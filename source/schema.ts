@@ -5,7 +5,7 @@
 import * as Class from '@singleware/class';
 import * as Types from '@singleware/types';
 
-import { PropertyDecorator, ClassConstructor } from './types';
+import { PropertyDecorator, ClassDecorator, Constructor } from './types';
 import { Entity } from './entity';
 import { Formats } from './formats';
 import { Storage } from './storage';
@@ -32,11 +32,13 @@ export class Schema {
    * @returns Returns the wrapped descriptor.
    */
   @Class.Private()
-  private static setFormat(column: Column, prototype: any, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor {
-    if (column.validators.length > 0) {
-      return <PropertyDescriptor>descriptor;
+  private static setFormat(column: Column, scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor {
+    if (column.validators.length === 0) {
+      const wrapped = Types.Validate(column.validators)(scope, property, descriptor);
+      wrapped.enumerable = true;
+      return wrapped;
     }
-    return Types.Validate(column.validators)(prototype, property, descriptor);
+    return <PropertyDescriptor>descriptor;
   }
 
   /**
@@ -46,22 +48,22 @@ export class Schema {
    */
   @Class.Private()
   private static setStorage(type: any): Storage {
-    let storage = Schema.storages.get(type);
+    let storage = this.storages.get(type);
     if (!storage) {
-      Schema.storages.set(type, (storage = { row: {} }));
+      this.storages.set(type, (storage = { row: {} }));
     }
     return storage;
   }
 
   /**
-   * Sets a column schema for the specified column type and name.
+   * Register a column schema for the specified column type and name.
    * @param type Column type.
    * @param name Column name.
    * @returns Returns the column schema.
    */
   @Class.Private()
-  private static setColumn(type: any, name: string): Column {
-    const storage = Schema.setStorage(type);
+  private static registerColumn(type: any, name: string): Column {
+    const storage = this.setStorage(type);
     if (!(name in storage.row)) {
       storage.row[name] = { name: name, types: [], validators: [] };
     }
@@ -69,15 +71,15 @@ export class Schema {
   }
 
   /**
-   * Loads the column schema dependencies to be used externally.
+   * Resolves the column schema dependencies to be used externally.
    * @param column Column schema.
    * @returns Returns the prepared column schema.
    */
   @Class.Private()
-  private static loadColumn(column: Column): Column {
+  private static resolveColumn(column: Column): Column {
     const newer = { ...column };
     if (newer.model) {
-      newer.schema = Schema.getRow(newer.model);
+      newer.schema = this.getRow(newer.model);
     }
     return Object.freeze(newer);
   }
@@ -88,12 +90,12 @@ export class Schema {
    * @returns Returns the row schema or undefined when the row schema does not exists.
    */
   @Class.Public()
-  public static getRow<T extends Entity>(model: ClassConstructor<T>): Row | undefined {
-    const storage = Schema.setStorage(model.prototype.constructor);
+  public static getRow<T extends Entity>(model: Constructor): Row | undefined {
+    const storage = this.setStorage(model.prototype.constructor);
     if (storage) {
       const row = <Row>{ ...storage.row };
       for (const name in row) {
-        row[name] = Schema.loadColumn(row[name]);
+        row[name] = this.resolveColumn(row[name]);
       }
       return Object.freeze(row);
     }
@@ -107,10 +109,10 @@ export class Schema {
    * @returns Returns the column schema or undefined when the column does not exists.
    */
   @Class.Public()
-  public static getColumn<T extends Entity>(model: ClassConstructor<T>, name: string): Column | undefined {
-    const storage = Schema.setStorage(model.prototype.constructor);
+  public static getColumn<T extends Entity>(model: Constructor, name: string): Column | undefined {
+    const storage = this.setStorage(model.prototype.constructor);
     if (storage) {
-      return name in storage.row ? Schema.loadColumn(storage.row[name]) : void 0;
+      return name in storage.row ? this.resolveColumn(storage.row[name]) : void 0;
     }
     return void 0;
   }
@@ -121,9 +123,9 @@ export class Schema {
    * @returns Returns the column schema or undefined when the column does not exists.
    */
   @Class.Public()
-  public static getPrimaryColumn<T extends Entity>(model: ClassConstructor<T>): Column | undefined {
-    const storage = Schema.storages.get(model.prototype.constructor);
-    return storage ? Schema.getColumn(model, <string>storage.primary) : void 0;
+  public static getPrimaryColumn<T extends Entity>(model: Constructor): Column | undefined {
+    const storage = this.storages.get(model.prototype.constructor);
+    return storage ? this.getColumn(model, <string>storage.primary) : void 0;
   }
 
   /**
@@ -132,8 +134,8 @@ export class Schema {
    * @returns Returns the storage name or undefined when the entity does not exists.
    */
   @Class.Public()
-  public static getStorageName<T extends Entity>(model: ClassConstructor<T>): string | undefined {
-    const storage = Schema.storages.get(model.prototype.constructor);
+  public static getStorageName<T extends Entity>(model: Constructor): string | undefined {
+    const storage = this.storages.get(model.prototype.constructor);
     return storage ? storage.name : void 0;
   }
 
@@ -144,11 +146,9 @@ export class Schema {
    */
   @Class.Public()
   public static Entity(name: string): ClassDecorator {
-    return Class.bindCallback(
-      <T extends Object>(model: ClassConstructor<T>): void => {
-        Schema.setStorage(model.prototype.constructor).name = name;
-      }
-    );
+    return (model: Constructor): void => {
+      this.setStorage(model.prototype.constructor).name = name;
+    };
   }
 
   /**
@@ -158,11 +158,9 @@ export class Schema {
    */
   @Class.Public()
   public static Alias(name: string): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string): void => {
-        Schema.setColumn(prototype.constructor, property).alias = name;
-      }
-    );
+    return (scope: Object, property: PropertyKey): any => {
+      this.registerColumn(scope.constructor, <string>property).alias = name;
+    };
   }
 
   /**
@@ -171,11 +169,9 @@ export class Schema {
    */
   @Class.Public()
   public static Required(): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string): void => {
-        Schema.setColumn(prototype.constructor, property).required = true;
-      }
-    );
+    return (scope: Object, property: PropertyKey): void => {
+      this.registerColumn(scope.constructor, <string>property).required = true;
+    };
   }
 
   /**
@@ -184,11 +180,9 @@ export class Schema {
    */
   @Class.Public()
   public static Hidden(): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string): void => {
-        Schema.setColumn(prototype.constructor, property).hidden = true;
-      }
-    );
+    return (scope: Object, property: PropertyKey): void => {
+      this.registerColumn(scope.constructor, <string>property).hidden = true;
+    };
   }
 
   /**
@@ -197,11 +191,9 @@ export class Schema {
    */
   @Class.Public()
   public static Primary(): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string): void => {
-        Schema.setStorage(prototype.constructor).primary = property;
-      }
-    );
+    return (scope: Object, property: PropertyKey): void => {
+      this.setStorage(scope.constructor).primary = <string>property;
+    };
   }
 
   /**
@@ -210,15 +202,13 @@ export class Schema {
    */
   @Class.Public()
   public static Id(): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.types.push(Formats.ID);
-        column.validators.push(new Types.Common.Any());
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.types.push(Formats.ID);
+      column.validators.push(new Types.Common.Any());
+      return descriptor;
+    };
   }
 
   /**
@@ -227,15 +217,13 @@ export class Schema {
    */
   @Class.Public()
   public static Null(): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.types.push(Formats.NULL);
-        column.validators.push(new Types.Common.Null());
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.types.push(Formats.NULL);
+      column.validators.push(new Types.Common.Null());
+      return descriptor;
+    };
   }
 
   /**
@@ -244,15 +232,13 @@ export class Schema {
    */
   @Class.Public()
   public static Boolean(): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.types.push(Formats.BOOLEAN);
-        column.validators.push(new Types.Common.Boolean());
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.types.push(Formats.BOOLEAN);
+      column.validators.push(new Types.Common.Boolean());
+      return descriptor;
+    };
   }
 
   /**
@@ -263,17 +249,15 @@ export class Schema {
    */
   @Class.Public()
   public static Integer(min?: number, max?: number): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.minimum = min;
-        column.maximum = max;
-        column.types.push(Formats.INTEGER);
-        column.validators.push(new Types.Common.Integer(min, max));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.minimum = min;
+      column.maximum = max;
+      column.types.push(Formats.INTEGER);
+      column.validators.push(new Types.Common.Integer(min, max));
+      return descriptor;
+    };
   }
 
   /**
@@ -284,17 +268,15 @@ export class Schema {
    */
   @Class.Public()
   public static Decimal(min?: number, max?: number): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.minimum = min;
-        column.maximum = max;
-        column.types.push(Formats.DECIMAL);
-        column.validators.push(new Types.Common.Decimal(min, max));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.minimum = min;
+      column.maximum = max;
+      column.types.push(Formats.DECIMAL);
+      column.validators.push(new Types.Common.Decimal(min, max));
+      return descriptor;
+    };
   }
 
   /**
@@ -305,17 +287,15 @@ export class Schema {
    */
   @Class.Public()
   public static Number(min?: number, max?: number): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.minimum = min;
-        column.maximum = max;
-        column.types.push(Formats.NUMBER);
-        column.validators.push(new Types.Common.Number(min, max));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.minimum = min;
+      column.maximum = max;
+      column.types.push(Formats.NUMBER);
+      column.validators.push(new Types.Common.Number(min, max));
+      return descriptor;
+    };
   }
 
   /**
@@ -326,17 +306,15 @@ export class Schema {
    */
   @Class.Public()
   public static String(min?: number, max?: number): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.minimum = min;
-        column.maximum = max;
-        column.types.push(Formats.STRING);
-        column.validators.push(new Types.Common.String(min, max));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.minimum = min;
+      column.maximum = max;
+      column.types.push(Formats.STRING);
+      column.validators.push(new Types.Common.String(min, max));
+      return descriptor;
+    };
   }
 
   /**
@@ -346,16 +324,14 @@ export class Schema {
    */
   @Class.Public()
   public static Enumeration(...values: string[]): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.values = values;
-        column.types.push(Formats.ENUMERATION);
-        column.validators.push(new Types.Common.Enumeration(...values));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.values = values;
+      column.types.push(Formats.ENUMERATION);
+      column.validators.push(new Types.Common.Enumeration(...values));
+      return descriptor;
+    };
   }
 
   /**
@@ -366,16 +342,14 @@ export class Schema {
    */
   @Class.Public()
   public static Pattern(pattern: RegExp, alias?: string): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.pattern = pattern;
-        column.types.push(Formats.PATTERN);
-        column.validators.push(new Types.Common.Pattern(pattern, alias));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.pattern = pattern;
+      column.types.push(Formats.PATTERN);
+      column.validators.push(new Types.Common.Pattern(pattern, alias));
+      return descriptor;
+    };
   }
 
   /**
@@ -386,15 +360,13 @@ export class Schema {
    */
   @Class.Public()
   public static Timestamp(min?: Date, max?: Date): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.types.push(Formats.TIMESTAMP);
-        column.validators.push(new Types.Common.Timestamp(min, max));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.types.push(Formats.TIMESTAMP);
+      column.validators.push(new Types.Common.Timestamp(min, max));
+      return descriptor;
+    };
   }
 
   /**
@@ -405,15 +377,13 @@ export class Schema {
    */
   @Class.Public()
   public static Date(min?: Date, max?: Date): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.types.push(Formats.DATE);
-        column.validators.push(new Types.Common.Timestamp(min, max));
-        return descriptor;
-      }
-    );
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.types.push(Formats.DATE);
+      column.validators.push(new Types.Common.Timestamp(min, max));
+      return descriptor;
+    };
   }
 
   /**
@@ -425,20 +395,18 @@ export class Schema {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Array<T extends Object>(model: ClassConstructor<T>, unique?: boolean, min?: number, max?: number): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.model = model;
-        column.unique = unique;
-        column.minimum = min;
-        column.maximum = max;
-        column.types.push(Formats.ARRAY);
-        column.validators.push(new Types.Common.InstanceOf(Array));
-        return descriptor;
-      }
-    );
+  public static Array<T extends Object>(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator {
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.model = model;
+      column.unique = unique;
+      column.minimum = min;
+      column.maximum = max;
+      column.types.push(Formats.ARRAY);
+      column.validators.push(new Types.Common.InstanceOf(Array));
+      return descriptor;
+    };
   }
 
   /**
@@ -447,16 +415,14 @@ export class Schema {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Object<T extends Object>(model: ClassConstructor<T>): PropertyDecorator {
-    return Class.bindCallback(
-      (prototype: any, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
-        const column = Schema.setColumn(prototype.constructor, property);
-        descriptor = Schema.setFormat(column, prototype, property, descriptor);
-        column.model = model;
-        column.types.push(Formats.OBJECT);
-        column.validators.push(new Types.Common.InstanceOf(Object));
-        return descriptor;
-      }
-    );
+  public static Object<T extends Object>(model: Constructor): PropertyDecorator {
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor | undefined => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, property, descriptor);
+      column.model = model;
+      column.types.push(Formats.OBJECT);
+      column.validators.push(new Types.Common.InstanceOf(Object));
+      return descriptor;
+    };
   }
 }

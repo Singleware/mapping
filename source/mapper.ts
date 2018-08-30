@@ -4,7 +4,7 @@
  */
 import * as Class from '@singleware/class';
 
-import { ClassConstructor } from './types';
+import { Constructor } from './types';
 import { Schema } from './schema';
 import { Driver } from './driver';
 import { Entity } from './entity';
@@ -27,7 +27,7 @@ export class Mapper<E extends Entity> {
    * Entity model.
    */
   @Class.Private()
-  private model: ClassConstructor<E>;
+  private model: Constructor<E>;
 
   /**
    * Gets the column name from the specified column schema.
@@ -214,7 +214,7 @@ export class Mapper<E extends Entity> {
    * @param driver Data driver.
    * @param model Entity model.
    */
-  public constructor(driver: Driver, model: ClassConstructor<E>) {
+  public constructor(driver: Driver, model: Constructor<E>) {
     this.driver = driver;
     this.model = model;
   }

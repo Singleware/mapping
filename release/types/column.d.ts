@@ -4,7 +4,7 @@
  */
 import * as Types from '@singleware/types';
 
-import { ClassConstructor } from './types';
+import { Constructor } from './types';
 import { Entity } from './entity';
 import { Formats } from './formats';
 import { Row } from './row';
@@ -60,7 +60,7 @@ export interface Column {
   /**
    * Column entity model.
    */
-  model?: ClassConstructor<Entity>;
+  model?: Constructor<Entity>;
   /**
    * Sub row schema.
    */

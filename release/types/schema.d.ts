@@ -1,4 +1,4 @@
-import { PropertyDecorator, ClassConstructor } from './types';
+import { PropertyDecorator, ClassDecorator, Constructor } from './types';
 import { Entity } from './entity';
 import { Column } from './column';
 import { Row } from './row';
@@ -26,43 +26,43 @@ export declare class Schema {
      */
     private static setStorage;
     /**
-     * Sets a column schema for the specified column type and name.
+     * Register a column schema for the specified column type and name.
      * @param type Column type.
      * @param name Column name.
      * @returns Returns the column schema.
      */
-    private static setColumn;
+    private static registerColumn;
     /**
-     * Loads the column schema dependencies to be used externally.
+     * Resolves the column schema dependencies to be used externally.
      * @param column Column schema.
      * @returns Returns the prepared column schema.
      */
-    private static loadColumn;
+    private static resolveColumn;
     /**
      * Gets the row schema for the specified entity model.
      * @param model Entity model.
      * @returns Returns the row schema or undefined when the row schema does not exists.
      */
-    static getRow<T extends Entity>(model: ClassConstructor<T>): Row | undefined;
+    static getRow<T extends Entity>(model: Constructor): Row | undefined;
     /**
      * Gets the column schema for the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getColumn<T extends Entity>(model: ClassConstructor<T>, name: string): Column | undefined;
+    static getColumn<T extends Entity>(model: Constructor, name: string): Column | undefined;
     /**
      * Gets the primary column schema for the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getPrimaryColumn<T extends Entity>(model: ClassConstructor<T>): Column | undefined;
+    static getPrimaryColumn<T extends Entity>(model: Constructor): Column | undefined;
     /**
      * Gets the storage name for the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */
-    static getStorageName<T extends Entity>(model: ClassConstructor<T>): string | undefined;
+    static getStorageName<T extends Entity>(model: Constructor): string | undefined;
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -168,11 +168,11 @@ export declare class Schema {
      * @param max Maximum items.
      * @returns Returns the decorator method.
      */
-    static Array<T extends Object>(model: ClassConstructor<T>, unique?: boolean, min?: number, max?: number): PropertyDecorator;
+    static Array<T extends Object>(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be an object column.
      * @param model Entity model.
      * @returns Returns the decorator method.
      */
-    static Object<T extends Object>(model: ClassConstructor<T>): PropertyDecorator;
+    static Object<T extends Object>(model: Constructor): PropertyDecorator;
 }

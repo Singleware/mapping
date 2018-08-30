@@ -1,4 +1,4 @@
-import { ClassConstructor } from './types';
+import { Constructor } from './types';
 import { Driver } from './driver';
 import { Entity } from './entity';
 import { Expression } from './expression';
@@ -109,5 +109,5 @@ export declare class Mapper<E extends Entity> {
      * @param driver Data driver.
      * @param model Entity model.
      */
-    constructor(driver: Driver, model: ClassConstructor<E>);
+    constructor(driver: Driver, model: Constructor<E>);
 }
