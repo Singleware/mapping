@@ -6,9 +6,10 @@
 /**
  * Schema formats enumeration.
  */
-export enum Formats {
+export enum Format {
   ID,
   NULL,
+  BINARY,
   BOOLEAN,
   INTEGER,
   DECIMAL,

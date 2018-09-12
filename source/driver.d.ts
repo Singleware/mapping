@@ -2,7 +2,9 @@
  * Copyright (C) 2018 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
+import { Constructor } from './types';
 import { Expression } from './expression';
+import { Aggregate } from './aggregate';
 import { Entity } from './entity';
 
 /**
@@ -10,57 +12,56 @@ import { Entity } from './entity';
  */
 export interface Driver {
   /**
-   * Insert the specified entity into the storage.
-   * @param storage Storage name.
+   * Insert the specified entity list into the storage.
+   * @param model Model type.
    * @param entities Entity list.
-   * @returns Returns the list inserted entities.
+   * @returns Returns the promise to get the id list of inserted entities.
    */
-  insert<T extends Entity>(storage: string, ...entities: T[]): any;
+  insert<T extends Entity>(model: Constructor<T>, ...entities: T[]): Promise<any[]>;
   /**
    * Find the corresponding entities from the storage.
-   * @param storage Storage name.
+   * @param model Model type.
    * @param filter Filter expression.
-   * @returns Returns the list of entities found.
+   * @param aggregate Virtual columns.
+   * @returns Returns the  promise to get the list of entities found.
    */
-  find<T extends Entity>(storage: string, filter: Expression): any;
+  find<T extends Entity>(model: Constructor<T>, filter: Expression, aggregate: Aggregate[]): Promise<T[]>;
   /**
    * Find the entity that corresponds to the specified entity id.
-   * @param storage Storage name.
-   * @param column Id column name.
-   * @param id Entity id value.
-   * @returns Returns the found entity or undefined when the entity was not found.
+   * @param model Model type.
+   * @param value Entity id.
+   * @param aggregate Virtual columns.
+   * @returns Returns the promise to get the entity found or undefined when the entity was not found.
    */
-  findById<T extends Entity>(storage: string, column: string, id: any): any;
+  findById<T extends Entity>(model: Constructor<T>, value: any, aggregate: Aggregate[]): Promise<T | undefined>;
   /**
    * Update all entities that corresponds to the specified filter.
-   * @param storage Storage name.
+   * @param model Model type.
    * @param filter Filter expression.
    * @param entity Entity data to be updated.
-   * @returns Returns the number of updated entities.
+   * @returns Returns the promise to get the number of updated entities.
    */
-  update<T extends Entity>(storage: string, filter: Expression, entity: T): any;
+  update(model: Constructor<Entity>, filter: Expression, entity: Entity): Promise<number>;
   /**
    * Update a entity that corresponds to the specified entity id.
-   * @param storage Storage name.
-   * @param column Id column name.
-   * @param id Entity id.
+   * @param model Model type.
+   * @param value Entity id.
    * @param entity Entity data to be updated.
-   * @returns Returns true when the entity has been updated or false otherwise.
+   * @returns Returns the promise to get true when the entity has been updated or false otherwise.
    */
-  updateById<T extends Entity>(storage: string, column: string, id: any, entity: T): any;
+  updateById(model: Constructor<Entity>, value: any, entity: Entity): Promise<boolean>;
   /**
    * Delete all entities that corresponds to the specified filter.
-   * @param storage Storage name.
+   * @param model Model type.
    * @param filter Filter columns.
-   * @return Returns the number of deleted entities.
+   * @return Returns the promise to get the number of deleted entities.
    */
-  delete<T extends Entity>(storage: string, filter: Expression): any;
+  delete(model: Constructor<Entity>, filter: Expression): Promise<number>;
   /**
    * Delete the entity that corresponds to the specified entity id.
-   * @param storage Storage name.
-   * @param column Id column name.
-   * @param id Entity id.
-   * @return Returns true when the entity has been deleted or false otherwise.
+   * @param model Model type.
+   * @param value Entity id.
+   * @return Returns the promise to get true when the entity has been deleted or false otherwise.
    */
-  deleteById<T extends Entity>(storage: string, column: string, id: any): any;
+  deleteById(model: Constructor<Entity>, value: any): Promise<boolean>;
 }

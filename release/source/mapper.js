@@ -6,6 +6,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var Mapper_1;
+"use strict";
 /**
  * Copyright (C) 2018 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
@@ -15,13 +17,17 @@ const schema_1 = require("./schema");
 /**
  * Generic data mapper class.
  */
-let Mapper = class Mapper {
+let Mapper = Mapper_1 = class Mapper {
     /**
      * Default constructor.
      * @param driver Data driver.
      * @param model Entity model.
+     * @throws Throws an error when the model is a not valid entity.
      */
     constructor(driver, model) {
+        if (!schema_1.Schema.getStorage(model)) {
+            throw new Error(`There is no storage name, make sure your entity model is a valid.`);
+        }
         this.driver = driver;
         this.model = model;
     }
@@ -39,33 +45,57 @@ let Mapper = class Mapper {
      * @throws Throws an error when there is no primary column defined.
      */
     getPrimaryName() {
-        const column = schema_1.Schema.getPrimaryColumn(this.model);
+        const column = schema_1.Schema.getPrimary(this.model);
         if (!column) {
             throw new Error(`There is no primary column to be used.`);
         }
         return this.getColumnName(column);
     }
     /**
-     * Gets the storage name.
-     * @returns Returns the storage name.
-     * @throws Throws an error when the storage name was not defined.
+     * Gets the virtual columns list.
+     * @returns Returns the virtual columns list.
      */
-    getStorageName() {
-        const name = schema_1.Schema.getStorageName(this.model);
-        if (!name) {
-            throw new Error(`There is no storage name, make sure your entity model is a valid.`);
+    getAggregations() {
+        const columns = schema_1.Schema.getVirtual(this.model);
+        const list = [];
+        if (columns) {
+            for (const name in columns) {
+                const data = columns[name];
+                const model = data.model || this.model;
+                list.push({
+                    storage: schema_1.Schema.getStorage(model),
+                    local: data.local ? this.getColumnName(schema_1.Schema.getColumn(this.model, data.local)) : this.getPrimaryName(),
+                    foreign: this.getColumnName(schema_1.Schema.getColumn(model, data.foreign)),
+                    virtual: data.name
+                });
+            }
         }
-        return name;
+        return list;
     }
     /**
-     * Gets a new entity based on the specified entity model.
+     * Assign virtual columns into the specified data based on the given entity.
+     * @param data Target entity data.
+     * @param entity Source entity.
+     * @returns Returns the specified entity data.
+     */
+    assignVirtual(data, entity) {
+        const virtual = schema_1.Schema.getVirtual(this.model);
+        for (const name in virtual) {
+            if (name in entity) {
+                data[name] = entity[name];
+            }
+        }
+        return data;
+    }
+    /**
+     * Creates a new model data based on the specified entity data.
      * @param entity Entity data.
-     * @param input Determines whether the entity will be used for input or output.
+     * @param input Determines whether the entity will be used for an input or output.
      * @param all Determines if all required properties must be provided.
      * @returns Returns the new generated entity data based on entity model.
      * @throws Throws an error when a required column is not supplied.
      */
-    getEntity(entity, input, all) {
+    createModel(entity, input, all) {
         const data = new this.model();
         const row = schema_1.Schema.getRow(this.model);
         for (const name in row) {
@@ -82,41 +112,16 @@ let Mapper = class Mapper {
         return data;
     }
     /**
-     * Gets a new list of entities based on the specified entity model.
-     * @param entities Entities list.
-     * @param input Determines whether the entities will be used for an input or output.
-     * @param all Determines whether all properties must be provided.
-     * @returns Returns the new entities list.
-     */
-    getEntities(entities, input, all) {
-        const list = [];
-        for (const entity of entities) {
-            list.push(this.getEntity(entity, input, all));
-        }
-        return list;
-    }
-    /**
-     * Generate a new normalized entity based on the specified entity model.
-     * @param entity Entity data.
-     * @returns Returns the new generated entity data.
-     */
-    normalize(entity) {
-        const schema = schema_1.Schema.getRow(this.model);
-        const data = {};
-        for (const column in entity) {
-            if (column in schema && !schema[column].hidden) {
-                data[column] = entity[column];
-            }
-        }
-        return data;
-    }
-    /**
-     * Insert the specified entities list into the storage.
-     * @param entities Entities list.
+     * Insert the specified entity list into the storage.
+     * @param entities Entity list.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
     async insertMany(entities) {
-        return await this.driver.insert(this.getStorageName(), ...this.getEntities(entities, true, true));
+        const list = [];
+        for (const entity of entities) {
+            list.push(this.createModel(entity, true, true));
+        }
+        return await this.driver.insert(this.model, ...list);
     }
     /**
      * Insert the specified entity into the storage.
@@ -132,7 +137,12 @@ let Mapper = class Mapper {
      * @returns Returns a promise to get the list of entities found.
      */
     async find(filter) {
-        return await this.getEntities(await this.driver.find(this.getStorageName(), filter), false, true);
+        const entities = await this.driver.find(this.model, filter, this.getAggregations());
+        const results = [];
+        for (const entity of entities) {
+            results.push(this.assignVirtual(this.createModel(entity, false, true), entity));
+        }
+        return results;
     }
     /**
      * Find the entity that corresponds to the specified entity id.
@@ -140,10 +150,8 @@ let Mapper = class Mapper {
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
     async findById(id) {
-        const entity = await this.driver.findById(this.getStorageName(), this.getPrimaryName(), id);
-        if (entity) {
-            return await this.getEntity(entity, false, true);
-        }
+        const entity = await this.driver.findById(this.model, id, this.getAggregations());
+        return entity ? this.assignVirtual(this.createModel(entity, false, true), entity) : void 0;
     }
     /**
      * Update all entities that corresponds to the specified filter.
@@ -152,7 +160,7 @@ let Mapper = class Mapper {
      * @returns Returns a promise to get the number of updated entities.
      */
     async update(filter, entity) {
-        return await this.driver.update(this.getStorageName(), filter, this.getEntity(entity, true, false));
+        return await this.driver.update(this.model, filter, this.createModel(entity, true, false));
     }
     /**
      * Update a entity that corresponds to the specified id.
@@ -160,7 +168,7 @@ let Mapper = class Mapper {
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateById(id, entity) {
-        return await this.driver.updateById(this.getStorageName(), this.getPrimaryName(), id, this.getEntity(entity, true, false));
+        return await this.driver.updateById(this.model, id, this.createModel(entity, true, false));
     }
     /**
      * Delete all entities that corresponds to the specified filter.
@@ -168,7 +176,7 @@ let Mapper = class Mapper {
      * @return Returns a promise to get the number of deleted entities.
      */
     async delete(filter) {
-        return await this.driver.delete(this.getStorageName(), filter);
+        return await this.driver.delete(this.model, filter);
     }
     /**
      * Delete the entity that corresponds to the specified entity id.
@@ -176,7 +184,60 @@ let Mapper = class Mapper {
      * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
      */
     async deleteById(id) {
-        return await this.driver.deleteById(this.getStorageName(), this.getPrimaryName(), id);
+        return await this.driver.deleteById(this.model, id);
+    }
+    /**
+     * Generate a new normalized entity based on the specified entity data.
+     * @param entity Entity data.
+     * @returns Returns the new normalized entity data.
+     */
+    normalize(entity) {
+        return Mapper_1.normalize(this.model, entity);
+    }
+    /**
+     * Normalize all entities in the specified entity list.
+     * @param entities Entities list.
+     * @returns Returns the list of normalized entities.
+     */
+    normalizeAll(...entities) {
+        const list = [];
+        for (const entity of entities) {
+            list.push(this.normalize(entity));
+        }
+        return list;
+    }
+    /**
+     * Generates a new normalized entity data based on the specified entity model and data.
+     * @param model Entity model
+     * @param entity Entity data.
+     * @returns Returns the new normalized entity data.
+     */
+    static normalize(model, entity) {
+        const columns = schema_1.Schema.getRow(model);
+        const virtual = schema_1.Schema.getVirtual(model);
+        const data = {};
+        for (const name in entity) {
+            const value = entity[name];
+            if (name in columns) {
+                const column = columns[name];
+                if (!column.hidden) {
+                    data[name] = column.model ? Mapper_1.normalize(column.model, value) : value;
+                }
+            }
+            else if (name in virtual) {
+                if (value instanceof Array) {
+                    const list = [];
+                    for (const entry of value) {
+                        list.push(Mapper_1.normalize(virtual[name].model || model, entry));
+                    }
+                    data[name] = list;
+                }
+                else {
+                    data[name] = Mapper_1.normalize(virtual[name].model || model, value);
+                }
+            }
+        }
+        return data;
     }
 };
 __decorate([
@@ -193,41 +254,47 @@ __decorate([
 ], Mapper.prototype, "getPrimaryName", null);
 __decorate([
     Class.Private()
-], Mapper.prototype, "getStorageName", null);
+], Mapper.prototype, "getAggregations", null);
 __decorate([
     Class.Private()
-], Mapper.prototype, "getEntity", null);
+], Mapper.prototype, "assignVirtual", null);
 __decorate([
     Class.Private()
-], Mapper.prototype, "getEntities", null);
+], Mapper.prototype, "createModel", null);
 __decorate([
-    Class.Public()
-], Mapper.prototype, "normalize", null);
-__decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "insertMany", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "insert", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "find", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "findById", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "update", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "updateById", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "delete", null);
 __decorate([
-    Class.Public()
+    Class.Protected()
 ], Mapper.prototype, "deleteById", null);
-Mapper = __decorate([
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "normalize", null);
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "normalizeAll", null);
+__decorate([
+    Class.Protected()
+], Mapper, "normalize", null);
+Mapper = Mapper_1 = __decorate([
     Class.Describe()
 ], Mapper);
 exports.Mapper = Mapper;

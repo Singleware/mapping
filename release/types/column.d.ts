@@ -6,8 +6,8 @@ import * as Types from '@singleware/types';
 
 import { Constructor } from './types';
 import { Entity } from './entity';
-import { Formats } from './formats';
-import { Row } from './row';
+import { Format } from './format';
+import { Map } from './map';
 
 /**
  * Schema column interface.
@@ -24,7 +24,7 @@ export interface Column {
   /**
    * Supported column data types.
    */
-  types: Formats[];
+  types: Format[];
   /**
    * Supported column data formats.
    */
@@ -62,7 +62,7 @@ export interface Column {
    */
   model?: Constructor<Entity>;
   /**
-   * Sub row schema.
+   * Sub map schema.
    */
-  schema?: Row;
+  schema?: Map<Column>;
 }

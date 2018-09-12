@@ -1,7 +1,8 @@
 import { PropertyDecorator, ClassDecorator, Constructor } from './types';
 import { Entity } from './entity';
+import { Virtual } from './virtual';
 import { Column } from './column';
-import { Row } from './row';
+import { Map } from './map';
 /**
  * Schema helper class.
  */
@@ -26,7 +27,15 @@ export declare class Schema {
      */
     private static setStorage;
     /**
-     * Register a column schema for the specified column type and name.
+     * Register a virtual column schema for the specified column information.
+     * @param type Column type.
+     * @param name Column name.
+     * @param foreign Foreign column name.
+     * @returns Returns the join schema.
+     */
+    private static registerVirtual;
+    /**
+     * Register a column schema for the specified column information.
      * @param type Column type.
      * @param name Column name.
      * @returns Returns the column schema.
@@ -41,28 +50,34 @@ export declare class Schema {
     /**
      * Gets the row schema for the specified entity model.
      * @param model Entity model.
-     * @returns Returns the row schema or undefined when the row schema does not exists.
+     * @returns Returns the row schema or undefined when the entity model does not exists.
      */
-    static getRow<T extends Entity>(model: Constructor): Row | undefined;
+    static getRow<T extends Entity>(model: Constructor<T>): Map<Column> | undefined;
+    /**
+     * Gets the virtual columns schema for the specified entity model.
+     * @param model Entity model.
+     * @returns Returns the joined schema or undefined when the entity model does not exists.
+     */
+    static getVirtual<T extends Entity>(model: Constructor<T>): Map<Virtual> | undefined;
     /**
      * Gets the column schema for the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getColumn<T extends Entity>(model: Constructor, name: string): Column | undefined;
+    static getColumn<T extends Entity>(model: Constructor<T>, name: string): Column | undefined;
     /**
      * Gets the primary column schema for the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getPrimaryColumn<T extends Entity>(model: Constructor): Column | undefined;
+    static getPrimary<T extends Entity>(model: Constructor<T>): Column | undefined;
     /**
      * Gets the storage name for the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */
-    static getStorageName<T extends Entity>(model: Constructor): string | undefined;
+    static getStorage<T extends Entity>(model: Constructor<T>): string | undefined;
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -70,7 +85,7 @@ export declare class Schema {
      */
     static Entity(name: string): ClassDecorator;
     /**
-     * Decorates the specified property to be formatted with another property name.
+     * Decorates the specified property to be referenced by another property name.
      * @param name Alias name.
      * @returns Returns the decorator method.
      */
@@ -86,6 +101,14 @@ export declare class Schema {
      */
     static Hidden(): PropertyDecorator;
     /**
+     * Decorates the specified property to be virtual column of a foreign entity.
+     * @param foreign Foreign column name.
+     * @param model Foreign entity model.
+     * @param local Local id column name. (When omitted the primary ID column will be used as default)
+     * @returns Returns the decorator method.
+     */
+    static Join(foreign: string, model?: Constructor<Entity>, local?: string): PropertyDecorator;
+    /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.
      */
@@ -100,6 +123,11 @@ export declare class Schema {
      * @returns Returns the decorator method.
      */
     static Null(): PropertyDecorator;
+    /**
+     * Decorates the specified property to be a binary column.
+     * @returns Returns the decorator method.
+     */
+    static Binary(): PropertyDecorator;
     /**
      * Decorates the specified property to be a boolean column.
      * @returns Returns the decorator method.

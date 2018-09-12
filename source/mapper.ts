@@ -9,8 +9,10 @@ import { Schema } from './schema';
 import { Driver } from './driver';
 import { Entity } from './entity';
 import { Expression } from './expression';
+import { Aggregate } from './aggregate';
+import { Virtual } from './virtual';
 import { Column } from './column';
-import { Row } from './row';
+import { Map } from './map';
 
 /**
  * Generic data mapper class.
@@ -46,7 +48,7 @@ export class Mapper<E extends Entity> {
    */
   @Class.Private()
   private getPrimaryName(): string {
-    const column = <Column>Schema.getPrimaryColumn(this.model);
+    const column = <Column>Schema.getPrimary(this.model);
     if (!column) {
       throw new Error(`There is no primary column to be used.`);
     }
@@ -54,31 +56,57 @@ export class Mapper<E extends Entity> {
   }
 
   /**
-   * Gets the storage name.
-   * @returns Returns the storage name.
-   * @throws Throws an error when the storage name was not defined.
+   * Gets the virtual columns list.
+   * @returns Returns the virtual columns list.
    */
   @Class.Private()
-  private getStorageName(): string {
-    const name = Schema.getStorageName(this.model);
-    if (!name) {
-      throw new Error(`There is no storage name, make sure your entity model is a valid.`);
+  private getAggregations(): Aggregate[] {
+    const columns = Schema.getVirtual(this.model);
+    const list = [];
+    if (columns) {
+      for (const name in columns) {
+        const data = columns[name];
+        const model = data.model || this.model;
+        list.push({
+          storage: <string>Schema.getStorage(model),
+          local: data.local ? this.getColumnName(<Column>Schema.getColumn(this.model, data.local)) : this.getPrimaryName(),
+          foreign: this.getColumnName(<Column>Schema.getColumn(model, data.foreign)),
+          virtual: data.name
+        });
+      }
     }
-    return name;
+    return list;
   }
 
   /**
-   * Gets a new entity based on the specified entity model.
+   * Assign virtual columns into the specified data based on the given entity.
+   * @param data Target entity data.
+   * @param entity Source entity.
+   * @returns Returns the specified entity data.
+   */
+  @Class.Private()
+  private assignVirtual(data: E, entity: Entity): E {
+    const virtual = <Map<Virtual>>Schema.getVirtual(this.model);
+    for (const name in virtual) {
+      if (name in entity) {
+        data[name] = entity[name];
+      }
+    }
+    return data;
+  }
+
+  /**
+   * Creates a new model data based on the specified entity data.
    * @param entity Entity data.
-   * @param input Determines whether the entity will be used for input or output.
+   * @param input Determines whether the entity will be used for an input or output.
    * @param all Determines if all required properties must be provided.
    * @returns Returns the new generated entity data based on entity model.
    * @throws Throws an error when a required column is not supplied.
    */
   @Class.Private()
-  private getEntity(entity: Entity, input: boolean, all: boolean): E {
+  private createModel(entity: Entity, input: boolean, all: boolean): E {
     const data = new this.model();
-    const row = <Row>Schema.getRow(this.model);
+    const row = <Map<Column>>Schema.getRow(this.model);
     for (const name in row) {
       const column = this.getColumnName(row[name]);
       const source = input ? name : column;
@@ -93,46 +121,17 @@ export class Mapper<E extends Entity> {
   }
 
   /**
-   * Gets a new list of entities based on the specified entity model.
-   * @param entities Entities list.
-   * @param input Determines whether the entities will be used for an input or output.
-   * @param all Determines whether all properties must be provided.
-   * @returns Returns the new entities list.
-   */
-  @Class.Private()
-  private getEntities(entities: Entity[], input: boolean, all: boolean): E[] {
-    const list = [];
-    for (const entity of entities) {
-      list.push(this.getEntity(entity, input, all));
-    }
-    return list;
-  }
-
-  /**
-   * Generate a new normalized entity based on the specified entity model.
-   * @param entity Entity data.
-   * @returns Returns the new generated entity data.
-   */
-  @Class.Public()
-  protected normalize(entity: E): Entity {
-    const schema = <Row>Schema.getRow(this.model);
-    const data = <Entity>{};
-    for (const column in entity) {
-      if (column in schema && !schema[column].hidden) {
-        data[column] = entity[column];
-      }
-    }
-    return data;
-  }
-
-  /**
-   * Insert the specified entities list into the storage.
-   * @param entities Entities list.
+   * Insert the specified entity list into the storage.
+   * @param entities Entity list.
    * @returns Returns a promise to get the id list of all inserted entities.
    */
-  @Class.Public()
+  @Class.Protected()
   protected async insertMany(entities: E[]): Promise<any[]> {
-    return await this.driver.insert(this.getStorageName(), ...this.getEntities(entities, true, true));
+    const list = [];
+    for (const entity of entities) {
+      list.push(this.createModel(entity, true, true));
+    }
+    return await this.driver.insert(this.model, ...list);
   }
 
   /**
@@ -140,7 +139,7 @@ export class Mapper<E extends Entity> {
    * @param entity Entity data.
    * @returns Returns a promise to get the id of inserted entry.
    */
-  @Class.Public()
+  @Class.Protected()
   protected async insert(entity: E): Promise<any> {
     return (await this.insertMany([entity]))[0];
   }
@@ -150,9 +149,14 @@ export class Mapper<E extends Entity> {
    * @param filter Filter expression.
    * @returns Returns a promise to get the list of entities found.
    */
-  @Class.Public()
+  @Class.Protected()
   protected async find(filter: Expression): Promise<E[]> {
-    return await this.getEntities(await this.driver.find(this.getStorageName(), filter), false, true);
+    const entities = await this.driver.find(this.model, filter, this.getAggregations());
+    const results = [];
+    for (const entity of entities) {
+      results.push(this.assignVirtual(this.createModel(entity, false, true), entity));
+    }
+    return results;
   }
 
   /**
@@ -160,12 +164,10 @@ export class Mapper<E extends Entity> {
    * @param id Entity id.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
-  @Class.Public()
+  @Class.Protected()
   protected async findById(id: any): Promise<E | undefined> {
-    const entity = await this.driver.findById(this.getStorageName(), this.getPrimaryName(), id);
-    if (entity) {
-      return await this.getEntity(entity, false, true);
-    }
+    const entity = await this.driver.findById(this.model, id, this.getAggregations());
+    return entity ? this.assignVirtual(this.createModel(entity, false, true), entity) : void 0;
   }
 
   /**
@@ -174,9 +176,9 @@ export class Mapper<E extends Entity> {
    * @param entity Entity data to be updated.
    * @returns Returns a promise to get the number of updated entities.
    */
-  @Class.Public()
-  protected async update(filter: Expression, entity: E): Promise<number> {
-    return await this.driver.update(this.getStorageName(), filter, this.getEntity(entity, true, false));
+  @Class.Protected()
+  protected async update(filter: Expression, entity: Entity): Promise<number> {
+    return await this.driver.update(this.model, filter, this.createModel(entity, true, false));
   }
 
   /**
@@ -184,9 +186,9 @@ export class Mapper<E extends Entity> {
    * @param id Entity id.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
-  @Class.Public()
-  protected async updateById(id: any, entity: E): Promise<boolean> {
-    return await this.driver.updateById(this.getStorageName(), this.getPrimaryName(), id, this.getEntity(entity, true, false));
+  @Class.Protected()
+  protected async updateById(id: any, entity: Entity): Promise<boolean> {
+    return await this.driver.updateById(this.model, id, this.createModel(entity, true, false));
   }
 
   /**
@@ -194,9 +196,9 @@ export class Mapper<E extends Entity> {
    * @param filter Filter columns.
    * @return Returns a promise to get the number of deleted entities.
    */
-  @Class.Public()
+  @Class.Protected()
   protected async delete(filter: Expression): Promise<number> {
-    return await this.driver.delete(this.getStorageName(), filter);
+    return await this.driver.delete(this.model, filter);
   }
 
   /**
@@ -204,18 +206,79 @@ export class Mapper<E extends Entity> {
    * @param id Entity id.
    * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
    */
-  @Class.Public()
-  protected async deleteById(id: any): Promise<number> {
-    return await this.driver.deleteById(this.getStorageName(), this.getPrimaryName(), id);
+  @Class.Protected()
+  protected async deleteById(id: any): Promise<boolean> {
+    return await this.driver.deleteById(this.model, id);
+  }
+
+  /**
+   * Generate a new normalized entity based on the specified entity data.
+   * @param entity Entity data.
+   * @returns Returns the new normalized entity data.
+   */
+  @Class.Protected()
+  protected normalize(entity: Entity): Entity {
+    return Mapper.normalize(this.model, entity);
+  }
+
+  /**
+   * Normalize all entities in the specified entity list.
+   * @param entities Entities list.
+   * @returns Returns the list of normalized entities.
+   */
+  @Class.Protected()
+  protected normalizeAll(...entities: Entity[]): Entity[] {
+    const list = [];
+    for (const entity of entities) {
+      list.push(this.normalize(entity));
+    }
+    return list;
   }
 
   /**
    * Default constructor.
    * @param driver Data driver.
    * @param model Entity model.
+   * @throws Throws an error when the model is a not valid entity.
    */
   public constructor(driver: Driver, model: Constructor<E>) {
+    if (!Schema.getStorage(model)) {
+      throw new Error(`There is no storage name, make sure your entity model is a valid.`);
+    }
     this.driver = driver;
     this.model = model;
+  }
+
+  /**
+   * Generates a new normalized entity data based on the specified entity model and data.
+   * @param model Entity model
+   * @param entity Entity data.
+   * @returns Returns the new normalized entity data.
+   */
+  @Class.Protected()
+  protected static normalize(model: Constructor<Entity>, entity: Entity): Entity {
+    const columns = <Map<Column>>Schema.getRow(model);
+    const virtual = <Map<Virtual>>Schema.getVirtual(model);
+    const data = <Entity>{};
+    for (const name in entity) {
+      const value = entity[name];
+      if (name in columns) {
+        const column = columns[name];
+        if (!column.hidden) {
+          data[name] = column.model ? Mapper.normalize(column.model, value) : value;
+        }
+      } else if (name in virtual) {
+        if (value instanceof Array) {
+          const list = [];
+          for (const entry of value) {
+            list.push(Mapper.normalize(virtual[name].model || model, entry));
+          }
+          data[name] = list;
+        } else {
+          data[name] = Mapper.normalize(virtual[name].model || model, value);
+        }
+      }
+    }
+    return data;
   }
 }

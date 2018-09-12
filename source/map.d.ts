@@ -5,8 +5,8 @@
 import { Column } from './column';
 
 /**
- * Schema row interface.
+ * Schema map interface.
  */
-export interface Row {
-  [name: string]: Column;
+export interface Map<T> {
+  [name: string]: T;
 }

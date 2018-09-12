@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const Class = require("@singleware/class");
 const Types = require("@singleware/types");
-const formats_1 = require("./formats");
+const format_1 = require("./format");
 /**
  * Schema helper class.
  */
@@ -27,7 +27,8 @@ let Schema = class Schema {
      */
     static setFormat(column, scope, property, descriptor) {
         if (column.validators.length === 0) {
-            const wrapped = Types.Validate(column.validators)(scope, property, descriptor);
+            const format = new Types.Common.Group(Types.Common.Group.OR, column.validators);
+            const wrapped = Types.Validate(format)(scope, property, descriptor);
             wrapped.enumerable = true;
             return wrapped;
         }
@@ -41,22 +42,36 @@ let Schema = class Schema {
     static setStorage(type) {
         let storage = this.storages.get(type);
         if (!storage) {
-            this.storages.set(type, (storage = { row: {} }));
+            this.storages.set(type, (storage = { virtual: {}, columns: {} }));
         }
         return storage;
     }
     /**
-     * Register a column schema for the specified column type and name.
+     * Register a virtual column schema for the specified column information.
+     * @param type Column type.
+     * @param name Column name.
+     * @param foreign Foreign column name.
+     * @returns Returns the join schema.
+     */
+    static registerVirtual(type, name, foreign) {
+        const storage = this.setStorage(type);
+        if (!(name in storage.virtual)) {
+            storage.virtual[name] = { name: name, foreign: foreign };
+        }
+        return storage.virtual[name];
+    }
+    /**
+     * Register a column schema for the specified column information.
      * @param type Column type.
      * @param name Column name.
      * @returns Returns the column schema.
      */
     static registerColumn(type, name) {
         const storage = this.setStorage(type);
-        if (!(name in storage.row)) {
-            storage.row[name] = { name: name, types: [], validators: [] };
+        if (!(name in storage.columns)) {
+            storage.columns[name] = { name: name, types: [], validators: [] };
         }
-        return storage.row[name];
+        return storage.columns[name];
     }
     /**
      * Resolves the column schema dependencies to be used externally.
@@ -73,16 +88,28 @@ let Schema = class Schema {
     /**
      * Gets the row schema for the specified entity model.
      * @param model Entity model.
-     * @returns Returns the row schema or undefined when the row schema does not exists.
+     * @returns Returns the row schema or undefined when the entity model does not exists.
      */
     static getRow(model) {
         const storage = this.setStorage(model.prototype.constructor);
         if (storage) {
-            const row = { ...storage.row };
+            const row = { ...storage.columns };
             for (const name in row) {
                 row[name] = this.resolveColumn(row[name]);
             }
             return Object.freeze(row);
+        }
+        return void 0;
+    }
+    /**
+     * Gets the virtual columns schema for the specified entity model.
+     * @param model Entity model.
+     * @returns Returns the joined schema or undefined when the entity model does not exists.
+     */
+    static getVirtual(model) {
+        const storage = this.setStorage(model.prototype.constructor);
+        if (storage) {
+            return Object.freeze({ ...storage.virtual });
         }
         return void 0;
     }
@@ -95,7 +122,7 @@ let Schema = class Schema {
     static getColumn(model, name) {
         const storage = this.setStorage(model.prototype.constructor);
         if (storage) {
-            return name in storage.row ? this.resolveColumn(storage.row[name]) : void 0;
+            return name in storage.columns ? this.resolveColumn(storage.columns[name]) : void 0;
         }
         return void 0;
     }
@@ -104,7 +131,7 @@ let Schema = class Schema {
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getPrimaryColumn(model) {
+    static getPrimary(model) {
         const storage = this.storages.get(model.prototype.constructor);
         return storage ? this.getColumn(model, storage.primary) : void 0;
     }
@@ -113,7 +140,7 @@ let Schema = class Schema {
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */
-    static getStorageName(model) {
+    static getStorage(model) {
         const storage = this.storages.get(model.prototype.constructor);
         return storage ? storage.name : void 0;
     }
@@ -128,7 +155,7 @@ let Schema = class Schema {
         };
     }
     /**
-     * Decorates the specified property to be formatted with another property name.
+     * Decorates the specified property to be referenced by another property name.
      * @param name Alias name.
      * @returns Returns the decorator method.
      */
@@ -156,6 +183,23 @@ let Schema = class Schema {
         };
     }
     /**
+     * Decorates the specified property to be virtual column of a foreign entity.
+     * @param foreign Foreign column name.
+     * @param model Foreign entity model.
+     * @param local Local id column name. (When omitted the primary ID column will be used as default)
+     * @returns Returns the decorator method.
+     */
+    static Join(foreign, model, local) {
+        return (scope, property, descriptor) => {
+            const join = this.registerVirtual(scope.constructor, property, foreign);
+            descriptor = Types.Validate(new Types.Common.Any())(scope, property, descriptor);
+            join.local = local;
+            join.model = model;
+            descriptor.enumerable = true;
+            return descriptor;
+        };
+    }
+    /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.
      */
@@ -172,7 +216,7 @@ let Schema = class Schema {
         return (scope, property, descriptor) => {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
-            column.types.push(formats_1.Formats.ID);
+            column.types.push(format_1.Format.ID);
             column.validators.push(new Types.Common.Any());
             return descriptor;
         };
@@ -185,8 +229,20 @@ let Schema = class Schema {
         return (scope, property, descriptor) => {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
-            column.types.push(formats_1.Formats.NULL);
+            column.types.push(format_1.Format.NULL);
             column.validators.push(new Types.Common.Null());
+            return descriptor;
+        };
+    }
+    /**
+     * Decorates the specified property to be a binary column.
+     * @returns Returns the decorator method.
+     */
+    static Binary() {
+        return (scope, property, descriptor) => {
+            const column = this.registerColumn(scope.constructor, property);
+            descriptor = this.setFormat(column, scope, property, descriptor);
+            column.types.push(format_1.Format.BINARY);
             return descriptor;
         };
     }
@@ -198,7 +254,7 @@ let Schema = class Schema {
         return (scope, property, descriptor) => {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
-            column.types.push(formats_1.Formats.BOOLEAN);
+            column.types.push(format_1.Format.BOOLEAN);
             column.validators.push(new Types.Common.Boolean());
             return descriptor;
         };
@@ -215,7 +271,7 @@ let Schema = class Schema {
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.minimum = min;
             column.maximum = max;
-            column.types.push(formats_1.Formats.INTEGER);
+            column.types.push(format_1.Format.INTEGER);
             column.validators.push(new Types.Common.Integer(min, max));
             return descriptor;
         };
@@ -232,7 +288,7 @@ let Schema = class Schema {
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.minimum = min;
             column.maximum = max;
-            column.types.push(formats_1.Formats.DECIMAL);
+            column.types.push(format_1.Format.DECIMAL);
             column.validators.push(new Types.Common.Decimal(min, max));
             return descriptor;
         };
@@ -249,7 +305,7 @@ let Schema = class Schema {
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.minimum = min;
             column.maximum = max;
-            column.types.push(formats_1.Formats.NUMBER);
+            column.types.push(format_1.Format.NUMBER);
             column.validators.push(new Types.Common.Number(min, max));
             return descriptor;
         };
@@ -266,7 +322,7 @@ let Schema = class Schema {
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.minimum = min;
             column.maximum = max;
-            column.types.push(formats_1.Formats.STRING);
+            column.types.push(format_1.Format.STRING);
             column.validators.push(new Types.Common.String(min, max));
             return descriptor;
         };
@@ -281,7 +337,7 @@ let Schema = class Schema {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.values = values;
-            column.types.push(formats_1.Formats.ENUMERATION);
+            column.types.push(format_1.Format.ENUMERATION);
             column.validators.push(new Types.Common.Enumeration(...values));
             return descriptor;
         };
@@ -297,7 +353,7 @@ let Schema = class Schema {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.pattern = pattern;
-            column.types.push(formats_1.Formats.PATTERN);
+            column.types.push(format_1.Format.PATTERN);
             column.validators.push(new Types.Common.Pattern(pattern, alias));
             return descriptor;
         };
@@ -312,7 +368,7 @@ let Schema = class Schema {
         return (scope, property, descriptor) => {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
-            column.types.push(formats_1.Formats.TIMESTAMP);
+            column.types.push(format_1.Format.TIMESTAMP);
             column.validators.push(new Types.Common.Timestamp(min, max));
             return descriptor;
         };
@@ -327,7 +383,7 @@ let Schema = class Schema {
         return (scope, property, descriptor) => {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
-            column.types.push(formats_1.Formats.DATE);
+            column.types.push(format_1.Format.DATE);
             column.validators.push(new Types.Common.Timestamp(min, max));
             return descriptor;
         };
@@ -348,7 +404,7 @@ let Schema = class Schema {
             column.unique = unique;
             column.minimum = min;
             column.maximum = max;
-            column.types.push(formats_1.Formats.ARRAY);
+            column.types.push(format_1.Format.ARRAY);
             column.validators.push(new Types.Common.InstanceOf(Array));
             return descriptor;
         };
@@ -363,7 +419,7 @@ let Schema = class Schema {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.model = model;
-            column.types.push(formats_1.Formats.OBJECT);
+            column.types.push(format_1.Format.OBJECT);
             column.validators.push(new Types.Common.InstanceOf(Object));
             return descriptor;
         };
@@ -384,6 +440,9 @@ __decorate([
 ], Schema, "setStorage", null);
 __decorate([
     Class.Private()
+], Schema, "registerVirtual", null);
+__decorate([
+    Class.Private()
 ], Schema, "registerColumn", null);
 __decorate([
     Class.Private()
@@ -393,13 +452,16 @@ __decorate([
 ], Schema, "getRow", null);
 __decorate([
     Class.Public()
+], Schema, "getVirtual", null);
+__decorate([
+    Class.Public()
 ], Schema, "getColumn", null);
 __decorate([
     Class.Public()
-], Schema, "getPrimaryColumn", null);
+], Schema, "getPrimary", null);
 __decorate([
     Class.Public()
-], Schema, "getStorageName", null);
+], Schema, "getStorage", null);
 __decorate([
     Class.Public()
 ], Schema, "Entity", null);
@@ -414,6 +476,9 @@ __decorate([
 ], Schema, "Hidden", null);
 __decorate([
     Class.Public()
+], Schema, "Join", null);
+__decorate([
+    Class.Public()
 ], Schema, "Primary", null);
 __decorate([
     Class.Public()
@@ -421,6 +486,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "Null", null);
+__decorate([
+    Class.Public()
+], Schema, "Binary", null);
 __decorate([
     Class.Public()
 ], Schema, "Boolean", null);

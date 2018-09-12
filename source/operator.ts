@@ -6,7 +6,7 @@
 /**
  * Filter operators enumeration.
  */
-export enum Operators {
+export enum Operator {
   LESS,
   LESS_OR_EQUAL,
   EQUAL,

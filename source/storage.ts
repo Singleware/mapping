@@ -2,7 +2,9 @@
  * Copyright (C) 2018 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
-import { Row } from './row';
+import { Virtual } from './virtual';
+import { Column } from './column';
+import { Map } from './map';
 
 /**
  * Schema storage interface.
@@ -17,7 +19,11 @@ export interface Storage {
    */
   primary?: string;
   /**
-   * Row of columns.
+   * Virtual columns.
    */
-  row: Row;
+  virtual: Map<Virtual>;
+  /**
+   * Columns.
+   */
+  columns: Map<Column>;
 }

@@ -27,37 +27,29 @@ export declare class Mapper<E extends Entity> {
      */
     private getPrimaryName;
     /**
-     * Gets the storage name.
-     * @returns Returns the storage name.
-     * @throws Throws an error when the storage name was not defined.
+     * Gets the virtual columns list.
+     * @returns Returns the virtual columns list.
      */
-    private getStorageName;
+    private getAggregations;
     /**
-     * Gets a new entity based on the specified entity model.
+     * Assign virtual columns into the specified data based on the given entity.
+     * @param data Target entity data.
+     * @param entity Source entity.
+     * @returns Returns the specified entity data.
+     */
+    private assignVirtual;
+    /**
+     * Creates a new model data based on the specified entity data.
      * @param entity Entity data.
-     * @param input Determines whether the entity will be used for input or output.
+     * @param input Determines whether the entity will be used for an input or output.
      * @param all Determines if all required properties must be provided.
      * @returns Returns the new generated entity data based on entity model.
      * @throws Throws an error when a required column is not supplied.
      */
-    private getEntity;
+    private createModel;
     /**
-     * Gets a new list of entities based on the specified entity model.
-     * @param entities Entities list.
-     * @param input Determines whether the entities will be used for an input or output.
-     * @param all Determines whether all properties must be provided.
-     * @returns Returns the new entities list.
-     */
-    private getEntities;
-    /**
-     * Generate a new normalized entity based on the specified entity model.
-     * @param entity Entity data.
-     * @returns Returns the new generated entity data.
-     */
-    protected normalize(entity: E): Entity;
-    /**
-     * Insert the specified entities list into the storage.
-     * @param entities Entities list.
+     * Insert the specified entity list into the storage.
+     * @param entities Entity list.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
     protected insertMany(entities: E[]): Promise<any[]>;
@@ -85,13 +77,13 @@ export declare class Mapper<E extends Entity> {
      * @param entity Entity data to be updated.
      * @returns Returns a promise to get the number of updated entities.
      */
-    protected update(filter: Expression, entity: E): Promise<number>;
+    protected update(filter: Expression, entity: Entity): Promise<number>;
     /**
      * Update a entity that corresponds to the specified id.
      * @param id Entity id.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
-    protected updateById(id: any, entity: E): Promise<boolean>;
+    protected updateById(id: any, entity: Entity): Promise<boolean>;
     /**
      * Delete all entities that corresponds to the specified filter.
      * @param filter Filter columns.
@@ -103,11 +95,31 @@ export declare class Mapper<E extends Entity> {
      * @param id Entity id.
      * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
      */
-    protected deleteById(id: any): Promise<number>;
+    protected deleteById(id: any): Promise<boolean>;
+    /**
+     * Generate a new normalized entity based on the specified entity data.
+     * @param entity Entity data.
+     * @returns Returns the new normalized entity data.
+     */
+    protected normalize(entity: Entity): Entity;
+    /**
+     * Normalize all entities in the specified entity list.
+     * @param entities Entities list.
+     * @returns Returns the list of normalized entities.
+     */
+    protected normalizeAll(...entities: Entity[]): Entity[];
     /**
      * Default constructor.
      * @param driver Data driver.
      * @param model Entity model.
+     * @throws Throws an error when the model is a not valid entity.
      */
     constructor(driver: Driver, model: Constructor<E>);
+    /**
+     * Generates a new normalized entity data based on the specified entity model and data.
+     * @param model Entity model
+     * @param entity Entity data.
+     * @returns Returns the new normalized entity data.
+     */
+    protected static normalize(model: Constructor<Entity>, entity: Entity): Entity;
 }

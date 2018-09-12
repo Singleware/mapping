@@ -5,7 +5,7 @@
 /**
  * Filter operators enumeration.
  */
-export declare enum Operators {
+export declare enum Operator {
     LESS = 0,
     LESS_OR_EQUAL = 1,
     EQUAL = 2,
