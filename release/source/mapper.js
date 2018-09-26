@@ -14,6 +14,7 @@ var Mapper_1;
  */
 const Class = require("@singleware/class");
 const schema_1 = require("./schema");
+const format_1 = require("./format");
 /**
  * Generic data mapper class.
  */
@@ -32,14 +33,6 @@ let Mapper = Mapper_1 = class Mapper {
         this.model = model;
     }
     /**
-     * Gets the column name from the specified column schema.
-     * @param column Column schema.
-     * @returns Returns the column name.
-     */
-    getColumnName(column) {
-        return column.alias || column.name;
-    }
-    /**
      * Gets the primary column name.
      * @returns Returns the primary column name.
      * @throws Throws an error when there is no primary column defined.
@@ -49,7 +42,7 @@ let Mapper = Mapper_1 = class Mapper {
         if (!column) {
             throw new Error(`There is no primary column to be used.`);
         }
-        return this.getColumnName(column);
+        return Mapper_1.getColumnName(column);
     }
     /**
      * Gets the virtual columns list.
@@ -64,8 +57,8 @@ let Mapper = Mapper_1 = class Mapper {
                 const model = data.model || this.model;
                 list.push({
                     storage: schema_1.Schema.getStorage(model),
-                    local: data.local ? this.getColumnName(schema_1.Schema.getColumn(this.model, data.local)) : this.getPrimaryName(),
-                    foreign: this.getColumnName(schema_1.Schema.getColumn(model, data.foreign)),
+                    local: data.local ? Mapper_1.getColumnName(schema_1.Schema.getColumn(this.model, data.local)) : this.getPrimaryName(),
+                    foreign: Mapper_1.getColumnName(schema_1.Schema.getColumn(model, data.foreign)),
                     virtual: data.name
                 });
             }
@@ -96,20 +89,27 @@ let Mapper = Mapper_1 = class Mapper {
      * @throws Throws an error when a required column is not supplied.
      */
     createModel(entity, input, all) {
-        const data = new this.model();
-        const row = schema_1.Schema.getRow(this.model);
-        for (const name in row) {
-            const column = this.getColumnName(row[name]);
-            const source = input ? name : column;
-            const target = input ? column : name;
-            if (source in entity && entity[source] !== void 0) {
-                data[target] = entity[source];
-            }
-            else if (all && row[name].required) {
-                throw new Error(`Required column '${name}' does not supplied.`);
-            }
+        return Mapper_1.createModel(this.model, entity, input, all);
+    }
+    /**
+     * Generate a new normalized entity based on the specified entity data.
+     * @param entity Entity data.
+     * @returns Returns the new normalized entity data.
+     */
+    normalize(entity) {
+        return Mapper_1.normalize(this.model, entity);
+    }
+    /**
+     * Normalize all entities in the specified entity list.
+     * @param entities Entities list.
+     * @returns Returns the list of normalized entities.
+     */
+    normalizeAll(...entities) {
+        const list = [];
+        for (const entity of entities) {
+            list.push(this.normalize(entity));
         }
-        return data;
+        return list;
     }
     /**
      * Insert the specified entity list into the storage.
@@ -187,24 +187,143 @@ let Mapper = Mapper_1 = class Mapper {
         return await this.driver.deleteById(this.model, id);
     }
     /**
-     * Generate a new normalized entity based on the specified entity data.
-     * @param entity Entity data.
-     * @returns Returns the new normalized entity data.
+     * Determines whether the specified entity type common or not.
+     * @param type Entity type.
+     * @returns Returns true when the specified entity is common, false otherwise.
      */
-    normalize(entity) {
-        return Mapper_1.normalize(this.model, entity);
+    static isCommon(type) {
+        return this.commons.indexOf(type) !== -1;
     }
     /**
-     * Normalize all entities in the specified entity list.
-     * @param entities Entities list.
-     * @returns Returns the list of normalized entities.
+     * Gets the column name from the specified column schema.
+     * @param column Column schema.
+     * @returns Returns the column name.
      */
-    normalizeAll(...entities) {
+    static getColumnName(column) {
+        return column.alias || column.name;
+    }
+    /**
+     * Creates a new array of model data based on the specified entity model and values.
+     * @param model Entity model.
+     * @param values Entities list.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param all Determines if all required properties must be provided.
+     * @returns Returns the new generated list of entities based on entity model.
+     */
+    static createArrayModel(model, values, input, all) {
         const list = [];
-        for (const entity of entities) {
-            list.push(this.normalize(entity));
+        for (const value of values) {
+            list.push(this.createModel(model, value, input, all));
         }
         return list;
+    }
+    /**
+     * Creates a new map of model data based on the specified entity model and value.
+     * @param model Entity model.
+     * @param value Entity map.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param all Determines if all required properties must be provided.
+     * @returns Returns the new generated map of entity data based on entity model.
+     */
+    static createMapModel(model, value, input, all) {
+        const map = {};
+        for (const name in value) {
+            map[name] = this.createModel(model, value[name], input, all);
+        }
+        return map;
+    }
+    /**
+     * Creates a new model value based on the specified entity model and data.
+     * @param column Column schema.
+     * @param value Value to be created.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param all Determines if all required properties must be provided.
+     * @returns Returns the new normalized value.
+     */
+    static createValueModel(column, value, input, all) {
+        if (column.model && !this.isCommon(column.model)) {
+            if (column.types.indexOf(format_1.Format.ARRAY) !== -1) {
+                return this.createArrayModel(column.model, value, input, all);
+            }
+            else if (column.types.indexOf(format_1.Format.MAP) !== -1) {
+                return this.createMapModel(column.model, value, input, all);
+            }
+            else {
+                return this.createModel(column.model, value, input, all);
+            }
+        }
+        return value;
+    }
+    /**
+     * Creates a new model data based on the specified entity model and data.
+     * @param model Entity model.
+     * @param data Entity data.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param all Determines if all required properties must be provided.
+     * @returns Returns the new generated entity data based on entity model.
+     * @throws Throws an error when a required column is not supplied.
+     */
+    static createModel(model, entity, input, all) {
+        const data = new model();
+        const columns = schema_1.Schema.getRow(model);
+        for (const name in columns) {
+            const column = columns[name];
+            const source = input ? name : this.getColumnName(column);
+            const target = input ? this.getColumnName(column) : name;
+            if (source in entity && entity[source] !== void 0) {
+                data[target] = this.createValueModel(column, entity[source], input, all);
+            }
+            else if (all && column.required) {
+                throw new Error(`Required column '${name}' for entity '${schema_1.Schema.getStorage(model)}' does not supplied.`);
+            }
+        }
+        return data;
+    }
+    /**
+     * Generates a new normalized array of entity data based on the specified entity model and values.
+     * @param model Entity model.
+     * @param values Entities list.
+     * @returns Returns the new normalized list of entities.
+     */
+    static normalizeArray(model, values) {
+        const list = [];
+        for (const value of values) {
+            list.push(this.normalize(model, value));
+        }
+        return list;
+    }
+    /**
+     * Generates a new normalized map of entity data based on the specified entity model and value.
+     * @param model Entity model.
+     * @param value Entity map.
+     * @returns Returns the new normalized map of entities.
+     */
+    static normalizeMap(model, value) {
+        const map = {};
+        for (const name in value) {
+            map[name] = this.normalize(model, value[name]);
+        }
+        return map;
+    }
+    /**
+     * Generates a new normalized value from the specified column schema and value.
+     * @param column Column schema.
+     * @param value Value to be normalized.
+     * @returns Returns the new normalized value.
+     */
+    static normalizeValue(column, value) {
+        if (column.model && !this.isCommon(column.model)) {
+            if (column.types.indexOf(format_1.Format.ARRAY) !== -1) {
+                return this.normalizeArray(column.model, value);
+            }
+            else if (column.types.indexOf(format_1.Format.MAP) !== -1) {
+                return this.normalizeMap(column.model, value);
+            }
+            else {
+                return this.normalize(column.model, value);
+            }
+        }
+        return value;
     }
     /**
      * Generates a new normalized entity data based on the specified entity model and data.
@@ -219,36 +338,33 @@ let Mapper = Mapper_1 = class Mapper {
         for (const name in entity) {
             const value = entity[name];
             if (name in columns) {
-                const column = columns[name];
-                if (!column.hidden) {
-                    data[name] = column.model ? Mapper_1.normalize(column.model, value) : value;
+                const schema = columns[name];
+                if (!schema.hidden) {
+                    data[name] = this.normalizeValue(schema, value);
                 }
             }
             else if (name in virtual) {
                 if (value instanceof Array) {
-                    const list = [];
-                    for (const entry of value) {
-                        list.push(Mapper_1.normalize(virtual[name].model || model, entry));
-                    }
-                    data[name] = list;
+                    data[name] = this.normalizeArray(virtual[name].model || model, value);
                 }
                 else {
-                    data[name] = Mapper_1.normalize(virtual[name].model || model, value);
+                    data[name] = this.normalize(virtual[name].model || model, value);
                 }
             }
         }
         return data;
     }
 };
+/**
+ * List of common types.
+ */
+Mapper.commons = [String, Number, Boolean, Date];
 __decorate([
     Class.Private()
 ], Mapper.prototype, "driver", void 0);
 __decorate([
     Class.Private()
 ], Mapper.prototype, "model", void 0);
-__decorate([
-    Class.Private()
-], Mapper.prototype, "getColumnName", null);
 __decorate([
     Class.Private()
 ], Mapper.prototype, "getPrimaryName", null);
@@ -261,6 +377,12 @@ __decorate([
 __decorate([
     Class.Private()
 ], Mapper.prototype, "createModel", null);
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "normalize", null);
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "normalizeAll", null);
 __decorate([
     Class.Protected()
 ], Mapper.prototype, "insertMany", null);
@@ -286,11 +408,35 @@ __decorate([
     Class.Protected()
 ], Mapper.prototype, "deleteById", null);
 __decorate([
-    Class.Protected()
-], Mapper.prototype, "normalize", null);
+    Class.Private()
+], Mapper, "commons", void 0);
 __decorate([
-    Class.Protected()
-], Mapper.prototype, "normalizeAll", null);
+    Class.Private()
+], Mapper, "isCommon", null);
+__decorate([
+    Class.Private()
+], Mapper, "getColumnName", null);
+__decorate([
+    Class.Private()
+], Mapper, "createArrayModel", null);
+__decorate([
+    Class.Private()
+], Mapper, "createMapModel", null);
+__decorate([
+    Class.Private()
+], Mapper, "createValueModel", null);
+__decorate([
+    Class.Private()
+], Mapper, "createModel", null);
+__decorate([
+    Class.Private()
+], Mapper, "normalizeArray", null);
+__decorate([
+    Class.Private()
+], Mapper, "normalizeMap", null);
+__decorate([
+    Class.Private()
+], Mapper, "normalizeValue", null);
 __decorate([
     Class.Protected()
 ], Mapper, "normalize", null);
