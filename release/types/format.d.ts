@@ -19,5 +19,6 @@ export declare enum Format {
     TIMESTAMP = 10,
     DATE = 11,
     ARRAY = 12,
-    OBJECT = 13
+    MAP = 13,
+    OBJECT = 14
 }

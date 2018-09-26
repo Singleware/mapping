@@ -55,6 +55,9 @@ let Schema = class Schema {
      */
     static registerVirtual(type, name, foreign) {
         const storage = this.setStorage(type);
+        if (name in storage.columns) {
+            throw new Error(`A column with the name '${name}' already exists.`);
+        }
         if (!(name in storage.virtual)) {
             storage.virtual[name] = { name: name, foreign: foreign };
         }
@@ -68,6 +71,9 @@ let Schema = class Schema {
      */
     static registerColumn(type, name) {
         const storage = this.setStorage(type);
+        if (name in storage.virtual) {
+            throw new Error(`A virtual column with the name '${name}' already exists.`);
+        }
         if (!(name in storage.columns)) {
             storage.columns[name] = { name: name, types: [], validators: [] };
         }
@@ -410,6 +416,21 @@ let Schema = class Schema {
         };
     }
     /**
+     * Decorates the specified property to be an map column.
+     * @param model Entity model.
+     * @returns Returns the decorator method.
+     */
+    static Map(model) {
+        return (scope, property, descriptor) => {
+            const column = this.registerColumn(scope.constructor, property);
+            descriptor = this.setFormat(column, scope, property, descriptor);
+            column.model = model;
+            column.types.push(format_1.Format.MAP);
+            column.validators.push(new Types.Common.InstanceOf(Object));
+            return descriptor;
+        };
+    }
+    /**
      * Decorates the specified property to be an object column.
      * @param model Entity model.
      * @returns Returns the decorator method.
@@ -519,6 +540,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "Array", null);
+__decorate([
+    Class.Public()
+], Schema, "Map", null);
 __decorate([
     Class.Public()
 ], Schema, "Object", null);

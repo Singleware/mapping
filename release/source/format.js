@@ -22,5 +22,6 @@ var Format;
     Format[Format["TIMESTAMP"] = 10] = "TIMESTAMP";
     Format[Format["DATE"] = 11] = "DATE";
     Format[Format["ARRAY"] = 12] = "ARRAY";
-    Format[Format["OBJECT"] = 13] = "OBJECT";
+    Format[Format["MAP"] = 13] = "MAP";
+    Format[Format["OBJECT"] = 14] = "OBJECT";
 })(Format = exports.Format || (exports.Format = {}));

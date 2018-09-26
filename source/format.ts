@@ -20,5 +20,6 @@ export enum Format {
   TIMESTAMP,
   DATE,
   ARRAY,
+  MAP,
   OBJECT
 }

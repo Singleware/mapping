@@ -67,6 +67,9 @@ export class Schema {
   @Class.Private()
   private static registerVirtual(type: any, name: string, foreign: string): Virtual {
     const storage = this.setStorage(type);
+    if (name in storage.columns) {
+      throw new Error(`A column with the name '${name}' already exists.`);
+    }
     if (!(name in storage.virtual)) {
       storage.virtual[name] = { name: name, foreign: foreign };
     }
@@ -82,6 +85,9 @@ export class Schema {
   @Class.Private()
   private static registerColumn(type: any, name: string): Column {
     const storage = this.setStorage(type);
+    if (name in storage.virtual) {
+      throw new Error(`A virtual column with the name '${name}' already exists.`);
+    }
     if (!(name in storage.columns)) {
       storage.columns[name] = { name: name, types: [], validators: [] };
     }
@@ -470,6 +476,23 @@ export class Schema {
       column.maximum = max;
       column.types.push(Format.ARRAY);
       column.validators.push(new Types.Common.InstanceOf(Array));
+      return descriptor;
+    };
+  }
+
+  /**
+   * Decorates the specified property to be an map column.
+   * @param model Entity model.
+   * @returns Returns the decorator method.
+   */
+  @Class.Public()
+  public static Map<T extends Object>(model: Constructor): PropertyDecorator {
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
+      const column = this.registerColumn(scope.constructor, <string>property);
+      descriptor = this.setFormat(column, scope, <string>property, descriptor);
+      column.model = model;
+      column.types.push(Format.MAP);
+      column.validators.push(new Types.Common.InstanceOf(Object));
       return descriptor;
     };
   }
