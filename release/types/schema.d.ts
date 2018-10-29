@@ -196,17 +196,17 @@ export declare class Schema {
      * @param max Maximum items.
      * @returns Returns the decorator method.
      */
-    static Array<T extends Object>(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator;
+    static Array(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be an map column.
      * @param model Entity model.
      * @returns Returns the decorator method.
      */
-    static Map<T extends Object>(model: Constructor): PropertyDecorator;
+    static Map(model: Constructor): PropertyDecorator;
     /**
      * Decorates the specified property to be an object column.
      * @param model Entity model.
      * @returns Returns the decorator method.
      */
-    static Object<T extends Object>(model: Constructor): PropertyDecorator;
+    static Object(model: Constructor): PropertyDecorator;
 }

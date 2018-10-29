@@ -358,7 +358,7 @@ let Mapper = Mapper_1 = class Mapper {
 /**
  * List of common types.
  */
-Mapper.commons = [String, Number, Boolean, Date];
+Mapper.commons = [Object, String, Number, Boolean, Date];
 __decorate([
     Class.Private()
 ], Mapper.prototype, "driver", void 0);

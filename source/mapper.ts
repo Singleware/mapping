@@ -21,6 +21,12 @@ import { Map } from './map';
 @Class.Describe()
 export class Mapper<E extends Entity> {
   /**
+   * List of common types.
+   */
+  @Class.Private()
+  private static commons = [Object, String, Number, Boolean, Date];
+
+  /**
    * Data driver.
    */
   @Class.Private()
@@ -227,12 +233,6 @@ export class Mapper<E extends Entity> {
     this.driver = driver;
     this.model = model;
   }
-
-  /**
-   * List of common types.
-   */
-  @Class.Private()
-  private static commons = [String, Number, Boolean, Date];
 
   /**
    * Determines whether the specified entity type common or not.

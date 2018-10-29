@@ -7,6 +7,10 @@ import { Expression } from './expression';
  */
 export declare class Mapper<E extends Entity> {
     /**
+     * List of common types.
+     */
+    private static commons;
+    /**
      * Data driver.
      */
     private driver;
@@ -109,10 +113,6 @@ export declare class Mapper<E extends Entity> {
      * @throws Throws an error when the model is a not valid entity.
      */
     constructor(driver: Driver, model: Constructor<E>);
-    /**
-     * List of common types.
-     */
-    private static commons;
     /**
      * Determines whether the specified entity type common or not.
      * @param type Entity type.

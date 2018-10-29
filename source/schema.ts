@@ -466,7 +466,7 @@ export class Schema {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Array<T extends Object>(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator {
+  public static Array(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       const column = this.registerColumn(scope.constructor, <string>property);
       descriptor = this.setFormat(column, scope, <string>property, descriptor);
@@ -486,7 +486,7 @@ export class Schema {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Map<T extends Object>(model: Constructor): PropertyDecorator {
+  public static Map(model: Constructor): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       const column = this.registerColumn(scope.constructor, <string>property);
       descriptor = this.setFormat(column, scope, <string>property, descriptor);
@@ -503,7 +503,7 @@ export class Schema {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Object<T extends Object>(model: Constructor): PropertyDecorator {
+  public static Object(model: Constructor): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       const column = this.registerColumn(scope.constructor, <string>property);
       descriptor = this.setFormat(column, scope, <string>property, descriptor);
