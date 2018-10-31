@@ -337,18 +337,20 @@ let Mapper = Mapper_1 = class Mapper {
         const data = {};
         for (const name in entity) {
             const value = entity[name];
-            if (name in columns) {
-                const schema = columns[name];
-                if (!schema.hidden) {
-                    data[name] = this.normalizeValue(schema, value);
+            if (value !== void 0) {
+                if (name in columns) {
+                    const schema = columns[name];
+                    if (!schema.hidden) {
+                        data[name] = this.normalizeValue(schema, value);
+                    }
                 }
-            }
-            else if (name in virtual) {
-                if (value instanceof Array) {
-                    data[name] = this.normalizeArray(virtual[name].model || model, value);
-                }
-                else {
-                    data[name] = this.normalize(virtual[name].model || model, value);
+                else if (name in virtual) {
+                    if (value instanceof Array) {
+                        data[name] = this.normalizeArray(virtual[name].model || model, value);
+                    }
+                    else {
+                        data[name] = this.normalize(virtual[name].model || model, value);
+                    }
                 }
             }
         }
