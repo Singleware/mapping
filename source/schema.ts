@@ -17,7 +17,7 @@ import { Map } from './map';
  * Schema helper class.
  */
 @Class.Describe()
-export class Schema {
+export class Schema extends Class.Null {
   /**
    * Map of entity storages.
    */

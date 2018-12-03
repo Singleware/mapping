@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2018 Silas B. Domingos
+ * This source code is licensed under the MIT License as described in the file LICENSE.
+ */
+import * as Class from '@singleware/class';
 import { PropertyDecorator, ClassDecorator, Constructor } from './types';
 import { Entity } from './entity';
 import { Virtual } from './virtual';
@@ -6,7 +11,7 @@ import { Map } from './map';
 /**
  * Schema helper class.
  */
-export declare class Schema {
+export declare class Schema extends Class.Null {
     /**
      * Map of entity storages.
      */

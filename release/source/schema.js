@@ -16,7 +16,7 @@ const format_1 = require("./format");
 /**
  * Schema helper class.
  */
-let Schema = class Schema {
+let Schema = class Schema extends Class.Null {
     /**
      * Sets the column format for the specified entity prototype.
      * @param column Column schema.

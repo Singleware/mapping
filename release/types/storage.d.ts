@@ -5,24 +5,25 @@
 import { Virtual } from './virtual';
 import { Column } from './column';
 import { Map } from './map';
+
 /**
  * Schema storage interface.
  */
 export interface Storage {
-    /**
-     * Storage name.
-     */
-    name?: string;
-    /**
-     * Primary column name.
-     */
-    primary?: string;
-    /**
-     * Virtual columns.
-     */
-    virtual: Map<Virtual>;
-    /**
-     * Columns.
-     */
-    columns: Map<Column>;
+  /**
+   * Storage name.
+   */
+  name?: string;
+  /**
+   * Primary column name.
+   */
+  primary?: string;
+  /**
+   * Virtual columns.
+   */
+  virtual: Map<Virtual>;
+  /**
+   * Columns.
+   */
+  columns: Map<Column>;
 }

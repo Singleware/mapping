@@ -18,7 +18,7 @@ const format_1 = require("./format");
 /**
  * Generic data mapper class.
  */
-let Mapper = Mapper_1 = class Mapper {
+let Mapper = Mapper_1 = class Mapper extends Class.Null {
     /**
      * Default constructor.
      * @param driver Data driver.
@@ -26,6 +26,7 @@ let Mapper = Mapper_1 = class Mapper {
      * @throws Throws an error when the model is a not valid entity.
      */
     constructor(driver, model) {
+        super();
         if (!schema_1.Schema.getStorage(model)) {
             throw new Error(`There is no storage name, make sure your entity model is a valid.`);
         }

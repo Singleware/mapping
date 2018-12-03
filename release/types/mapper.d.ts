@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2018 Silas B. Domingos
+ * This source code is licensed under the MIT License as described in the file LICENSE.
+ */
+import * as Class from '@singleware/class';
 import { Constructor } from './types';
 import { Driver } from './driver';
 import { Entity } from './entity';
@@ -5,7 +10,7 @@ import { Expression } from './expression';
 /**
  * Generic data mapper class.
  */
-export declare class Mapper<E extends Entity> {
+export declare class Mapper<E extends Entity> extends Class.Null {
     /**
      * List of common types.
      */

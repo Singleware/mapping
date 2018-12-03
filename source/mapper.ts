@@ -19,7 +19,7 @@ import { Map } from './map';
  * Generic data mapper class.
  */
 @Class.Describe()
-export class Mapper<E extends Entity> {
+export class Mapper<E extends Entity> extends Class.Null {
   /**
    * List of common types.
    */
@@ -227,6 +227,7 @@ export class Mapper<E extends Entity> {
    * @throws Throws an error when the model is a not valid entity.
    */
   public constructor(driver: Driver, model: Constructor<E>) {
+    super();
     if (!Schema.getStorage(model)) {
       throw new Error(`There is no storage name, make sure your entity model is a valid.`);
     }
