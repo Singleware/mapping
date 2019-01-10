@@ -51,15 +51,17 @@ let Schema = class Schema extends Class.Null {
      * @param type Column type.
      * @param name Column name.
      * @param foreign Foreign column name.
+     * @param model Foreign entity model.
+     * @param local Local column name.
      * @returns Returns the join schema.
      */
-    static registerVirtual(type, name, foreign) {
+    static registerVirtual(type, name, foreign, model, local) {
         const storage = this.setStorage(type);
         if (name in storage.columns) {
             throw new Error(`A column with the name '${name}' already exists.`);
         }
         if (!(name in storage.virtual)) {
-            storage.virtual[name] = { name: name, foreign: foreign };
+            storage.virtual[name] = { name: name, foreign: foreign, local: local, model: model };
         }
         return storage.virtual[name];
     }
@@ -197,10 +199,8 @@ let Schema = class Schema extends Class.Null {
      */
     static Join(foreign, model, local) {
         return (scope, property, descriptor) => {
-            const join = this.registerVirtual(scope.constructor, property, foreign);
+            this.registerVirtual(scope.constructor, property, foreign, model, local);
             descriptor = Types.Validate(new Types.Common.Any())(scope, property, descriptor);
-            join.local = local;
-            join.model = model;
             descriptor.enumerable = true;
             return descriptor;
         };

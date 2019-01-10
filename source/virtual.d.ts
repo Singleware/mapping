@@ -18,11 +18,11 @@ export interface Virtual {
    */
   foreign: string;
   /**
-   * Local column name.
-   */
-  local?: string;
-  /**
    * Foreign entity model.
    */
-  model?: Constructor<Entity>;
+  model: Constructor<Entity>;
+  /**
+   * Local column name.
+   */
+  local: string;
 }

@@ -22,11 +22,11 @@ export interface Column {
    */
   alias?: string;
   /**
-   * Supported column data types.
+   * Column data types.
    */
   types: Format[];
   /**
-   * Supported column data formats.
+   * Column data validators.
    */
   validators: Types.Format[];
   /**

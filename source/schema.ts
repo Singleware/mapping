@@ -62,16 +62,18 @@ export class Schema extends Class.Null {
    * @param type Column type.
    * @param name Column name.
    * @param foreign Foreign column name.
+   * @param model Foreign entity model.
+   * @param local Local column name.
    * @returns Returns the join schema.
    */
   @Class.Private()
-  private static registerVirtual(type: any, name: string, foreign: string): Virtual {
+  private static registerVirtual(type: any, name: string, foreign: string, model: Constructor<Entity>, local: string): Virtual {
     const storage = this.setStorage(type);
     if (name in storage.columns) {
       throw new Error(`A column with the name '${name}' already exists.`);
     }
     if (!(name in storage.virtual)) {
-      storage.virtual[name] = { name: name, foreign: foreign };
+      storage.virtual[name] = { name: name, foreign: foreign, local: local, model: model };
     }
     return storage.virtual[name];
   }
@@ -231,12 +233,10 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Join(foreign: string, model?: Constructor<Entity>, local?: string): PropertyDecorator {
+  public static Join(foreign: string, model: Constructor<Entity>, local: string): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const join = this.registerVirtual(scope.constructor, <string>property, foreign);
+      this.registerVirtual(scope.constructor, <string>property, foreign, model, local);
       descriptor = <PropertyDescriptor>Types.Validate(new Types.Common.Any())(scope, property, descriptor);
-      join.local = local;
-      join.model = model;
       descriptor.enumerable = true;
       return descriptor;
     };

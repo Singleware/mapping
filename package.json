@@ -7,7 +7,7 @@
   "name": "@singleware/mapping",
   "description": "Singleware generic data mapping class package.",
   "license": "MIT",
-  "version": "1.1.27",
+  "version": "1.1.29",
   "main": "release/source/index.js",
   "types": "release/types/index.d.ts",
   "keywords": [
@@ -23,7 +23,7 @@
     "node": ">=10"
   },
   "dependencies": {
-    "@singleware/class": "^1.1.14",
+    "@singleware/class": "^1.1.19",
     "@singleware/types": "^1.1.3"
   },
   "devDependencies": {

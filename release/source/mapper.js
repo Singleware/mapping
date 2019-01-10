@@ -54,13 +54,15 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         const list = [];
         if (columns) {
             for (const name in columns) {
-                const data = columns[name];
-                const model = data.model || this.model;
+                const virtual = columns[name];
+                const localColumn = schema_1.Schema.getColumn(this.model, virtual.local);
+                const foreignColumn = schema_1.Schema.getColumn(virtual.model, virtual.foreign);
                 list.push({
-                    storage: schema_1.Schema.getStorage(model),
-                    local: data.local ? Mapper_1.getColumnName(schema_1.Schema.getColumn(this.model, data.local)) : this.getPrimaryName(),
-                    foreign: Mapper_1.getColumnName(schema_1.Schema.getColumn(model, data.foreign)),
-                    virtual: data.name
+                    local: Mapper_1.getColumnName(localColumn),
+                    foreign: Mapper_1.getColumnName(foreignColumn),
+                    virtual: virtual.name,
+                    storage: schema_1.Schema.getStorage(virtual.model),
+                    multiple: localColumn.types.includes(format_1.Format.ARRAY)
                 });
             }
         }

@@ -10,10 +10,6 @@ import { Entity } from './entity';
  */
 export interface Aggregate {
   /**
-   * Storage name.
-   */
-  storage: string;
-  /**
    * Local column name.
    */
   local: string;
@@ -25,4 +21,12 @@ export interface Aggregate {
    * Virtual column name.
    */
   virtual: string;
+  /**
+   * Storage name.
+   */
+  storage: string;
+  /**
+   * Determines whether the local column contains multiple IDs.
+   */
+  multiple: boolean;
 }

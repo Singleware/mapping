@@ -36,6 +36,8 @@ export declare class Schema extends Class.Null {
      * @param type Column type.
      * @param name Column name.
      * @param foreign Foreign column name.
+     * @param model Foreign entity model.
+     * @param local Local column name.
      * @returns Returns the join schema.
      */
     private static registerVirtual;
@@ -112,7 +114,7 @@ export declare class Schema extends Class.Null {
      * @param local Local id column name. (When omitted the primary ID column will be used as default)
      * @returns Returns the decorator method.
      */
-    static Join(foreign: string, model?: Constructor<Entity>, local?: string): PropertyDecorator;
+    static Join(foreign: string, model: Constructor<Entity>, local: string): PropertyDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.

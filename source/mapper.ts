@@ -62,13 +62,15 @@ export class Mapper<E extends Entity> extends Class.Null {
     const list = [];
     if (columns) {
       for (const name in columns) {
-        const data = columns[name];
-        const model = data.model || this.model;
+        const virtual = columns[name];
+        const localColumn = <Column>Schema.getColumn(this.model, virtual.local);
+        const foreignColumn = <Column>Schema.getColumn(virtual.model, virtual.foreign);
         list.push({
-          storage: <string>Schema.getStorage(model),
-          local: data.local ? Mapper.getColumnName(<Column>Schema.getColumn(this.model, data.local)) : this.getPrimaryName(),
-          foreign: Mapper.getColumnName(<Column>Schema.getColumn(model, data.foreign)),
-          virtual: data.name
+          local: Mapper.getColumnName(localColumn),
+          foreign: Mapper.getColumnName(foreignColumn),
+          virtual: virtual.name,
+          storage: <string>Schema.getStorage(virtual.model),
+          multiple: localColumn.types.includes(Format.ARRAY)
         });
       }
     }
