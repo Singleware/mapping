@@ -21,7 +21,7 @@ let Schema = class Schema extends Class.Null {
      * Sets the column format for the specified entity prototype.
      * @param column Column schema.
      * @param prototype Entity prototype.
-     * @param property Entity property
+     * @param property Entity property.
      * @param descriptor Entity descriptor.
      * @returns Returns the wrapped descriptor.
      */
@@ -42,7 +42,11 @@ let Schema = class Schema extends Class.Null {
     static setStorage(type) {
         let storage = this.storages.get(type);
         if (!storage) {
-            this.storages.set(type, (storage = { virtual: {}, columns: {} }));
+            storage = {
+                virtualColumns: {},
+                realColumns: {}
+            };
+            this.storages.set(type, storage);
         }
         return storage;
     }
@@ -57,13 +61,13 @@ let Schema = class Schema extends Class.Null {
      */
     static registerVirtual(type, name, foreign, model, local) {
         const storage = this.setStorage(type);
-        if (name in storage.columns) {
-            throw new Error(`A column with the name '${name}' already exists.`);
+        if (name in storage.realColumns) {
+            throw new Error(`A real column with the name '${name}' already exists.`);
         }
-        if (!(name in storage.virtual)) {
-            storage.virtual[name] = { name: name, foreign: foreign, local: local, model: model };
+        if (!(name in storage.virtualColumns)) {
+            storage.virtualColumns[name] = { name: name, foreign: foreign, local: local, model: model };
         }
-        return storage.virtual[name];
+        return storage.virtualColumns[name];
     }
     /**
      * Register a column schema for the specified column information.
@@ -73,13 +77,13 @@ let Schema = class Schema extends Class.Null {
      */
     static registerColumn(type, name) {
         const storage = this.setStorage(type);
-        if (name in storage.virtual) {
+        if (name in storage.virtualColumns) {
             throw new Error(`A virtual column with the name '${name}' already exists.`);
         }
-        if (!(name in storage.columns)) {
-            storage.columns[name] = { name: name, types: [], validators: [] };
+        if (!(name in storage.realColumns)) {
+            storage.realColumns[name] = { name: name, types: [], validators: [] };
         }
-        return storage.columns[name];
+        return storage.realColumns[name];
     }
     /**
      * Resolves the column schema dependencies to be used externally.
@@ -89,19 +93,19 @@ let Schema = class Schema extends Class.Null {
     static resolveColumn(column) {
         const newer = { ...column };
         if (newer.model) {
-            newer.schema = this.getRow(newer.model);
+            newer.schema = this.getRealRow(newer.model);
         }
         return Object.freeze(newer);
     }
     /**
-     * Gets the row schema for the specified entity model.
+     * Gets the real row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the row schema or undefined when the entity model does not exists.
      */
-    static getRow(model) {
+    static getRealRow(model) {
         const storage = this.setStorage(model.prototype.constructor);
         if (storage) {
-            const row = { ...storage.columns };
+            const row = { ...storage.realColumns };
             for (const name in row) {
                 row[name] = this.resolveColumn(row[name]);
             }
@@ -110,47 +114,54 @@ let Schema = class Schema extends Class.Null {
         return void 0;
     }
     /**
-     * Gets the virtual columns schema for the specified entity model.
+     * Gets the virtual row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the joined schema or undefined when the entity model does not exists.
      */
-    static getVirtual(model) {
+    static getVirtualRow(model) {
         const storage = this.setStorage(model.prototype.constructor);
         if (storage) {
-            return Object.freeze({ ...storage.virtual });
+            const row = { ...storage.virtualColumns };
+            return Object.freeze(row);
         }
         return void 0;
     }
     /**
-     * Gets the column schema for the specified entity model and column name.
+     * Gets the column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
     static getColumn(model, name) {
         const storage = this.setStorage(model.prototype.constructor);
-        if (storage) {
-            return name in storage.columns ? this.resolveColumn(storage.columns[name]) : void 0;
+        if (storage && name in storage.realColumns) {
+            return this.resolveColumn(storage.realColumns[name]);
         }
         return void 0;
     }
     /**
-     * Gets the primary column schema for the specified entity model.
+     * Gets the primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
     static getPrimary(model) {
         const storage = this.storages.get(model.prototype.constructor);
-        return storage ? this.getColumn(model, storage.primary) : void 0;
+        if (storage) {
+            return this.getColumn(model, storage.primary);
+        }
+        return void 0;
     }
     /**
-     * Gets the storage name for the specified entity model.
+     * Gets the storage name from the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */
     static getStorage(model) {
         const storage = this.storages.get(model.prototype.constructor);
-        return storage ? storage.name : void 0;
+        if (storage) {
+            return storage.name;
+        }
+        return void 0;
     }
     /**
      * Decorates the specified class to be an entity model.
@@ -249,6 +260,7 @@ let Schema = class Schema extends Class.Null {
             const column = this.registerColumn(scope.constructor, property);
             descriptor = this.setFormat(column, scope, property, descriptor);
             column.types.push(format_1.Format.BINARY);
+            column.validators.push(new Types.Common.Any());
             return descriptor;
         };
     }
@@ -470,10 +482,10 @@ __decorate([
 ], Schema, "resolveColumn", null);
 __decorate([
     Class.Public()
-], Schema, "getRow", null);
+], Schema, "getRealRow", null);
 __decorate([
     Class.Public()
-], Schema, "getVirtual", null);
+], Schema, "getVirtualRow", null);
 __decorate([
     Class.Public()
 ], Schema, "getColumn", null);

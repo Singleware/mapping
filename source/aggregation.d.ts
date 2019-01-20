@@ -6,9 +6,9 @@ import { Constructor } from './types';
 import { Entity } from './entity';
 
 /**
- * Aggregate interface.
+ * Aggregation interface.
  */
-export interface Aggregate {
+export interface Aggregation {
   /**
    * Local column name.
    */

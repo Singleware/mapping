@@ -9,7 +9,7 @@ export { Entity } from './entity';
 export { Expression } from './expression';
 export { Operator } from './operator';
 export { Format } from './format';
-export { Aggregate } from './aggregate';
+export { Aggregation } from './aggregation';
 export { Virtual } from './virtual';
 export { Column } from './column';
 export { Map } from './map';

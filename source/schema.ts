@@ -28,7 +28,7 @@ export class Schema extends Class.Null {
    * Sets the column format for the specified entity prototype.
    * @param column Column schema.
    * @param prototype Entity prototype.
-   * @param property Entity property
+   * @param property Entity property.
    * @param descriptor Entity descriptor.
    * @returns Returns the wrapped descriptor.
    */
@@ -52,7 +52,11 @@ export class Schema extends Class.Null {
   private static setStorage(type: any): Storage {
     let storage = this.storages.get(type);
     if (!storage) {
-      this.storages.set(type, (storage = { virtual: {}, columns: {} }));
+      storage = {
+        virtualColumns: {},
+        realColumns: {}
+      };
+      this.storages.set(type, storage);
     }
     return storage;
   }
@@ -69,13 +73,13 @@ export class Schema extends Class.Null {
   @Class.Private()
   private static registerVirtual(type: any, name: string, foreign: string, model: Constructor<Entity>, local: string): Virtual {
     const storage = this.setStorage(type);
-    if (name in storage.columns) {
-      throw new Error(`A column with the name '${name}' already exists.`);
+    if (name in storage.realColumns) {
+      throw new Error(`A real column with the name '${name}' already exists.`);
     }
-    if (!(name in storage.virtual)) {
-      storage.virtual[name] = { name: name, foreign: foreign, local: local, model: model };
+    if (!(name in storage.virtualColumns)) {
+      storage.virtualColumns[name] = { name: name, foreign: foreign, local: local, model: model };
     }
-    return storage.virtual[name];
+    return storage.virtualColumns[name];
   }
 
   /**
@@ -87,13 +91,13 @@ export class Schema extends Class.Null {
   @Class.Private()
   private static registerColumn(type: any, name: string): Column {
     const storage = this.setStorage(type);
-    if (name in storage.virtual) {
+    if (name in storage.virtualColumns) {
       throw new Error(`A virtual column with the name '${name}' already exists.`);
     }
-    if (!(name in storage.columns)) {
-      storage.columns[name] = { name: name, types: [], validators: [] };
+    if (!(name in storage.realColumns)) {
+      storage.realColumns[name] = { name: name, types: [], validators: [] };
     }
-    return storage.columns[name];
+    return storage.realColumns[name];
   }
 
   /**
@@ -105,21 +109,21 @@ export class Schema extends Class.Null {
   private static resolveColumn(column: Column): Column {
     const newer = { ...column };
     if (newer.model) {
-      newer.schema = this.getRow(newer.model);
+      newer.schema = this.getRealRow(newer.model);
     }
     return Object.freeze(newer);
   }
 
   /**
-   * Gets the row schema for the specified entity model.
+   * Gets the real row schema from the specified entity model.
    * @param model Entity model.
    * @returns Returns the row schema or undefined when the entity model does not exists.
    */
   @Class.Public()
-  public static getRow<T extends Entity>(model: Constructor<T>): Map<Column> | undefined {
+  public static getRealRow<T extends Entity>(model: Constructor<T>): Map<Column> | undefined {
     const storage = this.setStorage(model.prototype.constructor);
     if (storage) {
-      const row = <Map<Column>>{ ...storage.columns };
+      const row = <Map<Column>>{ ...storage.realColumns };
       for (const name in row) {
         row[name] = this.resolveColumn(row[name]);
       }
@@ -129,21 +133,22 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Gets the virtual columns schema for the specified entity model.
+   * Gets the virtual row schema from the specified entity model.
    * @param model Entity model.
    * @returns Returns the joined schema or undefined when the entity model does not exists.
    */
   @Class.Public()
-  public static getVirtual<T extends Entity>(model: Constructor<T>): Map<Virtual> | undefined {
+  public static getVirtualRow<T extends Entity>(model: Constructor<T>): Map<Virtual> | undefined {
     const storage = this.setStorage(model.prototype.constructor);
     if (storage) {
-      return Object.freeze(<Map<Virtual>>{ ...storage.virtual });
+      const row = <Map<Virtual>>{ ...storage.virtualColumns };
+      return Object.freeze(row);
     }
     return void 0;
   }
 
   /**
-   * Gets the column schema for the specified entity model and column name.
+   * Gets the column schema from the specified entity model and column name.
    * @param model Entity model.
    * @param name Column name.
    * @returns Returns the column schema or undefined when the column does not exists.
@@ -151,32 +156,38 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static getColumn<T extends Entity>(model: Constructor<T>, name: string): Column | undefined {
     const storage = this.setStorage(model.prototype.constructor);
-    if (storage) {
-      return name in storage.columns ? this.resolveColumn(storage.columns[name]) : void 0;
+    if (storage && name in storage.realColumns) {
+      return this.resolveColumn(storage.realColumns[name]);
     }
     return void 0;
   }
 
   /**
-   * Gets the primary column schema for the specified entity model.
+   * Gets the primary column schema from the specified entity model.
    * @param model Entity model.
    * @returns Returns the column schema or undefined when the column does not exists.
    */
   @Class.Public()
   public static getPrimary<T extends Entity>(model: Constructor<T>): Column | undefined {
     const storage = this.storages.get(model.prototype.constructor);
-    return storage ? this.getColumn(model, <string>storage.primary) : void 0;
+    if (storage) {
+      return this.getColumn(model, <string>storage.primary);
+    }
+    return void 0;
   }
 
   /**
-   * Gets the storage name for the specified entity model.
+   * Gets the storage name from the specified entity model.
    * @param model Entity model.
    * @returns Returns the storage name or undefined when the entity does not exists.
    */
   @Class.Public()
   public static getStorage<T extends Entity>(model: Constructor<T>): string | undefined {
     const storage = this.storages.get(model.prototype.constructor);
-    return storage ? storage.name : void 0;
+    if (storage) {
+      return storage.name;
+    }
+    return void 0;
   }
 
   /**
@@ -293,6 +304,7 @@ export class Schema extends Class.Null {
       const column = this.registerColumn(scope.constructor, <string>property);
       descriptor = this.setFormat(column, scope, <string>property, descriptor);
       column.types.push(Format.BINARY);
+      column.validators.push(new Types.Common.Any());
       return descriptor;
     };
   }

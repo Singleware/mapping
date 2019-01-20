@@ -20,7 +20,7 @@ export declare class Schema extends Class.Null {
      * Sets the column format for the specified entity prototype.
      * @param column Column schema.
      * @param prototype Entity prototype.
-     * @param property Entity property
+     * @param property Entity property.
      * @param descriptor Entity descriptor.
      * @returns Returns the wrapped descriptor.
      */
@@ -55,32 +55,32 @@ export declare class Schema extends Class.Null {
      */
     private static resolveColumn;
     /**
-     * Gets the row schema for the specified entity model.
+     * Gets the real row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the row schema or undefined when the entity model does not exists.
      */
-    static getRow<T extends Entity>(model: Constructor<T>): Map<Column> | undefined;
+    static getRealRow<T extends Entity>(model: Constructor<T>): Map<Column> | undefined;
     /**
-     * Gets the virtual columns schema for the specified entity model.
+     * Gets the virtual row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the joined schema or undefined when the entity model does not exists.
      */
-    static getVirtual<T extends Entity>(model: Constructor<T>): Map<Virtual> | undefined;
+    static getVirtualRow<T extends Entity>(model: Constructor<T>): Map<Virtual> | undefined;
     /**
-     * Gets the column schema for the specified entity model and column name.
+     * Gets the column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
     static getColumn<T extends Entity>(model: Constructor<T>, name: string): Column | undefined;
     /**
-     * Gets the primary column schema for the specified entity model.
+     * Gets the primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
     static getPrimary<T extends Entity>(model: Constructor<T>): Column | undefined;
     /**
-     * Gets the storage name for the specified entity model.
+     * Gets the storage name from the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */

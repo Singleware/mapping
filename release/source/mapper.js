@@ -34,170 +34,6 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         this.model = model;
     }
     /**
-     * Gets the primary column name.
-     * @returns Returns the primary column name.
-     * @throws Throws an error when there is no primary column defined.
-     */
-    getPrimaryName() {
-        const column = schema_1.Schema.getPrimary(this.model);
-        if (!column) {
-            throw new Error(`There is no primary column to be used.`);
-        }
-        return Mapper_1.getColumnName(column);
-    }
-    /**
-     * Gets the virtual columns list.
-     * @returns Returns the virtual columns list.
-     */
-    getAggregations() {
-        const columns = schema_1.Schema.getVirtual(this.model);
-        const list = [];
-        if (columns) {
-            for (const name in columns) {
-                const virtual = columns[name];
-                const localColumn = schema_1.Schema.getColumn(this.model, virtual.local);
-                const foreignColumn = schema_1.Schema.getColumn(virtual.model, virtual.foreign);
-                list.push({
-                    local: Mapper_1.getColumnName(localColumn),
-                    foreign: Mapper_1.getColumnName(foreignColumn),
-                    virtual: virtual.name,
-                    storage: schema_1.Schema.getStorage(virtual.model),
-                    multiple: localColumn.types.includes(format_1.Format.ARRAY)
-                });
-            }
-        }
-        return list;
-    }
-    /**
-     * Assign virtual columns into the specified data based on the given entity.
-     * @param data Target entity data.
-     * @param entity Source entity.
-     * @returns Returns the specified entity data.
-     */
-    assignVirtual(data, entity) {
-        const virtual = schema_1.Schema.getVirtual(this.model);
-        for (const name in virtual) {
-            if (name in entity) {
-                data[name] = entity[name];
-            }
-        }
-        return data;
-    }
-    /**
-     * Creates a new model data based on the specified entity data.
-     * @param entity Entity data.
-     * @param input Determines whether the entity will be used for an input or output.
-     * @param all Determines if all required properties must be provided.
-     * @returns Returns the new generated entity data based on entity model.
-     * @throws Throws an error when a required column is not supplied.
-     */
-    createModel(entity, input, all) {
-        return Mapper_1.createModel(this.model, entity, input, all);
-    }
-    /**
-     * Generate a new normalized entity based on the specified entity data.
-     * @param entity Entity data.
-     * @returns Returns the new normalized entity data.
-     */
-    normalize(entity) {
-        return Mapper_1.normalize(this.model, entity);
-    }
-    /**
-     * Normalize all entities in the specified entity list.
-     * @param entities Entities list.
-     * @returns Returns the list of normalized entities.
-     */
-    normalizeAll(...entities) {
-        const list = [];
-        for (const entity of entities) {
-            list.push(this.normalize(entity));
-        }
-        return list;
-    }
-    /**
-     * Insert the specified entity list into the storage.
-     * @param entities Entity list.
-     * @returns Returns a promise to get the id list of all inserted entities.
-     */
-    async insertMany(entities) {
-        const list = [];
-        for (const entity of entities) {
-            list.push(this.createModel(entity, true, true));
-        }
-        return await this.driver.insert(this.model, ...list);
-    }
-    /**
-     * Insert the specified entity into the storage.
-     * @param entity Entity data.
-     * @returns Returns a promise to get the id of inserted entry.
-     */
-    async insert(entity) {
-        return (await this.insertMany([entity]))[0];
-    }
-    /**
-     * Find the corresponding entity in the storage.
-     * @param filter Filter expression.
-     * @returns Returns a promise to get the list of entities found.
-     */
-    async find(filter) {
-        const entities = await this.driver.find(this.model, filter, this.getAggregations());
-        const results = [];
-        for (const entity of entities) {
-            results.push(this.assignVirtual(this.createModel(entity, false, true), entity));
-        }
-        return results;
-    }
-    /**
-     * Find the entity that corresponds to the specified entity id.
-     * @param id Entity id.
-     * @returns Returns a promise to get the entity found or undefined when the entity was not found.
-     */
-    async findById(id) {
-        const entity = await this.driver.findById(this.model, id, this.getAggregations());
-        return entity ? this.assignVirtual(this.createModel(entity, false, true), entity) : void 0;
-    }
-    /**
-     * Update all entities that corresponds to the specified filter.
-     * @param filter Filter expression.
-     * @param entity Entity data to be updated.
-     * @returns Returns a promise to get the number of updated entities.
-     */
-    async update(filter, entity) {
-        return await this.driver.update(this.model, filter, this.createModel(entity, true, false));
-    }
-    /**
-     * Update a entity that corresponds to the specified id.
-     * @param id Entity id.
-     * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
-     */
-    async updateById(id, entity) {
-        return await this.driver.updateById(this.model, id, this.createModel(entity, true, false));
-    }
-    /**
-     * Delete all entities that corresponds to the specified filter.
-     * @param filter Filter columns.
-     * @return Returns a promise to get the number of deleted entities.
-     */
-    async delete(filter) {
-        return await this.driver.delete(this.model, filter);
-    }
-    /**
-     * Delete the entity that corresponds to the specified entity id.
-     * @param id Entity id.
-     * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
-     */
-    async deleteById(id) {
-        return await this.driver.deleteById(this.model, id);
-    }
-    /**
-     * Determines whether the specified entity type common or not.
-     * @param type Entity type.
-     * @returns Returns true when the specified entity is common, false otherwise.
-     */
-    static isCommon(type) {
-        return this.commons.indexOf(type) !== -1;
-    }
-    /**
      * Gets the column name from the specified column schema.
      * @param column Column schema.
      * @returns Returns the column name.
@@ -206,7 +42,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return column.alias || column.name;
     }
     /**
-     * Creates a new array of model data based on the specified entity model and values.
+     * Creates a new array of data model based on the specified entity model and values.
      * @param model Entity model.
      * @param values Entities list.
      * @param input Determines whether the entity will be used for an input or output.
@@ -221,7 +57,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return list;
     }
     /**
-     * Creates a new map of model data based on the specified entity model and value.
+     * Creates a new map of data model based on the specified entity model and value.
      * @param model Entity model.
      * @param value Entity map.
      * @param input Determines whether the entity will be used for an input or output.
@@ -244,11 +80,11 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized value.
      */
     static createValueModel(column, value, input, all) {
-        if (column.model && !this.isCommon(column.model)) {
-            if (column.types.indexOf(format_1.Format.ARRAY) !== -1) {
+        if (column.model && !this.commons.includes(column.model)) {
+            if (column.types.includes(format_1.Format.ARRAY)) {
                 return this.createArrayModel(column.model, value, input, all);
             }
-            else if (column.types.indexOf(format_1.Format.MAP) !== -1) {
+            else if (column.types.includes(format_1.Format.MAP)) {
                 return this.createMapModel(column.model, value, input, all);
             }
             else {
@@ -258,7 +94,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return value;
     }
     /**
-     * Creates a new model data based on the specified entity model and data.
+     * Creates a new data model based on the specified entity model and data.
      * @param model Entity model.
      * @param data Entity data.
      * @param input Determines whether the entity will be used for an input or output.
@@ -268,7 +104,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      */
     static createModel(model, entity, input, all) {
         const data = new model();
-        const columns = schema_1.Schema.getRow(model);
+        const columns = schema_1.Schema.getRealRow(model);
         for (const name in columns) {
             const column = columns[name];
             const source = input ? name : this.getColumnName(column);
@@ -315,11 +151,11 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized value.
      */
     static normalizeValue(column, value) {
-        if (column.model && !this.isCommon(column.model)) {
-            if (column.types.indexOf(format_1.Format.ARRAY) !== -1) {
+        if (column.model && !this.commons.includes(column.model)) {
+            if (column.types.includes(format_1.Format.ARRAY)) {
                 return this.normalizeArray(column.model, value);
             }
-            else if (column.types.indexOf(format_1.Format.MAP) !== -1) {
+            else if (column.types.includes(format_1.Format.MAP)) {
                 return this.normalizeMap(column.model, value);
             }
             else {
@@ -335,29 +171,172 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized entity data.
      */
     static normalize(model, entity) {
-        const columns = schema_1.Schema.getRow(model);
-        const virtual = schema_1.Schema.getVirtual(model);
+        const rColumns = schema_1.Schema.getRealRow(model);
+        const vColumns = schema_1.Schema.getVirtualRow(model);
         const data = {};
         for (const name in entity) {
             const value = entity[name];
             if (value !== void 0) {
-                if (name in columns) {
-                    const schema = columns[name];
-                    if (!schema.hidden) {
-                        data[name] = this.normalizeValue(schema, value);
+                if (name in rColumns) {
+                    if (!rColumns[name].hidden) {
+                        data[name] = this.normalizeValue(rColumns[name], value);
                     }
                 }
-                else if (name in virtual) {
+                else if (name in vColumns) {
                     if (value instanceof Array) {
-                        data[name] = this.normalizeArray(virtual[name].model || model, value);
+                        data[name] = this.normalizeArray(vColumns[name].model || model, value);
                     }
                     else {
-                        data[name] = this.normalize(virtual[name].model || model, value);
+                        data[name] = this.normalize(vColumns[name].model || model, value);
                     }
                 }
             }
         }
         return data;
+    }
+    /**
+     * Gets the list of virtual columns.
+     * @returns Returns the virtual columns list.
+     */
+    getAggregations() {
+        const columns = schema_1.Schema.getVirtualRow(this.model);
+        const list = [];
+        if (columns) {
+            for (const name in columns) {
+                const column = columns[name];
+                const localColumn = schema_1.Schema.getColumn(this.model, column.local);
+                const foreignColumn = schema_1.Schema.getColumn(column.model, column.foreign);
+                list.push({
+                    local: Mapper_1.getColumnName(localColumn),
+                    foreign: Mapper_1.getColumnName(foreignColumn),
+                    virtual: column.name,
+                    storage: schema_1.Schema.getStorage(column.model),
+                    multiple: localColumn.types.includes(format_1.Format.ARRAY)
+                });
+            }
+        }
+        return list;
+    }
+    /**
+     * Assign virtual columns into the specified data based on the given entity.
+     * @param data Target entity data.
+     * @param entity Source entity.
+     * @returns Returns the specified entity data.
+     */
+    assignVirtual(data, entity) {
+        const columns = schema_1.Schema.getVirtualRow(this.model);
+        for (const name in columns) {
+            if (name in entity) {
+                data[name] = entity[name];
+            }
+        }
+        return data;
+    }
+    /**
+     * Creates a new data model based on the specified entity data.
+     * @param entity Entity data.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param all Determines if all required properties must be provided.
+     * @returns Returns the new generated entity data based on entity model.
+     * @throws Throws an error when a required column is not supplied.
+     */
+    createModel(entity, input, all) {
+        return Mapper_1.createModel(this.model, entity, input, all);
+    }
+    /**
+     * Generate a new normalized entity based on the specified entity data.
+     * @param entity Entity data.
+     * @returns Returns the new normalized entity data.
+     */
+    normalize(entity) {
+        return Mapper_1.normalize(this.model, entity);
+    }
+    /**
+     * Normalize all entities in the specified entity list.
+     * @param entities Entities list.
+     * @returns Returns the list of normalized entities.
+     */
+    normalizeAll(...entities) {
+        const list = [];
+        for (const entity of entities) {
+            list.push(this.normalize(entity));
+        }
+        return list;
+    }
+    /**
+     * Insert the specified entity list into the storage.
+     * @param entities Entity list.
+     * @returns Returns a promise to get the id list of all inserted entities.
+     */
+    async insertMany(...entities) {
+        const list = [];
+        for (const entity of entities) {
+            list.push(this.createModel(entity, true, true));
+        }
+        return await this.driver.insert(this.model, list);
+    }
+    /**
+     * Insert the specified entity into the storage.
+     * @param entity Entity data.
+     * @returns Returns a promise to get the id of inserted entry.
+     */
+    async insert(entity) {
+        return (await this.insertMany(entity))[0];
+    }
+    /**
+     * Find the corresponding entity in the storage.
+     * @param filters List of expression filters.
+     * @returns Returns a promise to get the list of entities found.
+     */
+    async find(...filters) {
+        const entities = await this.driver.find(this.model, this.getAggregations(), filters);
+        const results = [];
+        for (const entity of entities) {
+            results.push(this.assignVirtual(this.createModel(entity, false, true), entity));
+        }
+        return results;
+    }
+    /**
+     * Find the entity that corresponds to the specified entity id.
+     * @param id Entity id.
+     * @returns Returns a promise to get the entity found or undefined when the entity was not found.
+     */
+    async findById(id) {
+        const entity = await this.driver.findById(this.model, this.getAggregations(), id);
+        return entity ? this.assignVirtual(this.createModel(entity, false, true), entity) : void 0;
+    }
+    /**
+     * Update all entities that corresponds to the specified filter.
+     * @param filter Filter expression.
+     * @param entity Entity data to be updated.
+     * @returns Returns a promise to get the number of updated entities.
+     */
+    async update(filter, entity) {
+        return await this.driver.update(this.model, this.createModel(entity, true, false), filter);
+    }
+    /**
+     * Update a entity that corresponds to the specified id.
+     * @param id Entity id.
+     * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
+     */
+    async updateById(id, entity) {
+        return await this.driver.updateById(this.model, this.createModel(entity, true, false), id);
+    }
+    /**
+     * Delete all entities that corresponds to the specified filter.
+     * @param filter Filter columns.
+     * @return Returns a promise to get the number of deleted entities.
+     */
+    async delete(filter) {
+        return await this.driver.delete(this.model, filter);
+    }
+    /**
+     * Delete the entity that corresponds to the specified entity id.
+     * @param id Entity id.
+     * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
+     */
+    async deleteById(id) {
+        return await this.driver.deleteById(this.model, id);
     }
 };
 /**
@@ -370,9 +349,6 @@ __decorate([
 __decorate([
     Class.Private()
 ], Mapper.prototype, "model", void 0);
-__decorate([
-    Class.Private()
-], Mapper.prototype, "getPrimaryName", null);
 __decorate([
     Class.Private()
 ], Mapper.prototype, "getAggregations", null);
@@ -415,9 +391,6 @@ __decorate([
 __decorate([
     Class.Private()
 ], Mapper, "commons", void 0);
-__decorate([
-    Class.Private()
-], Mapper, "isCommon", null);
 __decorate([
     Class.Private()
 ], Mapper, "getColumnName", null);

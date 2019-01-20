@@ -19,11 +19,11 @@ export interface Storage {
    */
   primary?: string;
   /**
+   * Real columns.
+   */
+  realColumns: Map<Column>;
+  /**
    * Virtual columns.
    */
-  virtual: Map<Virtual>;
-  /**
-   * Columns.
-   */
-  columns: Map<Column>;
+  virtualColumns: Map<Virtual>;
 }
