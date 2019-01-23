@@ -3,18 +3,13 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Class from '@singleware/class';
-import { Constructor } from './types';
+import * as Types from './types';
+import * as Statements from './statements';
 import { Driver } from './driver';
-import { Entity } from './entity';
-import { Expression } from './expression';
 /**
  * Generic data mapper class.
  */
-export declare class Mapper<E extends Entity> extends Class.Null {
-    /**
-     * List of common types.
-     */
-    private static commons;
+export declare class Mapper<E extends Types.Entity> extends Class.Null {
     /**
      * Data driver.
      */
@@ -24,46 +19,44 @@ export declare class Mapper<E extends Entity> extends Class.Null {
      */
     private model;
     /**
-     * Gets the column name from the specified column schema.
-     * @param column Column schema.
-     * @returns Returns the column name.
+     * List of common types.
      */
-    private static getColumnName;
+    private static commons;
     /**
-     * Creates a new array of data model based on the specified entity model and values.
+     * Creates and get a new array of data model based on the specified entity model and values.
      * @param model Entity model.
      * @param values Entities list.
      * @param input Determines whether the entity will be used for an input or output.
-     * @param all Determines if all required properties must be provided.
+     * @param fully Determines whether all required properties must be provided.
      * @returns Returns the new generated list of entities based on entity model.
      */
-    private static createArrayModel;
+    private static getArrayModel;
     /**
-     * Creates a new map of data model based on the specified entity model and value.
+     * Creates and get a new map of data model based on the specified entity model and value.
      * @param model Entity model.
      * @param value Entity map.
      * @param input Determines whether the entity will be used for an input or output.
-     * @param all Determines if all required properties must be provided.
+     * @param fully Determines if all required properties must be provided.
      * @returns Returns the new generated map of entity data based on entity model.
      */
-    private static createMapModel;
+    private static getMapModel;
     /**
-     * Creates a new model value based on the specified entity model and data.
+     * Creates and get a new model value based on the specified entity model and data.
      * @param column Column schema.
      * @param value Value to be created.
      * @param input Determines whether the entity will be used for an input or output.
-     * @param all Determines if all required properties must be provided.
+     * @param fully Determines whether all required properties must be provided.
      * @returns Returns the new normalized value.
      */
-    private static createValueModel;
+    private static getValueModel;
     /**
      * Creates a new data model based on the specified entity model and data.
      * @param model Entity model.
      * @param data Entity data.
      * @param input Determines whether the entity will be used for an input or output.
-     * @param all Determines if all required properties must be provided.
+     * @param fully Determines whether all required properties must be provided.
      * @returns Returns the new generated entity data based on entity model.
-     * @throws Throws an error when a required column is not supplied.
+     * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
      */
     private static createModel;
     /**
@@ -93,24 +86,24 @@ export declare class Mapper<E extends Entity> extends Class.Null {
      * @param entity Entity data.
      * @returns Returns the new normalized entity data.
      */
-    protected static normalize(model: Constructor<Entity>, entity: Entity): Entity;
+    protected static normalize(model: Types.Model, entity: Types.Entity): Types.Entity;
     /**
-     * Gets the list of virtual columns.
+     * Gets the list of joined columns.
      * @returns Returns the virtual columns list.
      */
-    private getAggregations;
+    private getJoinedColumns;
     /**
-     * Assign virtual columns into the specified data based on the given entity.
+     * Assign all joined columns into the specified data model from the given entity.
      * @param data Target entity data.
      * @param entity Source entity.
      * @returns Returns the specified entity data.
      */
-    private assignVirtual;
+    private assignJoinedColumns;
     /**
      * Creates a new data model based on the specified entity data.
      * @param entity Entity data.
      * @param input Determines whether the entity will be used for an input or output.
-     * @param all Determines if all required properties must be provided.
+     * @param fully Determines whether all required properties must be provided.
      * @returns Returns the new generated entity data based on entity model.
      * @throws Throws an error when a required column is not supplied.
      */
@@ -120,13 +113,13 @@ export declare class Mapper<E extends Entity> extends Class.Null {
      * @param entity Entity data.
      * @returns Returns the new normalized entity data.
      */
-    protected normalize(entity: Entity): Entity;
+    protected normalize(entity: Types.Entity): Types.Entity;
     /**
      * Normalize all entities in the specified entity list.
      * @param entities Entities list.
      * @returns Returns the list of normalized entities.
      */
-    protected normalizeAll(...entities: Entity[]): Entity[];
+    protected normalizeAll(...entities: Types.Entity[]): Types.Entity[];
     /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
@@ -144,7 +137,7 @@ export declare class Mapper<E extends Entity> extends Class.Null {
      * @param filters List of expression filters.
      * @returns Returns a promise to get the list of entities found.
      */
-    protected find(...filters: Expression[]): Promise<E[]>;
+    protected find(...filters: Statements.Filter[]): Promise<E[]>;
     /**
      * Find the entity that corresponds to the specified entity id.
      * @param id Entity id.
@@ -157,19 +150,19 @@ export declare class Mapper<E extends Entity> extends Class.Null {
      * @param entity Entity data to be updated.
      * @returns Returns a promise to get the number of updated entities.
      */
-    protected update(filter: Expression, entity: Entity): Promise<number>;
+    protected update(filter: Statements.Filter, entity: Types.Entity): Promise<number>;
     /**
      * Update a entity that corresponds to the specified id.
      * @param id Entity id.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
-    protected updateById(id: any, entity: Entity): Promise<boolean>;
+    protected updateById(id: any, entity: Types.Entity): Promise<boolean>;
     /**
      * Delete all entities that corresponds to the specified filter.
      * @param filter Filter columns.
      * @return Returns a promise to get the number of deleted entities.
      */
-    protected delete(filter: Expression): Promise<number>;
+    protected delete(filter: Statements.Filter): Promise<number>;
     /**
      * Delete the entity that corresponds to the specified entity id.
      * @param id Entity id.
@@ -182,5 +175,5 @@ export declare class Mapper<E extends Entity> extends Class.Null {
      * @param model Entity model.
      * @throws Throws an error when the model is a not valid entity.
      */
-    constructor(driver: Driver, model: Constructor<E>);
+    constructor(driver: Driver, model: Types.Model<E>);
 }

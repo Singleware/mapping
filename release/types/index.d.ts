@@ -5,11 +5,9 @@
 export { Schema } from './schema';
 export { Mapper } from './mapper';
 export { Driver } from './driver';
-export { Entity } from './entity';
-export { Expression } from './expression';
-export { Operator } from './operator';
-export { Format } from './format';
-export { Aggregation } from './aggregation';
-export { Virtual } from './virtual';
-export { Column } from './column';
-export { Map } from './map';
+import * as Types from './types';
+export import Types = Types;
+import * as Columns from './columns';
+export import Columns = Columns;
+import * as Statements from './statements';
+export import Statements = Statements;

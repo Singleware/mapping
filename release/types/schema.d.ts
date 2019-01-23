@@ -3,11 +3,8 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Class from '@singleware/class';
-import { PropertyDecorator, ClassDecorator, Constructor } from './types';
-import { Entity } from './entity';
-import { Virtual } from './virtual';
-import { Column } from './column';
-import { Map } from './map';
+import * as Types from './types';
+import * as Columns from './columns';
 /**
  * Schema helper class.
  */
@@ -17,7 +14,7 @@ export declare class Schema extends Class.Null {
      */
     private static storages;
     /**
-     * Sets the column format for the specified entity prototype.
+     * Sets the column validation format for the specified entity prototype.
      * @param column Column schema.
      * @param prototype Entity prototype.
      * @param property Entity property.
@@ -32,7 +29,15 @@ export declare class Schema extends Class.Null {
      */
     private static setStorage;
     /**
-     * Register a virtual column schema for the specified column information.
+     * Set a real column schema for the specified column information.
+     * @param type Column type.
+     * @param name Column name.
+     * @param format Column data format.
+     * @returns Returns the column schema.
+     */
+    private static setReal;
+    /**
+     * Set a virtual column schema for the specified column information.
      * @param type Column type.
      * @param name Column name.
      * @param foreign Foreign column name.
@@ -40,51 +45,44 @@ export declare class Schema extends Class.Null {
      * @param local Local column name.
      * @returns Returns the join schema.
      */
-    private static registerVirtual;
+    private static setVirtual;
     /**
-     * Register a column schema for the specified column information.
-     * @param type Column type.
-     * @param name Column name.
-     * @returns Returns the column schema.
-     */
-    private static registerColumn;
-    /**
-     * Resolves the column schema dependencies to be used externally.
+     * Resolve any dependency in the specified real column schema to be used externally.
      * @param column Column schema.
-     * @returns Returns the prepared column schema.
+     * @returns Returns the resolved column schema.
      */
-    private static resolveColumn;
+    private static resolveRealColumn;
     /**
      * Gets the real row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the row schema or undefined when the entity model does not exists.
      */
-    static getRealRow<T extends Entity>(model: Constructor<T>): Map<Column> | undefined;
+    static getRealRow<T extends Types.Entity>(model: Types.Model<T>): Columns.RealRow | undefined;
     /**
      * Gets the virtual row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the joined schema or undefined when the entity model does not exists.
      */
-    static getVirtualRow<T extends Entity>(model: Constructor<T>): Map<Virtual> | undefined;
+    static getVirtualRow<T extends Types.Entity>(model: Types.Model<T>): Columns.VirtualRow | undefined;
     /**
-     * Gets the column schema from the specified entity model and column name.
+     * Gets the real column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getColumn<T extends Entity>(model: Constructor<T>, name: string): Column | undefined;
+    static getRealColumn<T extends Types.Entity>(model: Types.Model<T>, name: string): Columns.Real | undefined;
     /**
-     * Gets the primary column schema from the specified entity model.
+     * Gets the real primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getPrimary<T extends Entity>(model: Constructor<T>): Column | undefined;
+    static getPrimaryColumn<T extends Types.Entity>(model: Types.Model<T>): Columns.Real | undefined;
     /**
      * Gets the storage name from the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */
-    static getStorage<T extends Entity>(model: Constructor<T>): string | undefined;
+    static getStorage<T extends Types.Entity>(model: Types.Model<T>): string | undefined;
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -108,13 +106,23 @@ export declare class Schema extends Class.Null {
      */
     static Hidden(): PropertyDecorator;
     /**
+     * Decorates the specified property to be a read-only column.
+     * @returns Returns the decorator method.
+     */
+    static ReadOnly(): PropertyDecorator;
+    /**
+     * Decorates the specified property to be a write-only column.
+     * @returns Returns the decorator method.
+     */
+    static WriteOnly(): PropertyDecorator;
+    /**
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name. (When omitted the primary ID column will be used as default)
      * @returns Returns the decorator method.
      */
-    static Join(foreign: string, model: Constructor<Entity>, local: string): PropertyDecorator;
+    static Join(foreign: string, model: Types.Model, local: string): PropertyDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.
@@ -203,17 +211,17 @@ export declare class Schema extends Class.Null {
      * @param max Maximum items.
      * @returns Returns the decorator method.
      */
-    static Array(model: Constructor, unique?: boolean, min?: number, max?: number): PropertyDecorator;
+    static Array(model: Types.Model, unique?: boolean, min?: number, max?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be an map column.
      * @param model Entity model.
      * @returns Returns the decorator method.
      */
-    static Map(model: Constructor): PropertyDecorator;
+    static Map(model: Types.Model): PropertyDecorator;
     /**
      * Decorates the specified property to be an object column.
      * @param model Entity model.
      * @returns Returns the decorator method.
      */
-    static Object(model: Constructor): PropertyDecorator;
+    static Object(model: Types.Model): PropertyDecorator;
 }

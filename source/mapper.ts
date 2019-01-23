@@ -4,28 +4,18 @@
  */
 import * as Class from '@singleware/class';
 
-import { Constructor } from './types';
+import * as Types from './types';
+import * as Columns from './columns';
+import * as Statements from './statements';
+
 import { Schema } from './schema';
 import { Driver } from './driver';
-import { Entity } from './entity';
-import { Format } from './format';
-import { Expression } from './expression';
-import { Aggregation } from './aggregation';
-import { Virtual } from './virtual';
-import { Column } from './column';
-import { Map } from './map';
 
 /**
  * Generic data mapper class.
  */
 @Class.Describe()
-export class Mapper<E extends Entity> extends Class.Null {
-  /**
-   * List of common types.
-   */
-  @Class.Private()
-  private static commons = <any[]>[Object, String, Number, Boolean, Date];
-
+export class Mapper<E extends Types.Entity> extends Class.Null {
   /**
    * Data driver.
    */
@@ -36,69 +26,65 @@ export class Mapper<E extends Entity> extends Class.Null {
    * Entity model.
    */
   @Class.Private()
-  private model: Constructor<E>;
+  private model: Types.Model<E>;
 
   /**
-   * Gets the column name from the specified column schema.
-   * @param column Column schema.
-   * @returns Returns the column name.
+   * List of common types.
    */
   @Class.Private()
-  private static getColumnName(column: Column): string {
-    return column.alias || column.name;
-  }
+  private static commons = <any[]>[Object, String, Number, Boolean, Date];
 
   /**
-   * Creates a new array of data model based on the specified entity model and values.
+   * Creates and get a new array of data model based on the specified entity model and values.
    * @param model Entity model.
    * @param values Entities list.
    * @param input Determines whether the entity will be used for an input or output.
-   * @param all Determines if all required properties must be provided.
+   * @param fully Determines whether all required properties must be provided.
    * @returns Returns the new generated list of entities based on entity model.
    */
   @Class.Private()
-  private static createArrayModel(model: Constructor<Entity>, values: Entity[], input: boolean, all: boolean): Entity {
-    const list = [];
+  private static getArrayModel(model: Types.Model, values: Types.Entity[], input: boolean, fully: boolean): Types.Entity[] {
+    const list = <Types.Entity[]>[];
     for (const value of values) {
-      list.push(this.createModel(model, value, input, all));
+      list.push(this.createModel(model, value, input, fully));
     }
     return list;
   }
 
   /**
-   * Creates a new map of data model based on the specified entity model and value.
+   * Creates and get a new map of data model based on the specified entity model and value.
    * @param model Entity model.
    * @param value Entity map.
    * @param input Determines whether the entity will be used for an input or output.
-   * @param all Determines if all required properties must be provided.
+   * @param fully Determines if all required properties must be provided.
    * @returns Returns the new generated map of entity data based on entity model.
    */
   @Class.Private()
-  private static createMapModel(model: Constructor<Entity>, value: Entity, input: boolean, all: boolean): Entity {
-    const map = <Entity>{};
+  private static getMapModel(model: Types.Model, value: Types.Entity, input: boolean, fully: boolean): Types.Entity {
+    const map = <Types.Entity>{};
     for (const name in value) {
-      map[name] = this.createModel(model, value[name], input, all);
+      map[name] = this.createModel(model, value[name], input, fully);
     }
     return map;
   }
 
   /**
-   * Creates a new model value based on the specified entity model and data.
+   * Creates and get a new model value based on the specified entity model and data.
    * @param column Column schema.
    * @param value Value to be created.
    * @param input Determines whether the entity will be used for an input or output.
-   * @param all Determines if all required properties must be provided.
+   * @param fully Determines whether all required properties must be provided.
    * @returns Returns the new normalized value.
    */
   @Class.Private()
-  private static createValueModel(column: Column, value: any, input: boolean, all: boolean): any {
+  private static getValueModel(column: Columns.Real, value: any, input: boolean, fully: boolean): any {
     if (column.model && !this.commons.includes(column.model)) {
-      if (column.types.includes(Format.ARRAY)) {
-        return this.createArrayModel(column.model, value, input, all);
-      } else if (column.types.includes(Format.MAP)) {
-        return this.createMapModel(column.model, value, input, all);
+      if (column.formats.includes(Types.Format.ARRAY)) {
+        return this.getArrayModel(column.model, value, input, fully);
+      } else if (column.formats.includes(Types.Format.MAP)) {
+        return this.getMapModel(column.model, value, input, fully);
       } else {
-        return this.createModel(column.model, value, input, all);
+        return this.createModel(column.model, value, input, fully);
       }
     }
     return value;
@@ -109,21 +95,27 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @param model Entity model.
    * @param data Entity data.
    * @param input Determines whether the entity will be used for an input or output.
-   * @param all Determines if all required properties must be provided.
+   * @param fully Determines whether all required properties must be provided.
    * @returns Returns the new generated entity data based on entity model.
-   * @throws Throws an error when a required column is not supplied.
+   * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
    */
   @Class.Private()
-  private static createModel(model: Constructor<Entity>, entity: Entity, input: boolean, all: boolean): Entity {
+  private static createModel(model: Types.Model, entity: Types.Entity, input: boolean, fully: boolean): Types.Entity {
     const data = new model();
-    const columns = <Map<Column>>Schema.getRealRow(model);
+    const columns = <Columns.RealRow>Schema.getRealRow(model);
     for (const name in columns) {
       const column = columns[name];
-      const source = input ? name : this.getColumnName(column);
-      const target = input ? this.getColumnName(column) : name;
+      const source = input ? column.name : column.alias || column.name;
+      const target = input ? column.alias || column.name : column.name;
       if (source in entity && entity[source] !== void 0) {
-        data[target] = this.createValueModel(column, entity[source], input, all);
-      } else if (all && column.required) {
+        if (input && column.readonly) {
+          throw new Error(`The specified property ${target} is read-only.`);
+        } else if (!input && column.writeonly) {
+          throw new Error(`The specified property ${target} is write-only.`);
+        } else {
+          data[target] = this.getValueModel(column, entity[source], input, fully);
+        }
+      } else if (fully && column.required) {
         throw new Error(`Required column '${name}' for entity '${Schema.getStorage(model)}' does not supplied.`);
       }
     }
@@ -137,7 +129,7 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns the new normalized list of entities.
    */
   @Class.Private()
-  private static normalizeArray(model: Constructor<Entity>, values: Entity[]): Entity {
+  private static normalizeArray(model: Types.Model, values: Types.Entity[]): Types.Entity {
     const list = [];
     for (const value of values) {
       list.push(this.normalize(model, value));
@@ -152,8 +144,8 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns the new normalized map of entities.
    */
   @Class.Private()
-  private static normalizeMap(model: Constructor<Entity>, value: Entity): Entity {
-    const map = <Entity>{};
+  private static normalizeMap(model: Types.Model, value: Types.Entity): Types.Entity {
+    const map = <Types.Entity>{};
     for (const name in value) {
       map[name] = this.normalize(model, value[name]);
     }
@@ -167,11 +159,11 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns the new normalized value.
    */
   @Class.Private()
-  private static normalizeValue(column: Column, value: any): any {
+  private static normalizeValue(column: Columns.Real, value: any): any {
     if (column.model && !this.commons.includes(column.model)) {
-      if (column.types.includes(Format.ARRAY)) {
+      if (column.formats.includes(Types.Format.ARRAY)) {
         return this.normalizeArray(column.model, value);
-      } else if (column.types.includes(Format.MAP)) {
+      } else if (column.formats.includes(Types.Format.MAP)) {
         return this.normalizeMap(column.model, value);
       } else {
         return this.normalize(column.model, value);
@@ -187,10 +179,10 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns the new normalized entity data.
    */
   @Class.Protected()
-  protected static normalize(model: Constructor<Entity>, entity: Entity): Entity {
-    const rColumns = <Map<Column>>Schema.getRealRow(model);
-    const vColumns = <Map<Virtual>>Schema.getVirtualRow(model);
-    const data = <Entity>{};
+  protected static normalize(model: Types.Model, entity: Types.Entity): Types.Entity {
+    const rColumns = <Columns.RealRow>Schema.getRealRow(model);
+    const vColumns = <Columns.VirtualRow>Schema.getVirtualRow(model);
+    const data = <Types.Entity>{};
     for (const name in entity) {
       const value = entity[name];
       if (value !== void 0) {
@@ -211,24 +203,24 @@ export class Mapper<E extends Entity> extends Class.Null {
   }
 
   /**
-   * Gets the list of virtual columns.
+   * Gets the list of joined columns.
    * @returns Returns the virtual columns list.
    */
   @Class.Private()
-  private getAggregations(): Aggregation[] {
+  private getJoinedColumns(): Statements.Join[] {
     const columns = Schema.getVirtualRow(this.model);
-    const list = [];
+    const list = <Statements.Join[]>[];
     if (columns) {
       for (const name in columns) {
         const column = columns[name];
-        const localColumn = <Column>Schema.getColumn(this.model, column.local);
-        const foreignColumn = <Column>Schema.getColumn(column.model, column.foreign);
+        const local = <Columns.Real>Schema.getRealColumn(this.model, column.local);
+        const foreign = <Columns.Real>Schema.getRealColumn(column.model, column.foreign);
         list.push({
-          local: Mapper.getColumnName(localColumn),
-          foreign: Mapper.getColumnName(foreignColumn),
+          local: local.alias || local.name,
+          foreign: foreign.alias || foreign.name,
           virtual: column.name,
           storage: <string>Schema.getStorage(column.model),
-          multiple: localColumn.types.includes(Format.ARRAY)
+          multiple: local.formats.includes(Types.Format.ARRAY)
         });
       }
     }
@@ -236,14 +228,14 @@ export class Mapper<E extends Entity> extends Class.Null {
   }
 
   /**
-   * Assign virtual columns into the specified data based on the given entity.
+   * Assign all joined columns into the specified data model from the given entity.
    * @param data Target entity data.
    * @param entity Source entity.
    * @returns Returns the specified entity data.
    */
   @Class.Private()
-  private assignVirtual(data: E, entity: Entity): E {
-    const columns = <Map<Virtual>>Schema.getVirtualRow(this.model);
+  private assignJoinedColumns(data: E, entity: Types.Entity): E {
+    const columns = <Columns.VirtualRow>Schema.getVirtualRow(this.model);
     for (const name in columns) {
       if (name in entity) {
         data[name] = entity[name];
@@ -256,13 +248,13 @@ export class Mapper<E extends Entity> extends Class.Null {
    * Creates a new data model based on the specified entity data.
    * @param entity Entity data.
    * @param input Determines whether the entity will be used for an input or output.
-   * @param all Determines if all required properties must be provided.
+   * @param fully Determines whether all required properties must be provided.
    * @returns Returns the new generated entity data based on entity model.
    * @throws Throws an error when a required column is not supplied.
    */
   @Class.Private()
-  private createModel(entity: Entity, input: boolean, all: boolean): E {
-    return <E>Mapper.createModel(this.model, entity, input, all);
+  private createModel(entity: Types.Entity, input: boolean, fully: boolean): E {
+    return <E>Mapper.createModel(this.model, entity, input, fully);
   }
 
   /**
@@ -271,7 +263,7 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns the new normalized entity data.
    */
   @Class.Protected()
-  protected normalize(entity: Entity): Entity {
+  protected normalize(entity: Types.Entity): Types.Entity {
     return Mapper.normalize(this.model, entity);
   }
 
@@ -281,7 +273,7 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns the list of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAll(...entities: Entity[]): Entity[] {
+  protected normalizeAll(...entities: Types.Entity[]): Types.Entity[] {
     const list = [];
     for (const entity of entities) {
       list.push(this.normalize(entity));
@@ -319,11 +311,11 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Protected()
-  protected async find(...filters: Expression[]): Promise<E[]> {
-    const entities = await this.driver.find(this.model, this.getAggregations(), filters);
+  protected async find(...filters: Statements.Filter[]): Promise<E[]> {
+    const entities = await this.driver.find(this.model, this.getJoinedColumns(), filters);
     const results = [];
     for (const entity of entities) {
-      results.push(this.assignVirtual(this.createModel(entity, false, true), entity));
+      results.push(this.assignJoinedColumns(this.createModel(entity, false, true), entity));
     }
     return results;
   }
@@ -335,8 +327,11 @@ export class Mapper<E extends Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async findById(id: any): Promise<E | undefined> {
-    const entity = await this.driver.findById(this.model, this.getAggregations(), id);
-    return entity ? this.assignVirtual(this.createModel(entity, false, true), entity) : void 0;
+    const entity = await this.driver.findById(this.model, this.getJoinedColumns(), id);
+    if (entity) {
+      return this.assignJoinedColumns(this.createModel(entity, false, true), entity);
+    }
+    return void 0;
   }
 
   /**
@@ -346,7 +341,7 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Protected()
-  protected async update(filter: Expression, entity: Entity): Promise<number> {
+  protected async update(filter: Statements.Filter, entity: Types.Entity): Promise<number> {
     return await this.driver.update(this.model, this.createModel(entity, true, false), filter);
   }
 
@@ -356,7 +351,7 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Protected()
-  protected async updateById(id: any, entity: Entity): Promise<boolean> {
+  protected async updateById(id: any, entity: Types.Entity): Promise<boolean> {
     return await this.driver.updateById(this.model, this.createModel(entity, true, false), id);
   }
 
@@ -366,7 +361,7 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @return Returns a promise to get the number of deleted entities.
    */
   @Class.Protected()
-  protected async delete(filter: Expression): Promise<number> {
+  protected async delete(filter: Statements.Filter): Promise<number> {
     return await this.driver.delete(this.model, filter);
   }
 
@@ -386,12 +381,11 @@ export class Mapper<E extends Entity> extends Class.Null {
    * @param model Entity model.
    * @throws Throws an error when the model is a not valid entity.
    */
-  public constructor(driver: Driver, model: Constructor<E>) {
+  public constructor(driver: Driver, model: Types.Model<E>) {
     super();
-    if (!Schema.getStorage(model)) {
-      throw new Error(`There is no storage name, make sure your entity model is a valid.`);
-    }
     this.driver = driver;
-    this.model = model;
+    if (!Schema.getStorage((this.model = model))) {
+      throw new Error(`There is no storage name, make sure your entity model is valid.`);
+    }
   }
 }
