@@ -14,5 +14,6 @@ export declare enum Operator {
     GREATER = 5,
     CONTAIN = 6,
     BETWEEN = 7,
-    NOT_CONTAIN = 8
+    NOT_CONTAIN = 8,
+    REGEX = 9
 }

@@ -15,5 +15,6 @@ export enum Operator {
   GREATER,
   CONTAIN,
   BETWEEN,
-  NOT_CONTAIN
+  NOT_CONTAIN,
+  REGEX
 }

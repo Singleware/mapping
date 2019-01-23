@@ -121,6 +121,12 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     protected normalizeAll(...entities: Types.Entity[]): Types.Entity[];
     /**
+     * Normalize all entities in the specified entity list.
+     * @param entities Entities list.
+     * @returns Returns the map of normalized entities.
+     */
+    protected normalizeAsMap(...entities: Types.Entity[]): Types.Entity;
+    /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
      * @returns Returns a promise to get the id list of all inserted entities.

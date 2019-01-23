@@ -282,6 +282,25 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
+   * Normalize all entities in the specified entity list.
+   * @param entities Entities list.
+   * @returns Returns the map of normalized entities.
+   */
+  @Class.Protected()
+  protected normalizeAsMap(...entities: Types.Entity[]): Types.Entity {
+    const column = Schema.getPrimaryColumn(this.model);
+    const map = <Types.Entity>{};
+    if (!column) {
+      throw new Error(`The specified data model has no primary column.`);
+    }
+    for (const entity of entities) {
+      const normalized = this.normalize(entity);
+      map[normalized[column.alias || column.name]] = normalized;
+    }
+    return map;
+  }
+
+  /**
    * Insert the specified entity list into the storage.
    * @param entities Entity list.
    * @returns Returns a promise to get the id list of all inserted entities.
