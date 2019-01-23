@@ -23,6 +23,16 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     private static commons;
     /**
+     * Creates a new data model based on the specified entity model and data.
+     * @param model Entity model.
+     * @param data Entity data.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param fully Determines whether all required properties must be provided.
+     * @returns Returns the new generated entity data based on entity model.
+     * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
+     */
+    private static createModel;
+    /**
      * Creates and get a new array of data model based on the specified entity model and values.
      * @param model Entity model.
      * @param values Entities list.
@@ -49,16 +59,6 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      * @returns Returns the new normalized value.
      */
     private static getValueModel;
-    /**
-     * Creates a new data model based on the specified entity model and data.
-     * @param model Entity model.
-     * @param data Entity data.
-     * @param input Determines whether the entity will be used for an input or output.
-     * @param fully Determines whether all required properties must be provided.
-     * @returns Returns the new generated entity data based on entity model.
-     * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
-     */
-    private static createModel;
     /**
      * Generates a new normalized array of entity data based on the specified entity model and values.
      * @param model Entity model.
@@ -131,7 +131,7 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      * @param entities Entity list.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
-    protected insertMany(...entities: E[]): Promise<any[]>;
+    protected insertMany(entities: E[]): Promise<any[]>;
     /**
      * Insert the specified entity into the storage.
      * @param entity Entity data.
@@ -140,10 +140,12 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
     protected insert(entity: E): Promise<any>;
     /**
      * Find the corresponding entity in the storage.
-     * @param filters List of expression filters.
+     * @param filters List of filters.
+     * @param sort Sorting fields.
+     * @param limit Result limits.
      * @returns Returns a promise to get the list of entities found.
      */
-    protected find(...filters: Statements.Filter[]): Promise<E[]>;
+    protected find(filters: Statements.Filter[], sort?: Statements.Sort, limit?: Statements.Limit): Promise<E[]>;
     /**
      * Find the entity that corresponds to the specified entity id.
      * @param id Entity id.

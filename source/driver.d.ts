@@ -29,7 +29,7 @@ export interface Driver {
     model: Types.Model<T>,
     joins: Statements.Join[],
     filters: Statements.Filter[],
-    sort?: Statements.Join,
+    sort?: Statements.Sort,
     limit?: Statements.Limit
   ): Promise<T[]>;
   /**

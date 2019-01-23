@@ -33,6 +33,39 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         }
     }
     /**
+     * Creates a new data model based on the specified entity model and data.
+     * @param model Entity model.
+     * @param data Entity data.
+     * @param input Determines whether the entity will be used for an input or output.
+     * @param fully Determines whether all required properties must be provided.
+     * @returns Returns the new generated entity data based on entity model.
+     * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
+     */
+    static createModel(model, entity, input, fully) {
+        const data = new model();
+        const columns = schema_1.Schema.getRealRow(model);
+        for (const name in columns) {
+            const column = columns[name];
+            const source = input ? column.name : column.alias || column.name;
+            const target = input ? column.alias || column.name : column.name;
+            if (source in entity && entity[source] !== void 0) {
+                if (input && column.readonly) {
+                    throw new Error(`The specified property ${target} is read-only.`);
+                }
+                else if (!input && column.writeonly) {
+                    throw new Error(`The specified property ${target} is write-only.`);
+                }
+                else {
+                    data[target] = this.getValueModel(column, entity[source], input, fully);
+                }
+            }
+            else if (fully && column.required) {
+                throw new Error(`Required column '${name}' for entity '${schema_1.Schema.getStorage(model)}' does not supplied.`);
+            }
+        }
+        return data;
+    }
+    /**
      * Creates and get a new array of data model based on the specified entity model and values.
      * @param model Entity model.
      * @param values Entities list.
@@ -83,39 +116,6 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
             }
         }
         return value;
-    }
-    /**
-     * Creates a new data model based on the specified entity model and data.
-     * @param model Entity model.
-     * @param data Entity data.
-     * @param input Determines whether the entity will be used for an input or output.
-     * @param fully Determines whether all required properties must be provided.
-     * @returns Returns the new generated entity data based on entity model.
-     * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
-     */
-    static createModel(model, entity, input, fully) {
-        const data = new model();
-        const columns = schema_1.Schema.getRealRow(model);
-        for (const name in columns) {
-            const column = columns[name];
-            const source = input ? column.name : column.alias || column.name;
-            const target = input ? column.alias || column.name : column.name;
-            if (source in entity && entity[source] !== void 0) {
-                if (input && column.readonly) {
-                    throw new Error(`The specified property ${target} is read-only.`);
-                }
-                else if (!input && column.writeonly) {
-                    throw new Error(`The specified property ${target} is write-only.`);
-                }
-                else {
-                    data[target] = this.getValueModel(column, entity[source], input, fully);
-                }
-            }
-            else if (fully && column.required) {
-                throw new Error(`Required column '${name}' for entity '${schema_1.Schema.getStorage(model)}' does not supplied.`);
-            }
-        }
-        return data;
     }
     /**
      * Generates a new normalized array of entity data based on the specified entity model and values.
@@ -284,7 +284,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @param entities Entity list.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
-    async insertMany(...entities) {
+    async insertMany(entities) {
         const list = [];
         for (const entity of entities) {
             list.push(this.createModel(entity, true, true));
@@ -297,15 +297,17 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns a promise to get the id of inserted entry.
      */
     async insert(entity) {
-        return (await this.insertMany(entity))[0];
+        return (await this.insertMany([entity]))[0];
     }
     /**
      * Find the corresponding entity in the storage.
-     * @param filters List of expression filters.
+     * @param filters List of filters.
+     * @param sort Sorting fields.
+     * @param limit Result limits.
      * @returns Returns a promise to get the list of entities found.
      */
-    async find(...filters) {
-        const entities = await this.driver.find(this.model, this.getJoinedColumns(), filters);
+    async find(filters, sort, limit) {
+        const entities = await this.driver.find(this.model, this.getJoinedColumns(), filters, sort, limit);
         const results = [];
         for (const entity of entities) {
             results.push(this.assignJoinedColumns(this.createModel(entity, false, true), entity));
@@ -415,6 +417,9 @@ __decorate([
 ], Mapper, "commons", void 0);
 __decorate([
     Class.Private()
+], Mapper, "createModel", null);
+__decorate([
+    Class.Private()
 ], Mapper, "getArrayModel", null);
 __decorate([
     Class.Private()
@@ -422,9 +427,6 @@ __decorate([
 __decorate([
     Class.Private()
 ], Mapper, "getValueModel", null);
-__decorate([
-    Class.Private()
-], Mapper, "createModel", null);
 __decorate([
     Class.Private()
 ], Mapper, "normalizeArray", null);

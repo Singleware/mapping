@@ -5,16 +5,13 @@
 import * as Types from '../types';
 import { Real } from './real';
 import { Virtual } from './virtual';
-
 export { Real } from './real';
 export { Virtual } from './virtual';
-
 /**
  * Type declaration for map of real columns.
  */
-export type RealRow = Types.Map<Real>;
-
+export declare type RealRow = Types.Map<Real>;
 /**
  * Type declaration for map of virtual columns.
  */
-export type VirtualRow = Types.Map<Virtual>;
+export declare type VirtualRow = Types.Map<Virtual>;
