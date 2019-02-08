@@ -11,121 +11,120 @@ import { Driver } from './driver';
  */
 export declare class Mapper<E extends Types.Entity> extends Class.Null {
     /**
-     * Data driver.
+     * List of common types.
      */
-    private driver;
+    private static commons;
     /**
      * Entity model.
      */
     private model;
     /**
-     * List of common types.
+     * Data driver.
      */
-    private static commons;
+    private driver;
     /**
-     * Creates a new data model based on the specified entity model and data.
-     * @param model Entity model.
-     * @param data Entity data.
-     * @param input Determines whether the entity will be used for an input or output.
+     * Creates a new entity based on the specified model type and input data.
+     * @param model Model type.
+     * @param data Input data.
+     * @param input Determines whether the data will be used for an input or output.
      * @param fully Determines whether all required properties must be provided.
-     * @returns Returns the new generated entity data based on entity model.
-     * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
+     * @returns Returns the new generated entity based on the model type.
+     * @throws Throws an error when some required column was not supplied or some read-only/write-only property was set wrongly.
      */
-    private static createModel;
+    private static createEntity;
     /**
-     * Creates and get a new array of data model based on the specified entity model and values.
-     * @param model Entity model.
-     * @param values Entities list.
-     * @param input Determines whether the entity will be used for an input or output.
+     * Creates a new list of entities based on the specified model type and the list of data.
+     * @param model Model type.
+     * @param list List of data.
+     * @param input Determines whether the data will be used for an input or output.
      * @param fully Determines whether all required properties must be provided.
-     * @returns Returns the new generated list of entities based on entity model.
+     * @returns Returns the new generated list of entities based on the model type.
      */
-    private static getArrayModel;
+    private static createEntityArray;
     /**
-     * Creates and get a new map of data model based on the specified entity model and value.
-     * @param model Entity model.
-     * @param value Entity map.
-     * @param input Determines whether the entity will be used for an input or output.
-     * @param fully Determines if all required properties must be provided.
-     * @returns Returns the new generated map of entity data based on entity model.
-     */
-    private static getMapModel;
-    /**
-     * Creates and get a new model value based on the specified entity model and data.
-     * @param column Column schema.
-     * @param value Value to be created.
-     * @param input Determines whether the entity will be used for an input or output.
+     * Create a new map of entities based on the specified model type and map of data.
+     * @param model Model type.
+     * @param map Map of data.
+     * @param input Determines whether the data will be used for an input or output.
      * @param fully Determines whether all required properties must be provided.
-     * @returns Returns the new normalized value.
+     * @returns Returns the new generated map of entities based on the model type.
      */
-    private static getValueModel;
+    private static createEntityMap;
     /**
-     * Generates a new normalized array of entity data based on the specified entity model and values.
-     * @param model Entity model.
+     * Check whether the specified value can be converted to an entity.
+     * @param real Real column schema.
+     * @param value Value to be converted.
+     * @param input Determines whether the value will be used for an input or output.
+     * @param fully Determines whether all required properties must be provided.
+     * @returns Returns the original or the converted value.
+     */
+    private static castValue;
+    /**
+     * Generates a new normalized array of entities data based on the specified model type and input values.
+     * @param model Model type.
      * @param values Entities list.
      * @returns Returns the new normalized list of entities.
      */
     private static normalizeArray;
     /**
-     * Generates a new normalized map of entity data based on the specified entity model and value.
-     * @param model Entity model.
+     * Generates a new normalized map of entities data based on the specified model type and value.
+     * @param model Model type.
      * @param value Entity map.
      * @returns Returns the new normalized map of entities.
      */
     private static normalizeMap;
     /**
-     * Generates a new normalized value from the specified column schema and value.
-     * @param column Column schema.
+     * Generates a new normalized value from the specified real column schema and value.
+     * @param real Real column schema.
      * @param value Value to be normalized.
      * @returns Returns the new normalized value.
      */
     private static normalizeValue;
     /**
-     * Generates a new normalized entity data based on the specified entity model and data.
-     * @param model Entity model
-     * @param entity Entity data.
+     * Generates a new normalized entity data based on the specified model type and input data.
+     * @param model Model type.
+     * @param input Input data.
      * @returns Returns the new normalized entity data.
      */
-    protected static normalize(model: Types.Model, entity: Types.Entity): Types.Entity;
+    protected static normalize(model: Types.Model, input: Types.Entity): Types.Entity;
     /**
      * Gets the list of joined columns.
      * @returns Returns the virtual columns list.
      */
     private getJoinedColumns;
     /**
-     * Assign all joined columns into the specified data model from the given entity.
-     * @param data Target entity data.
+     * Creates a new entity based on the current model type and input data.
+     * @param data Input data.
+     * @param input Determines whether the data will be used for an input or output.
+     * @param fully Determines whether all required properties must be provided.
+     * @returns Returns the new generated entity.
+     */
+    private createEntity;
+    /**
+     * Assign all joined columns into the specified data the given entity.
+     * @param data Target data.
      * @param entity Source entity.
-     * @returns Returns the specified entity data.
+     * @returns Returns the specified target data.
      */
     private assignJoinedColumns;
     /**
-     * Creates a new data model based on the specified entity data.
-     * @param entity Entity data.
-     * @param input Determines whether the entity will be used for an input or output.
-     * @param fully Determines whether all required properties must be provided.
-     * @returns Returns the new generated entity data based on entity model.
-     * @throws Throws an error when a required column is not supplied.
-     */
-    private createModel;
-    /**
-     * Generate a new normalized entity based on the specified entity data.
-     * @param entity Entity data.
+     * Generate a new normalized entity based on the specified input data.
+     * @param input Input data.
      * @returns Returns the new normalized entity data.
      */
-    protected normalize(entity: Types.Entity): Types.Entity;
+    protected normalize(input: Types.Entity): Types.Entity;
     /**
-     * Normalize all entities in the specified entity list.
-     * @param entities Entities list.
+     * Normalize all entities in the specified input list.
+     * @param list Input list.
      * @returns Returns the list of normalized entities.
      */
-    protected normalizeAll(...entities: Types.Entity[]): Types.Entity[];
+    protected normalizeAll(...list: Types.Entity[]): Types.Entity[];
     /**
-     * Normalize all entities in the specified entity list.
-     * @param entities Entities list.
+     * Normalize all entities in the specified input list to a map of entities.
+     * @param list Input list.
      * @returns Returns the map of normalized entities.
      */
-    protected normalizeAsMap(...entities: Types.Entity[]): Types.Entity;
+    protected normalizeAsMap(...list: Types.Entity[]): Types.Entity;
     /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
@@ -140,12 +139,12 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
     protected insert(entity: E): Promise<any>;
     /**
      * Find the corresponding entity in the storage.
-     * @param filters List of filters.
+     * @param filter Field filters.
      * @param sort Sorting fields.
      * @param limit Result limits.
      * @returns Returns a promise to get the list of entities found.
      */
-    protected find(filters: Statements.Filter[], sort?: Statements.Sort, limit?: Statements.Limit): Promise<E[]>;
+    protected find(filter: Statements.Filter, sort?: Statements.Sort, limit?: Statements.Limit): Promise<E[]>;
     /**
      * Find the entity that corresponds to the specified entity id.
      * @param id Entity id.

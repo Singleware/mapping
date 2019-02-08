@@ -17,10 +17,10 @@ import { Driver } from './driver';
 @Class.Describe()
 export class Mapper<E extends Types.Entity> extends Class.Null {
   /**
-   * Data driver.
+   * List of common types.
    */
   @Class.Private()
-  private driver: Driver;
+  private static commons = <any[]>[Object, String, Number, Boolean, Date];
 
   /**
    * Entity model.
@@ -29,102 +29,102 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   private model: Types.Model<E>;
 
   /**
-   * List of common types.
+   * Data driver.
    */
   @Class.Private()
-  private static commons = <any[]>[Object, String, Number, Boolean, Date];
+  private driver: Driver;
 
   /**
-   * Creates a new data model based on the specified entity model and data.
-   * @param model Entity model.
-   * @param data Entity data.
-   * @param input Determines whether the entity will be used for an input or output.
+   * Creates a new entity based on the specified model type and input data.
+   * @param model Model type.
+   * @param data Input data.
+   * @param input Determines whether the data will be used for an input or output.
    * @param fully Determines whether all required properties must be provided.
-   * @returns Returns the new generated entity data based on entity model.
-   * @throws Throws an error when a required column is not supplied or some read-only/write-only property was set wrongly.
+   * @returns Returns the new generated entity based on the model type.
+   * @throws Throws an error when some required column was not supplied or some read-only/write-only property was set wrongly.
    */
   @Class.Private()
-  private static createModel(model: Types.Model, entity: Types.Entity, input: boolean, fully: boolean): Types.Entity {
-    const data = new model();
+  private static createEntity(model: Types.Model, data: Types.Entity, input: boolean, fully: boolean): Types.Entity {
+    const entity = new model();
     const columns = <Columns.RealRow>Schema.getRealRow(model);
     for (const name in columns) {
       const column = columns[name];
       const source = input ? column.name : column.alias || column.name;
       const target = input ? column.alias || column.name : column.name;
-      if (source in entity && entity[source] !== void 0) {
+      if (source in data && data[source] !== void 0) {
         if (input && column.readonly) {
           throw new Error(`The specified property ${target} is read-only.`);
         } else if (!input && column.writeonly) {
           throw new Error(`The specified property ${target} is write-only.`);
         } else {
-          data[target] = this.getValueModel(column, entity[source], input, fully);
+          entity[target] = this.castValue(column, data[source], input, fully);
         }
       } else if (fully && column.required) {
         throw new Error(`Required column '${name}' for entity '${Schema.getStorage(model)}' does not supplied.`);
       }
     }
-    return data;
+    return entity;
   }
 
   /**
-   * Creates and get a new array of data model based on the specified entity model and values.
-   * @param model Entity model.
-   * @param values Entities list.
-   * @param input Determines whether the entity will be used for an input or output.
+   * Creates a new list of entities based on the specified model type and the list of data.
+   * @param model Model type.
+   * @param list List of data.
+   * @param input Determines whether the data will be used for an input or output.
    * @param fully Determines whether all required properties must be provided.
-   * @returns Returns the new generated list of entities based on entity model.
+   * @returns Returns the new generated list of entities based on the model type.
    */
   @Class.Private()
-  private static getArrayModel(model: Types.Model, values: Types.Entity[], input: boolean, fully: boolean): Types.Entity[] {
-    const list = <Types.Entity[]>[];
-    for (const value of values) {
-      list.push(this.createModel(model, value, input, fully));
+  private static createEntityArray(model: Types.Model, list: Types.Entity[], input: boolean, fully: boolean): Types.Entity[] {
+    const entities = <Types.Entity[]>[];
+    for (const data of list) {
+      entities.push(this.createEntity(model, data, input, fully));
     }
-    return list;
+    return entities;
   }
 
   /**
-   * Creates and get a new map of data model based on the specified entity model and value.
-   * @param model Entity model.
-   * @param value Entity map.
-   * @param input Determines whether the entity will be used for an input or output.
-   * @param fully Determines if all required properties must be provided.
-   * @returns Returns the new generated map of entity data based on entity model.
-   */
-  @Class.Private()
-  private static getMapModel(model: Types.Model, value: Types.Entity, input: boolean, fully: boolean): Types.Entity {
-    const map = <Types.Entity>{};
-    for (const name in value) {
-      map[name] = this.createModel(model, value[name], input, fully);
-    }
-    return map;
-  }
-
-  /**
-   * Creates and get a new model value based on the specified entity model and data.
-   * @param column Column schema.
-   * @param value Value to be created.
-   * @param input Determines whether the entity will be used for an input or output.
+   * Create a new map of entities based on the specified model type and map of data.
+   * @param model Model type.
+   * @param map Map of data.
+   * @param input Determines whether the data will be used for an input or output.
    * @param fully Determines whether all required properties must be provided.
-   * @returns Returns the new normalized value.
+   * @returns Returns the new generated map of entities based on the model type.
    */
   @Class.Private()
-  private static getValueModel(column: Columns.Real, value: any, input: boolean, fully: boolean): any {
-    if (column.model && !this.commons.includes(column.model)) {
-      if (column.formats.includes(Types.Format.ARRAY)) {
-        return this.getArrayModel(column.model, value, input, fully);
-      } else if (column.formats.includes(Types.Format.MAP)) {
-        return this.getMapModel(column.model, value, input, fully);
+  private static createEntityMap(model: Types.Model, map: Types.Entity, input: boolean, fully: boolean): Types.Entity {
+    const entities = <Types.Entity>{};
+    for (const name in map) {
+      entities[name] = this.createEntity(model, map[name], input, fully);
+    }
+    return entities;
+  }
+
+  /**
+   * Check whether the specified value can be converted to an entity.
+   * @param real Real column schema.
+   * @param value Value to be converted.
+   * @param input Determines whether the value will be used for an input or output.
+   * @param fully Determines whether all required properties must be provided.
+   * @returns Returns the original or the converted value.
+   */
+  @Class.Private()
+  private static castValue(real: Columns.Real, value: any, input: boolean, fully: boolean): any {
+    if (real.model && !this.commons.includes(real.model)) {
+      if (real.formats.includes(Types.Format.ARRAY)) {
+        return this.createEntityArray(real.model, value, input, fully);
+      } else if (real.formats.includes(Types.Format.MAP)) {
+        return this.createEntityMap(real.model, value, input, fully);
       } else {
-        return this.createModel(column.model, value, input, fully);
+        return this.createEntity(real.model, value, input, fully);
       }
     }
     return value;
   }
 
   /**
-   * Generates a new normalized array of entity data based on the specified entity model and values.
-   * @param model Entity model.
+   * Generates a new normalized array of entities data based on the specified model type and input values.
+   * @param model Model type.
    * @param values Entities list.
    * @returns Returns the new normalized list of entities.
    */
@@ -138,8 +138,8 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Generates a new normalized map of entity data based on the specified entity model and value.
-   * @param model Entity model.
+   * Generates a new normalized map of entities data based on the specified model type and value.
+   * @param model Model type.
    * @param value Entity map.
    * @returns Returns the new normalized map of entities.
    */
@@ -153,38 +153,38 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Generates a new normalized value from the specified column schema and value.
-   * @param column Column schema.
+   * Generates a new normalized value from the specified real column schema and value.
+   * @param real Real column schema.
    * @param value Value to be normalized.
    * @returns Returns the new normalized value.
    */
   @Class.Private()
-  private static normalizeValue(column: Columns.Real, value: any): any {
-    if (column.model && !this.commons.includes(column.model)) {
-      if (column.formats.includes(Types.Format.ARRAY)) {
-        return this.normalizeArray(column.model, value);
-      } else if (column.formats.includes(Types.Format.MAP)) {
-        return this.normalizeMap(column.model, value);
+  private static normalizeValue(real: Columns.Real, value: any): any {
+    if (real.model && !this.commons.includes(real.model)) {
+      if (real.formats.includes(Types.Format.ARRAY)) {
+        return this.normalizeArray(real.model, value);
+      } else if (real.formats.includes(Types.Format.MAP)) {
+        return this.normalizeMap(real.model, value);
       } else {
-        return this.normalize(column.model, value);
+        return this.normalize(real.model, value);
       }
     }
     return value;
   }
 
   /**
-   * Generates a new normalized entity data based on the specified entity model and data.
-   * @param model Entity model
-   * @param entity Entity data.
+   * Generates a new normalized entity data based on the specified model type and input data.
+   * @param model Model type.
+   * @param input Input data.
    * @returns Returns the new normalized entity data.
    */
   @Class.Protected()
-  protected static normalize(model: Types.Model, entity: Types.Entity): Types.Entity {
+  protected static normalize(model: Types.Model, input: Types.Entity): Types.Entity {
     const rColumns = <Columns.RealRow>Schema.getRealRow(model);
     const vColumns = <Columns.VirtualRow>Schema.getVirtualRow(model);
     const data = <Types.Entity>{};
-    for (const name in entity) {
-      const value = entity[name];
+    for (const name in input) {
+      const value = input[name];
       if (value !== void 0) {
         if (name in rColumns) {
           if (!rColumns[name].hidden) {
@@ -228,10 +228,22 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Assign all joined columns into the specified data model from the given entity.
-   * @param data Target entity data.
+   * Creates a new entity based on the current model type and input data.
+   * @param data Input data.
+   * @param input Determines whether the data will be used for an input or output.
+   * @param fully Determines whether all required properties must be provided.
+   * @returns Returns the new generated entity.
+   */
+  @Class.Private()
+  private createEntity(data: Types.Entity, input: boolean, fully: boolean): E {
+    return <E>Mapper.createEntity(this.model, data, input, fully);
+  }
+
+  /**
+   * Assign all joined columns into the specified data the given entity.
+   * @param data Target data.
    * @param entity Source entity.
-   * @returns Returns the specified entity data.
+   * @returns Returns the specified target data.
    */
   @Class.Private()
   private assignJoinedColumns(data: E, entity: Types.Entity): E {
@@ -245,56 +257,43 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Creates a new data model based on the specified entity data.
-   * @param entity Entity data.
-   * @param input Determines whether the entity will be used for an input or output.
-   * @param fully Determines whether all required properties must be provided.
-   * @returns Returns the new generated entity data based on entity model.
-   * @throws Throws an error when a required column is not supplied.
-   */
-  @Class.Private()
-  private createModel(entity: Types.Entity, input: boolean, fully: boolean): E {
-    return <E>Mapper.createModel(this.model, entity, input, fully);
-  }
-
-  /**
-   * Generate a new normalized entity based on the specified entity data.
-   * @param entity Entity data.
+   * Generate a new normalized entity based on the specified input data.
+   * @param input Input data.
    * @returns Returns the new normalized entity data.
    */
   @Class.Protected()
-  protected normalize(entity: Types.Entity): Types.Entity {
-    return Mapper.normalize(this.model, entity);
+  protected normalize(input: Types.Entity): Types.Entity {
+    return Mapper.normalize(this.model, input);
   }
 
   /**
-   * Normalize all entities in the specified entity list.
-   * @param entities Entities list.
+   * Normalize all entities in the specified input list.
+   * @param list Input list.
    * @returns Returns the list of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAll(...entities: Types.Entity[]): Types.Entity[] {
-    const list = [];
-    for (const entity of entities) {
-      list.push(this.normalize(entity));
+  protected normalizeAll(...list: Types.Entity[]): Types.Entity[] {
+    const entities = [];
+    for (const input of list) {
+      entities.push(this.normalize(input));
     }
-    return list;
+    return entities;
   }
 
   /**
-   * Normalize all entities in the specified entity list.
-   * @param entities Entities list.
+   * Normalize all entities in the specified input list to a map of entities.
+   * @param list Input list.
    * @returns Returns the map of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAsMap(...entities: Types.Entity[]): Types.Entity {
-    const column = Schema.getPrimaryColumn(this.model);
+  protected normalizeAsMap(...list: Types.Entity[]): Types.Entity {
+    const column = Schema.getRealPrimaryColumn(this.model);
     const map = <Types.Entity>{};
     if (!column) {
       throw new Error(`The specified data model has no primary column.`);
     }
-    for (const entity of entities) {
-      const normalized = this.normalize(entity);
+    for (const input of list) {
+      const normalized = this.normalize(input);
       map[normalized[column.alias || column.name]] = normalized;
     }
     return map;
@@ -309,7 +308,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   protected async insertMany(entities: E[]): Promise<any[]> {
     const list = [];
     for (const entity of entities) {
-      list.push(this.createModel(entity, true, true));
+      list.push(this.createEntity(entity, true, true));
     }
     return await this.driver.insert(this.model, list);
   }
@@ -326,17 +325,17 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
 
   /**
    * Find the corresponding entity in the storage.
-   * @param filters List of filters.
+   * @param filter Field filters.
    * @param sort Sorting fields.
    * @param limit Result limits.
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Protected()
-  protected async find(filters: Statements.Filter[], sort?: Statements.Sort, limit?: Statements.Limit): Promise<E[]> {
-    const entities = await this.driver.find(this.model, this.getJoinedColumns(), filters, sort, limit);
+  protected async find(filter: Statements.Filter, sort?: Statements.Sort, limit?: Statements.Limit): Promise<E[]> {
+    const list = await this.driver.find(this.model, this.getJoinedColumns(), filter, sort, limit);
     const results = [];
-    for (const entity of entities) {
-      results.push(this.assignJoinedColumns(this.createModel(entity, false, true), entity));
+    for (const entity of list) {
+      results.push(this.assignJoinedColumns(this.createEntity(entity, false, true), entity));
     }
     return results;
   }
@@ -350,7 +349,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   protected async findById(id: any): Promise<E | undefined> {
     const entity = await this.driver.findById(this.model, this.getJoinedColumns(), id);
     if (entity) {
-      return this.assignJoinedColumns(this.createModel(entity, false, true), entity);
+      return this.assignJoinedColumns(this.createEntity(entity, false, true), entity);
     }
     return void 0;
   }
@@ -363,7 +362,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async update(filter: Statements.Filter, entity: Types.Entity): Promise<number> {
-    return await this.driver.update(this.model, this.createModel(entity, true, false), filter);
+    return await this.driver.update(this.model, this.createEntity(entity, true, false), filter);
   }
 
   /**
@@ -373,7 +372,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateById(id: any, entity: Types.Entity): Promise<boolean> {
-    return await this.driver.updateById(this.model, this.createModel(entity, true, false), id);
+    return await this.driver.updateById(this.model, this.createEntity(entity, true, false), id);
   }
 
   /**

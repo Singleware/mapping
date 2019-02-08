@@ -19,16 +19,16 @@ export interface Driver {
   /**
    * Find the corresponding entities from the storage.
    * @param model Model type.
-   * @param joins List of junctions.
-   * @param filters List of filters.
+   * @param joins List of joins.
+   * @param filter Field filters.
    * @param sort Sorting fields.
    * @param limit Result limits.
    * @returns Returns the  promise to get the list of entities found.
    */
   find<T extends Types.Entity>(
     model: Types.Model<T>,
-    joins: Statements.Join[],
-    filters: Statements.Filter[],
+    join: Statements.Join[],
+    filter: Statements.Filter,
     sort?: Statements.Sort,
     limit?: Statements.Limit
   ): Promise<T[]>;

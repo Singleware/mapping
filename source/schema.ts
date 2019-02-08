@@ -20,109 +20,128 @@ export class Schema extends Class.Null {
   private static storages: WeakMap<any, Types.Storage> = new WeakMap();
 
   /**
-   * Sets the column validation format for the specified entity prototype.
+   * Adds the specified format validation into the provided column schema and property descriptor.
+   * @param scope Entity scope.
    * @param column Column schema.
-   * @param prototype Entity prototype.
-   * @param property Entity property.
-   * @param descriptor Entity descriptor.
-   * @returns Returns the wrapped descriptor.
+   * @param validator Data validator.
+   * @param format Data format.
+   * @param descriptor Property descriptor.
+   * @returns Returns the wrapped property descriptor.
    */
   @Class.Private()
-  private static setFormat(column: Columns.Real, prototype: Object, property: string, descriptor?: PropertyDescriptor): PropertyDescriptor {
+  private static addValidation(
+    scope: Object,
+    column: Columns.Real,
+    validator: Validator.Format,
+    format: Types.Format,
+    descriptor?: PropertyDescriptor
+  ): PropertyDescriptor {
     if (column.validation.length === 0) {
-      const grouping = new Validator.Common.Group(Validator.Common.Group.OR, column.validation);
-      const wrapped = Validator.Validate(grouping)(prototype, property, descriptor);
-      wrapped.enumerable = true;
-      return wrapped;
+      const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validation);
+      descriptor = <PropertyDescriptor>Validator.Validate(validation)(scope, column.name, descriptor);
+      descriptor.enumerable = true;
     }
+    column.formats.push(format);
+    column.validation.push(validator);
     return <PropertyDescriptor>descriptor;
   }
 
   /**
-   * Sets a storage for the specified entity type.
+   * Assign all properties into the storage that corresponds to the specified entity type.
    * @param type Entity type.
-   * @returns Returns the entity type.
+   * @param properties Storage properties.
+   * @returns Returns the assigned storage object.
    */
   @Class.Private()
-  private static setStorage(type: any): Types.Storage {
+  private static assignStorage(type: any, properties?: Types.Entity): Types.Storage {
     let storage = this.storages.get(type);
-    if (!storage) {
-      this.storages.set(type, (storage = { real: {}, virtual: {} }));
+    if (storage) {
+      Object.assign(storage, properties);
+    } else {
+      this.storages.set(
+        type,
+        (storage = {
+          ...properties,
+          real: {},
+          virtual: {}
+        })
+      );
     }
     return storage;
   }
 
   /**
-   * Set a real column schema for the specified column information.
-   * @param type Column type.
+   * Assign all properties into the real column schema that corresponds to the specified entity type an column name.
+   * @param type Entity type.
    * @param name Column name.
-   * @param format Column data format.
-   * @returns Returns the column schema.
+   * @param properties Column properties.
+   * @returns Returns the assigned column schema.
    */
   @Class.Private()
-  private static setReal(type: any, name: string, format?: Types.Format): Columns.Real {
-    const storage = this.setStorage(type);
+  private static assignRealColumn(type: any, name: string, properties?: Types.Entity): Columns.Real {
+    const storage = this.assignStorage(type);
     if (name in storage.virtual) {
       throw new Error(`A virtual column with the name '${name}' already exists.`);
     }
-    if (!(name in storage.real)) {
-      const column = <Columns.Real>{ name: name, formats: [], validation: [] };
-      storage.real[name] = column;
-      if (format) {
-        column.formats.push(format);
-      }
+    if (name in storage.real) {
+      Object.assign(storage.real[name], properties);
+    } else {
+      storage.real[name] = {
+        ...properties,
+        name: name,
+        formats: [],
+        validation: []
+      };
     }
     return storage.real[name];
   }
 
   /**
-   * Set a virtual column schema for the specified column information.
-   * @param type Column type.
+   * Assign all properties into the virtual column schema that corresponds to the specified entity type an column name.
+   * @param type Entity type.
    * @param name Column name.
    * @param foreign Foreign column name.
    * @param model Foreign entity model.
    * @param local Local column name.
-   * @returns Returns the join schema.
+   * @returns Returns the created column schema.
    */
   @Class.Private()
-  private static setVirtual(type: any, name: string, foreign: string, model: Types.Model<Types.Entity>, local: string): Columns.Virtual {
-    const storage = this.setStorage(type);
+  private static assignVirtualColumn(type: any, name: string, foreign: string, model: Types.Model, local: string): Columns.Virtual {
+    const storage = this.assignStorage(type);
     if (name in storage.real) {
       throw new Error(`A real column with the name '${name}' already exists.`);
     }
     if (!(name in storage.virtual)) {
-      const column = <Columns.Virtual>{ name: name, foreign: foreign, local: local, model: model };
-      storage.virtual[name] = column;
+      storage.virtual[name] = {
+        name: name,
+        foreign: foreign,
+        local: local,
+        model: model
+      };
     }
     return storage.virtual[name];
   }
 
   /**
-   * Resolve any dependency in the specified real column schema to be used externally.
-   * @param column Column schema.
-   * @returns Returns the resolved column schema.
-   */
-  @Class.Private()
-  private static resolveRealColumn(column: Columns.Real): Columns.Real {
-    const newer = <Columns.Real>{ ...column };
-    if (newer.model) {
-      newer.schema = this.getRealRow(newer.model);
-    }
-    return Object.freeze(newer);
-  }
-
-  /**
    * Gets the real row schema from the specified entity model.
    * @param model Entity model.
+   * @param cache Recursivity cache.
    * @returns Returns the row schema or undefined when the entity model does not exists.
    */
   @Class.Public()
-  public static getRealRow<T extends Types.Entity>(model: Types.Model<T>): Columns.RealRow | undefined {
-    const storage = this.setStorage(model.prototype.constructor);
+  public static getRealRow(model: Types.Model, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow | undefined {
+    const storage = this.storages.get(model.prototype.constructor);
     if (storage) {
-      const row = <Columns.RealRow>{ ...storage.real };
-      for (const name in row) {
-        row[name] = this.resolveRealColumn(row[name]);
+      const row = <Columns.RealRow>{};
+      for (const name in storage.real) {
+        const column = <Columns.Real>{ ...storage.real[name] };
+        if (column.model) {
+          cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
+          if (!(column.schema = cache.get(column.model))) {
+            cache.set(column.model, (column.schema = <Columns.RealRow>this.getRealRow(column.model, cache)));
+          }
+        }
+        row[name] = Object.freeze(column);
       }
       return Object.freeze(row);
     }
@@ -135,11 +154,10 @@ export class Schema extends Class.Null {
    * @returns Returns the joined schema or undefined when the entity model does not exists.
    */
   @Class.Public()
-  public static getVirtualRow<T extends Types.Entity>(model: Types.Model<T>): Columns.VirtualRow | undefined {
-    const storage = this.setStorage(model.prototype.constructor);
+  public static getVirtualRow(model: Types.Model): Columns.VirtualRow | undefined {
+    const storage = this.storages.get(model.prototype.constructor);
     if (storage) {
-      const row = <Columns.VirtualRow>{ ...storage.virtual };
-      return Object.freeze(row);
+      return Object.freeze(<Columns.VirtualRow>{ ...storage.virtual });
     }
     return void 0;
   }
@@ -148,13 +166,21 @@ export class Schema extends Class.Null {
    * Gets the real column schema from the specified entity model and column name.
    * @param model Entity model.
    * @param name Column name.
+   * @param cache Recursivity cache.
    * @returns Returns the column schema or undefined when the column does not exists.
    */
   @Class.Public()
-  public static getRealColumn<T extends Types.Entity>(model: Types.Model<T>, name: string): Columns.Real | undefined {
-    const storage = this.setStorage(model.prototype.constructor);
+  public static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real | undefined {
+    const storage = this.storages.get(model.prototype.constructor);
     if (storage && name in storage.real) {
-      return this.resolveRealColumn(storage.real[name]);
+      const column = <Columns.Real>{ ...storage.real[name] };
+      if (column.model) {
+        cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
+        if (!(column.schema = cache.get(column.model))) {
+          cache.set(column.model, (column.schema = <Columns.RealRow>this.getRealRow(column.model, cache)));
+        }
+      }
+      return Object.freeze(column);
     }
     return void 0;
   }
@@ -165,7 +191,7 @@ export class Schema extends Class.Null {
    * @returns Returns the column schema or undefined when the column does not exists.
    */
   @Class.Public()
-  public static getPrimaryColumn<T extends Types.Entity>(model: Types.Model<T>): Columns.Real | undefined {
+  public static getRealPrimaryColumn(model: Types.Model): Columns.Real | undefined {
     const storage = this.storages.get(model.prototype.constructor);
     if (storage) {
       return this.getRealColumn(model, <string>storage.primary);
@@ -179,7 +205,7 @@ export class Schema extends Class.Null {
    * @returns Returns the storage name or undefined when the entity does not exists.
    */
   @Class.Public()
-  public static getStorage<T extends Types.Entity>(model: Types.Model<T>): string | undefined {
+  public static getStorage(model: Types.Model): string | undefined {
     const storage = this.storages.get(model.prototype.constructor);
     if (storage) {
       return storage.name;
@@ -195,7 +221,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Entity(name: string): ClassDecorator {
     return (model: any): void => {
-      this.setStorage(model.prototype.constructor).name = name;
+      this.assignStorage(model.prototype.constructor, {
+        name: name
+      });
     };
   }
 
@@ -207,7 +235,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Alias(name: string): PropertyDecorator {
     return (scope: Object, property: PropertyKey): any => {
-      this.setReal(scope.constructor, <string>property).alias = name;
+      this.assignRealColumn(scope.constructor, <string>property, {
+        alias: name
+      });
     };
   }
 
@@ -218,7 +248,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Required(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.setReal(scope.constructor, <string>property).required = true;
+      this.assignRealColumn(scope.constructor, <string>property, {
+        required: true
+      });
     };
   }
 
@@ -229,7 +261,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Hidden(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.setReal(scope.constructor, <string>property).hidden = true;
+      this.assignRealColumn(scope.constructor, <string>property, {
+        hidden: true
+      });
     };
   }
 
@@ -240,7 +274,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static ReadOnly(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.setReal(scope.constructor, <string>property).readonly = true;
+      this.assignRealColumn(scope.constructor, <string>property, {
+        readonly: true
+      });
     };
   }
 
@@ -251,7 +287,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static WriteOnly(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.setReal(scope.constructor, <string>property).writeonly = true;
+      this.assignRealColumn(scope.constructor, <string>property, {
+        writeonly: true
+      });
     };
   }
 
@@ -265,7 +303,7 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Join(foreign: string, model: Types.Model, local: string): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      this.setVirtual(scope.constructor, <string>property, foreign, model, local);
+      this.assignVirtualColumn(scope.constructor, <string>property, foreign, model, local);
       descriptor = <PropertyDescriptor>Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);
       descriptor.enumerable = true;
       return descriptor;
@@ -279,7 +317,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Primary(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.setStorage(scope.constructor).primary = <string>property;
+      this.assignStorage(scope.constructor, {
+        primary: <string>property
+      });
     };
   }
 
@@ -290,10 +330,13 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Id(): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.ID);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.validation.push(new Validator.Common.Any());
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property),
+        new Validator.Common.Any(),
+        Types.Format.ID,
+        descriptor
+      );
     };
   }
 
@@ -304,10 +347,13 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Null(): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.NULL);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.validation.push(new Validator.Common.Null());
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property),
+        new Validator.Common.Null(),
+        Types.Format.NULL,
+        descriptor
+      );
     };
   }
 
@@ -318,10 +364,13 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Binary(): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.BINARY);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.validation.push(new Validator.Common.Any());
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property),
+        new Validator.Common.Any(),
+        Types.Format.BINARY,
+        descriptor
+      );
     };
   }
 
@@ -332,82 +381,101 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Boolean(): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.BOOLEAN);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.validation.push(new Validator.Common.Boolean());
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property),
+        new Validator.Common.Boolean(),
+        Types.Format.BOOLEAN,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be a integer column.
-   * @param min Minimum value.
-   * @param max Maximum value.
+   * @param minimum Minimum value.
+   * @param maximum Maximum value.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Integer(min?: number, max?: number): PropertyDecorator {
+  public static Integer(minimum?: number, maximum?: number): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.INTEGER);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.minimum = min;
-      column.maximum = max;
-      column.validation.push(new Validator.Common.Integer(min, max));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          minimum: minimum,
+          maximum: maximum
+        }),
+        new Validator.Common.Integer(minimum, maximum),
+        Types.Format.INTEGER,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be a decimal column.
-   * @param min Minimum value.
-   * @param max Maximum value.
+   * @param minimum Minimum value.
+   * @param maximum Maximum value.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Decimal(min?: number, max?: number): PropertyDecorator {
+  public static Decimal(minimum?: number, maximum?: number): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.DECIMAL);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.minimum = min;
-      column.maximum = max;
-      column.validation.push(new Validator.Common.Decimal(min, max));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          minimum: minimum,
+          maximum: maximum
+        }),
+        new Validator.Common.Decimal(minimum, maximum),
+        Types.Format.DECIMAL,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be a number column.
-   * @param min Minimum value.
-   * @param max Maximum value.
+   * @param minimum Minimum value.
+   * @param maximum Maximum value.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Number(min?: number, max?: number): PropertyDecorator {
+  public static Number(minimum?: number, maximum?: number): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.NUMBER);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.minimum = min;
-      column.maximum = max;
-      column.validation.push(new Validator.Common.Number(min, max));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          minimum: minimum,
+          maximum: maximum
+        }),
+        new Validator.Common.Number(minimum, maximum),
+        Types.Format.NUMBER,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be a string column.
-   * @param min Minimum date.
-   * @param max Maximum date.
+   * @param minimum Minimum length.
+   * @param maximum Maximum length.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static String(min?: number, max?: number): PropertyDecorator {
+  public static String(minimum?: number, maximum?: number): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.STRING);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.minimum = min;
-      column.maximum = max;
-      column.validation.push(new Validator.Common.String(min, max));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          minimum: minimum,
+          maximum: maximum
+        }),
+        new Validator.Common.String(minimum, maximum),
+        Types.Format.STRING,
+        descriptor
+      );
     };
   }
 
@@ -419,28 +487,36 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Enumeration(...values: string[]): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.ENUMERATION);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.values = values;
-      column.validation.push(new Validator.Common.Enumeration(...values));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          values: values
+        }),
+        new Validator.Common.Enumeration(...values),
+        Types.Format.ENUMERATION,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be a string pattern column.
    * @param pattern Pattern expression.
-   * @param alias Pattern alias name.
+   * @param name Pattern name.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Pattern(pattern: RegExp, alias?: string): PropertyDecorator {
+  public static Pattern(pattern: RegExp, name?: string): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.PATTERN);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.pattern = pattern;
-      column.validation.push(new Validator.Common.Pattern(pattern, alias));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          pattern: pattern
+        }),
+        new Validator.Common.Pattern(pattern, name),
+        Types.Format.PATTERN,
+        descriptor
+      );
     };
   }
 
@@ -453,80 +529,98 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Timestamp(min?: Date, max?: Date): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.TIMESTAMP);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.validation.push(new Validator.Common.Timestamp(min, max));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property),
+        new Validator.Common.Timestamp(min, max),
+        Types.Format.TIMESTAMP,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be a date column.
-   * @param min Minimum date.
-   * @param max Maximum date.
+   * @param minimum Minimum date.
+   * @param maximum Maximum date.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Date(min?: Date, max?: Date): PropertyDecorator {
+  public static Date(minimum?: Date, maximum?: Date): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.DATE);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.validation.push(new Validator.Common.Timestamp(min, max));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property),
+        new Validator.Common.Timestamp(minimum, maximum),
+        Types.Format.DATE,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be an array column.
-   * @param model Entity model.
-   * @param unique Determines whether the array items must be unique or not.
-   * @param min Minimum items.
-   * @param max Maximum items.
+   * @param model Model type.
+   * @param unique Determines whether the items of array must be unique or not.
+   * @param minimum Minimum items.
+   * @param maximum Maximum items.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Array(model: Types.Model, unique?: boolean, min?: number, max?: number): PropertyDecorator {
+  public static Array(model: Types.Model, unique?: boolean, minimum?: number, maximum?: number): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.ARRAY);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.model = model;
-      column.unique = unique;
-      column.minimum = min;
-      column.maximum = max;
-      column.validation.push(new Validator.Common.InstanceOf(Array));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          model: model,
+          unique: unique,
+          minimum: minimum,
+          maximum: maximum
+        }),
+        new Validator.Common.InstanceOf(Array),
+        Types.Format.ARRAY,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be an map column.
-   * @param model Entity model.
+   * @param model Model type.
    * @returns Returns the decorator method.
    */
   @Class.Public()
   public static Map(model: Types.Model): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.MAP);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.model = model;
-      column.validation.push(new Validator.Common.InstanceOf(Object));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          model: model
+        }),
+        new Validator.Common.InstanceOf(Object),
+        Types.Format.MAP,
+        descriptor
+      );
     };
   }
 
   /**
    * Decorates the specified property to be an object column.
-   * @param model Entity model.
+   * @param model Model type.
    * @returns Returns the decorator method.
    */
   @Class.Public()
   public static Object(model: Types.Model): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      const column = this.setReal(scope.constructor, <string>property, Types.Format.OBJECT);
-      descriptor = this.setFormat(column, scope, <string>property, descriptor);
-      column.model = model;
-      column.validation.push(new Validator.Common.InstanceOf(Object));
-      return descriptor;
+      return this.addValidation(
+        scope,
+        this.assignRealColumn(scope.constructor, <string>property, {
+          model: model
+        }),
+        new Validator.Common.InstanceOf(Object),
+        Types.Format.OBJECT,
+        descriptor
+      );
     };
   }
 }

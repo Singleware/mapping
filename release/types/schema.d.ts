@@ -14,75 +14,73 @@ export declare class Schema extends Class.Null {
      */
     private static storages;
     /**
-     * Sets the column validation format for the specified entity prototype.
+     * Adds the specified format validation into the provided column schema and property descriptor.
+     * @param scope Entity scope.
      * @param column Column schema.
-     * @param prototype Entity prototype.
-     * @param property Entity property.
-     * @param descriptor Entity descriptor.
-     * @returns Returns the wrapped descriptor.
+     * @param validator Data validator.
+     * @param format Data format.
+     * @param descriptor Property descriptor.
+     * @returns Returns the wrapped property descriptor.
      */
-    private static setFormat;
+    private static addValidation;
     /**
-     * Sets a storage for the specified entity type.
+     * Assign all properties into the storage that corresponds to the specified entity type.
      * @param type Entity type.
-     * @returns Returns the entity type.
+     * @param properties Storage properties.
+     * @returns Returns the assigned storage object.
      */
-    private static setStorage;
+    private static assignStorage;
     /**
-     * Set a real column schema for the specified column information.
-     * @param type Column type.
+     * Assign all properties into the real column schema that corresponds to the specified entity type an column name.
+     * @param type Entity type.
      * @param name Column name.
-     * @param format Column data format.
-     * @returns Returns the column schema.
+     * @param properties Column properties.
+     * @returns Returns the assigned column schema.
      */
-    private static setReal;
+    private static assignRealColumn;
     /**
-     * Set a virtual column schema for the specified column information.
-     * @param type Column type.
+     * Assign all properties into the virtual column schema that corresponds to the specified entity type an column name.
+     * @param type Entity type.
      * @param name Column name.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local column name.
-     * @returns Returns the join schema.
+     * @returns Returns the created column schema.
      */
-    private static setVirtual;
-    /**
-     * Resolve any dependency in the specified real column schema to be used externally.
-     * @param column Column schema.
-     * @returns Returns the resolved column schema.
-     */
-    private static resolveRealColumn;
+    private static assignVirtualColumn;
     /**
      * Gets the real row schema from the specified entity model.
      * @param model Entity model.
+     * @param cache Recursivity cache.
      * @returns Returns the row schema or undefined when the entity model does not exists.
      */
-    static getRealRow<T extends Types.Entity>(model: Types.Model<T>): Columns.RealRow | undefined;
+    static getRealRow(model: Types.Model, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow | undefined;
     /**
      * Gets the virtual row schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the joined schema or undefined when the entity model does not exists.
      */
-    static getVirtualRow<T extends Types.Entity>(model: Types.Model<T>): Columns.VirtualRow | undefined;
+    static getVirtualRow(model: Types.Model): Columns.VirtualRow | undefined;
     /**
      * Gets the real column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
+     * @param cache Recursivity cache.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getRealColumn<T extends Types.Entity>(model: Types.Model<T>, name: string): Columns.Real | undefined;
+    static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real | undefined;
     /**
      * Gets the real primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getPrimaryColumn<T extends Types.Entity>(model: Types.Model<T>): Columns.Real | undefined;
+    static getRealPrimaryColumn(model: Types.Model): Columns.Real | undefined;
     /**
      * Gets the storage name from the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
      */
-    static getStorage<T extends Types.Entity>(model: Types.Model<T>): string | undefined;
+    static getStorage(model: Types.Model): string | undefined;
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -150,32 +148,32 @@ export declare class Schema extends Class.Null {
     static Boolean(): PropertyDecorator;
     /**
      * Decorates the specified property to be a integer column.
-     * @param min Minimum value.
-     * @param max Maximum value.
+     * @param minimum Minimum value.
+     * @param maximum Maximum value.
      * @returns Returns the decorator method.
      */
-    static Integer(min?: number, max?: number): PropertyDecorator;
+    static Integer(minimum?: number, maximum?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be a decimal column.
-     * @param min Minimum value.
-     * @param max Maximum value.
+     * @param minimum Minimum value.
+     * @param maximum Maximum value.
      * @returns Returns the decorator method.
      */
-    static Decimal(min?: number, max?: number): PropertyDecorator;
+    static Decimal(minimum?: number, maximum?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be a number column.
-     * @param min Minimum value.
-     * @param max Maximum value.
+     * @param minimum Minimum value.
+     * @param maximum Maximum value.
      * @returns Returns the decorator method.
      */
-    static Number(min?: number, max?: number): PropertyDecorator;
+    static Number(minimum?: number, maximum?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be a string column.
-     * @param min Minimum date.
-     * @param max Maximum date.
+     * @param minimum Minimum length.
+     * @param maximum Maximum length.
      * @returns Returns the decorator method.
      */
-    static String(min?: number, max?: number): PropertyDecorator;
+    static String(minimum?: number, maximum?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be a enumeration column.
      * @param values Enumeration values.
@@ -185,10 +183,10 @@ export declare class Schema extends Class.Null {
     /**
      * Decorates the specified property to be a string pattern column.
      * @param pattern Pattern expression.
-     * @param alias Pattern alias name.
+     * @param name Pattern name.
      * @returns Returns the decorator method.
      */
-    static Pattern(pattern: RegExp, alias?: string): PropertyDecorator;
+    static Pattern(pattern: RegExp, name?: string): PropertyDecorator;
     /**
      * Decorates the specified property to be a timestamp column.
      * @param min Minimum date.
@@ -198,29 +196,29 @@ export declare class Schema extends Class.Null {
     static Timestamp(min?: Date, max?: Date): PropertyDecorator;
     /**
      * Decorates the specified property to be a date column.
-     * @param min Minimum date.
-     * @param max Maximum date.
+     * @param minimum Minimum date.
+     * @param maximum Maximum date.
      * @returns Returns the decorator method.
      */
-    static Date(min?: Date, max?: Date): PropertyDecorator;
+    static Date(minimum?: Date, maximum?: Date): PropertyDecorator;
     /**
      * Decorates the specified property to be an array column.
-     * @param model Entity model.
-     * @param unique Determines whether the array items must be unique or not.
-     * @param min Minimum items.
-     * @param max Maximum items.
+     * @param model Model type.
+     * @param unique Determines whether the items of array must be unique or not.
+     * @param minimum Minimum items.
+     * @param maximum Maximum items.
      * @returns Returns the decorator method.
      */
-    static Array(model: Types.Model, unique?: boolean, min?: number, max?: number): PropertyDecorator;
+    static Array(model: Types.Model, unique?: boolean, minimum?: number, maximum?: number): PropertyDecorator;
     /**
      * Decorates the specified property to be an map column.
-     * @param model Entity model.
+     * @param model Model type.
      * @returns Returns the decorator method.
      */
     static Map(model: Types.Model): PropertyDecorator;
     /**
      * Decorates the specified property to be an object column.
-     * @param model Entity model.
+     * @param model Model type.
      * @returns Returns the decorator method.
      */
     static Object(model: Types.Model): PropertyDecorator;
