@@ -111,7 +111,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Private()
   private static castValue(real: Columns.Real, value: any, input: boolean, fully: boolean): any {
-    if (real.model && !this.isCommon(real.model)) {
+    if (real.model && !this.commons.includes(real.model)) {
       if (real.formats.includes(Types.Format.ARRAY)) {
         return this.createEntityArray(real.model, value, input, fully);
       } else if (real.formats.includes(Types.Format.MAP)) {
@@ -161,7 +161,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Private()
   private static normalizeValue(real: Columns.Real, value: any): any {
-    if (real.model && !this.isCommon(real.model)) {
+    if (real.model && !this.commons.includes(real.model)) {
       if (real.formats.includes(Types.Format.ARRAY)) {
         return this.normalizeArray(real.model, value);
       } else if (real.formats.includes(Types.Format.MAP)) {
@@ -171,16 +171,6 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
       }
     }
     return value;
-  }
-
-  /**
-   * Determines whether the specified model ype is common or not.
-   * @param model Model type.
-   * @returns Returns true when the specified model type is a common type or false otherwise.
-   */
-  @Class.Protected()
-  protected static isCommon(model: Types.Model): boolean {
-    return this.commons.includes(model);
   }
 
   /**
@@ -211,6 +201,17 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
       }
     }
     return data;
+  }
+
+  /**
+   * Adds the specified type as a common type to all mappers.
+   * @param type Class type.
+   */
+  @Class.Public()
+  public static addCommonType(type: Class.Constructor): void {
+    if (!this.commons.includes(type)) {
+      this.commons.push(type);
+    }
   }
 
   /**
