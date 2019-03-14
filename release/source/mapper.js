@@ -43,6 +43,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      */
     static createEntity(model, data, input, fully) {
         const entity = new model();
+        const storage = schema_1.Schema.getStorage(model);
         const columns = schema_1.Schema.getRealRow(model);
         for (const name in columns) {
             const column = columns[name];
@@ -50,17 +51,17 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
             const target = input ? column.alias || column.name : column.name;
             if (source in data && data[source] !== void 0) {
                 if (input && column.readonly) {
-                    throw new Error(`The specified property ${target} is read-only.`);
+                    throw new Error(`Column '${target}' in the entity '${storage}' is read-only.`);
                 }
                 else if (!input && column.writeonly) {
-                    throw new Error(`The specified property ${target} is write-only.`);
+                    throw new Error(`Column '${target}' in the entity '${storage}' is write-only.`);
                 }
                 else {
                     entity[target] = this.castValue(column, data[source], input, fully);
                 }
             }
             else if (fully && column.required) {
-                throw new Error(`Required column '${name}' for entity '${schema_1.Schema.getStorage(model)}' does not supplied.`);
+                throw new Error(`Column '${name}' in the entity '${storage}' is required.`);
             }
         }
         return entity;
@@ -104,7 +105,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the original or the converted value.
      */
     static castValue(real, value, input, fully) {
-        if (real.model && !this.commons.includes(real.model)) {
+        if (real.model && !this.isCommon(real.model)) {
             if (real.formats.includes(Types.Format.ARRAY)) {
                 return this.createEntityArray(real.model, value, input, fully);
             }
@@ -150,7 +151,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized value.
      */
     static normalizeValue(real, value) {
-        if (real.model && !this.commons.includes(real.model)) {
+        if (real.model && !this.isCommon(real.model)) {
             if (real.formats.includes(Types.Format.ARRAY)) {
                 return this.normalizeArray(real.model, value);
             }
@@ -162,6 +163,14 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
             }
         }
         return value;
+    }
+    /**
+     * Determines whether the specified model ype is common or not.
+     * @param model Model type.
+     * @returns Returns true when the specified model type is a common type or false otherwise.
+     */
+    static isCommon(model) {
+        return this.commons.includes(model);
     }
     /**
      * Generates a new normalized entity data based on the specified model type and input data.
@@ -435,6 +444,9 @@ __decorate([
 __decorate([
     Class.Private()
 ], Mapper, "normalizeValue", null);
+__decorate([
+    Class.Protected()
+], Mapper, "isCommon", null);
 __decorate([
     Class.Protected()
 ], Mapper, "normalize", null);

@@ -46,6 +46,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   @Class.Private()
   private static createEntity(model: Types.Model, data: Types.Entity, input: boolean, fully: boolean): Types.Entity {
     const entity = new model();
+    const storage = Schema.getStorage(model);
     const columns = <Columns.RealRow>Schema.getRealRow(model);
     for (const name in columns) {
       const column = columns[name];
@@ -53,14 +54,14 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
       const target = input ? column.alias || column.name : column.name;
       if (source in data && data[source] !== void 0) {
         if (input && column.readonly) {
-          throw new Error(`The specified property ${target} is read-only.`);
+          throw new Error(`Column '${target}' in the entity '${storage}' is read-only.`);
         } else if (!input && column.writeonly) {
-          throw new Error(`The specified property ${target} is write-only.`);
+          throw new Error(`Column '${target}' in the entity '${storage}' is write-only.`);
         } else {
           entity[target] = this.castValue(column, data[source], input, fully);
         }
       } else if (fully && column.required) {
-        throw new Error(`Required column '${name}' for entity '${Schema.getStorage(model)}' does not supplied.`);
+        throw new Error(`Column '${name}' in the entity '${storage}' is required.`);
       }
     }
     return entity;
@@ -110,7 +111,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Private()
   private static castValue(real: Columns.Real, value: any, input: boolean, fully: boolean): any {
-    if (real.model && !this.commons.includes(real.model)) {
+    if (real.model && !this.isCommon(real.model)) {
       if (real.formats.includes(Types.Format.ARRAY)) {
         return this.createEntityArray(real.model, value, input, fully);
       } else if (real.formats.includes(Types.Format.MAP)) {
@@ -160,7 +161,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Private()
   private static normalizeValue(real: Columns.Real, value: any): any {
-    if (real.model && !this.commons.includes(real.model)) {
+    if (real.model && !this.isCommon(real.model)) {
       if (real.formats.includes(Types.Format.ARRAY)) {
         return this.normalizeArray(real.model, value);
       } else if (real.formats.includes(Types.Format.MAP)) {
@@ -170,6 +171,16 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
       }
     }
     return value;
+  }
+
+  /**
+   * Determines whether the specified model ype is common or not.
+   * @param model Model type.
+   * @returns Returns true when the specified model type is a common type or false otherwise.
+   */
+  @Class.Protected()
+  protected static isCommon(model: Types.Model): boolean {
+    return this.commons.includes(model);
   }
 
   /**

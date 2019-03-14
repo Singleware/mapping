@@ -81,6 +81,12 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     private static normalizeValue;
     /**
+     * Determines whether the specified model ype is common or not.
+     * @param model Model type.
+     * @returns Returns true when the specified model type is a common type or false otherwise.
+     */
+    protected static isCommon(model: Types.Model): boolean;
+    /**
      * Generates a new normalized entity data based on the specified model type and input data.
      * @param model Model type.
      * @param input Input data.
