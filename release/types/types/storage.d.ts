@@ -12,7 +12,7 @@ export interface Storage {
   /**
    * Storage name.
    */
-  name?: string;
+  name: string;
   /**
    * Primary column name.
    */

@@ -3,12 +3,14 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Class from '@singleware/class';
+
 import { Entity } from './entity';
 
 export { Map } from './map';
 export { Entity } from './entity';
 export { Format } from './format';
 export { Storage } from './storage';
+export { View } from './view';
 
 /**
  * Type declaration for entity model constructors.

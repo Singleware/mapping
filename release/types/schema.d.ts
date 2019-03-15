@@ -45,38 +45,60 @@ export declare class Schema extends Class.Null {
      */
     private static assignVirtualColumn;
     /**
-     * Gets the real row schema from the specified entity model.
+     * Assign all properties into a real or virtual column schema that corresponds to the specified entity type an column name.
+     * @param type Entity type.
+     * @param name Column name.
+     * @param properties Column properties.
+     * @returns Returns the assigned column schema.
+     */
+    private static assignRealOrVirtualColumn;
+    /**
+     * Gets the real row schema from the specified entity model, view mode.
      * @param model Entity model.
+     * @param view View mode.
      * @param cache Recursivity cache.
      * @returns Returns the row schema or undefined when the entity model does not exists.
+     * @throws Throws an error when the entity model isn't valid.
      */
-    static getRealRow(model: Types.Model, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow | undefined;
+    static getRealRow(model: Types.Model, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow;
     /**
      * Gets the virtual row schema from the specified entity model.
      * @param model Entity model.
+     * @param view View mode.
      * @returns Returns the joined schema or undefined when the entity model does not exists.
+     * @throws Throws an error when the entity model isn't valid.
      */
-    static getVirtualRow(model: Types.Model): Columns.VirtualRow | undefined;
+    static getVirtualRow(model: Types.Model, view: string): Columns.VirtualRow;
+    /**
+     * Gets the joint row schema from the specified entity model.
+     * @param model Entity model.
+     * @param view View mode.
+     * @returns Returns the virtual columns list.
+     */
+    static getJointRow(model: Types.Model, view: string): Columns.JointRow;
     /**
      * Gets the real column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
      * @param cache Recursivity cache.
      * @returns Returns the column schema or undefined when the column does not exists.
+     * @throws Throws an error when the entity model isn't valid or the specified column was not found.
      */
-    static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real | undefined;
+    static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real;
     /**
      * Gets the primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
+     * @throws Throws an error when the entity model isn't valid.
      */
-    static getPrimaryColumn(model: Types.Model): Columns.Real | undefined;
+    static getPrimaryColumn(model: Types.Model): Columns.Real;
     /**
      * Gets the storage name from the specified entity model.
      * @param model Entity model.
      * @returns Returns the storage name or undefined when the entity does not exists.
+     * @throws Throws an error when the entity model isn't valid.
      */
-    static getStorage(model: Types.Model): string | undefined;
+    static getStorage(model: Types.Model): string;
     /**
      * Determines whether the specified model is a valid entity.
      * @param model Entity model.
@@ -117,6 +139,12 @@ export declare class Schema extends Class.Null {
      * @throws Throws an error when the column is already read-only.
      */
     static WriteOnly(): PropertyDecorator;
+    /**
+     * Decorates the specified property to be viewed only in specific scenarios.
+     * @param views List of view names.
+     * @returns Returns the decorator method.
+     */
+    static Views(...views: string[]): PropertyDecorator;
     /**
      * Decorates the specified property to convert its input and output values.
      * @param callback Converter callback.

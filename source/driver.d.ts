@@ -12,14 +12,15 @@ export interface Driver {
   /**
    * Insert the specified entity list into the storage.
    * @param model Model type.
+   * @param view View mode.
    * @param entities Entity list.
    * @returns Returns the promise to get the id list of inserted entities.
    */
-  insert<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]>;
+  insert<T extends Types.Entity>(model: Types.Model<T>, view: string, entities: T[]): Promise<any[]>;
   /**
    * Find the corresponding entities from the storage.
    * @param model Model type.
-   * @param joins List of joins.
+   * @param view View model.
    * @param filter Field filters.
    * @param sort Sorting fields.
    * @param limit Result limits.
@@ -27,7 +28,7 @@ export interface Driver {
    */
   find<T extends Types.Entity>(
     model: Types.Model<T>,
-    join: Statements.Join[],
+    view: string,
     filter: Statements.Filter,
     sort?: Statements.Sort,
     limit?: Statements.Limit
@@ -35,27 +36,29 @@ export interface Driver {
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param model Model type.
-   * @param joins List of junctions.
+   * @param view View model.
    * @param id Entity id.
    * @returns Returns the promise to get the entity found or undefined when the entity was not found.
    */
-  findById<T extends Types.Entity>(model: Types.Model<T>, joins: Statements.Join[], id: any): Promise<T | undefined>;
+  findById<T extends Types.Entity>(model: Types.Model<T>, view: string, id: any): Promise<T | undefined>;
   /**
    * Update all entities that corresponds to the specified filter.
    * @param model Model type.
+   * @param view View model.
    * @param entity Entity data to be updated.
    * @param filter Expression filter.
    * @returns Returns the promise to get the number of updated entities.
    */
-  update(model: Types.Model, entity: Types.Entity, filter: Statements.Filter): Promise<number>;
+  update(model: Types.Model, view: string, entity: Types.Entity, filter: Statements.Filter): Promise<number>;
   /**
    * Update a entity that corresponds to the specified entity id.
    * @param model Model type.
+   * @param view View model.
    * @param entity Entity data to be updated.
    * @param id Entity id.
    * @returns Returns the promise to get true when the entity has been updated or false otherwise.
    */
-  updateById(model: Types.Model, entity: Types.Entity, id: any): Promise<boolean>;
+  updateById(model: Types.Model, view: string, entity: Types.Entity, id: any): Promise<boolean>;
   /**
    * Delete all entities that corresponds to the specified filter.
    * @param model Model type.

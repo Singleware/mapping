@@ -27,6 +27,10 @@ export interface Real {
    */
   validations: Validator.Format[];
   /**
+   * Column views.
+   */
+  views?: string[];
+  /**
    * Column converter callback.
    */
   converter?: Types.Converter;

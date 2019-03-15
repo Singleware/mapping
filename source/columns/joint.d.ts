@@ -4,9 +4,9 @@
  */
 
 /**
- * Join statement interface.
+ * Joint column interface.
  */
-export interface Join {
+export interface Joint {
   /**
    * Local column name.
    */

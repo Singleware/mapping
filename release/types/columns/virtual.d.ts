@@ -5,7 +5,7 @@
 import * as Types from '../types';
 
 /**
- * Virtual column schema interface.
+ * Virtual column interface.
  */
 export interface Virtual {
   /**
@@ -24,4 +24,8 @@ export interface Virtual {
    * Local column name.
    */
   local: string;
+  /**
+   * Virtual views.
+   */
+  views?: string[];
 }

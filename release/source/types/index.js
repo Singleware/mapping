@@ -2,3 +2,5 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var format_1 = require("./format");
 exports.Format = format_1.Format;
+var view_1 = require("./view");
+exports.View = view_1.View;

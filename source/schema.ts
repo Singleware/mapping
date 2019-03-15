@@ -58,14 +58,8 @@ export class Schema extends Class.Null {
     if (storage) {
       Object.assign(storage, properties);
     } else {
-      this.storages.set(
-        type,
-        (storage = {
-          ...properties,
-          real: {},
-          virtual: {}
-        })
-      );
+      storage = { name: type.name, ...properties, real: {}, virtual: {} };
+      this.storages.set(type, storage);
     }
     return storage;
   }
@@ -86,12 +80,7 @@ export class Schema extends Class.Null {
     if (name in storage.real) {
       Object.assign(storage.real[name], properties);
     } else {
-      storage.real[name] = {
-        ...properties,
-        name: name,
-        formats: [],
-        validations: []
-      };
+      storage.real[name] = { ...properties, name: name, formats: [], validations: [] };
     }
     return storage.real[name];
   }
@@ -112,54 +101,108 @@ export class Schema extends Class.Null {
       throw new Error(`A real column with the name '${name}' already exists.`);
     }
     if (!(name in storage.virtual)) {
-      storage.virtual[name] = {
-        name: name,
-        foreign: foreign,
-        local: local,
-        model: model
-      };
+      storage.virtual[name] = { name: name, foreign: foreign, local: local, model: model };
     }
     return storage.virtual[name];
   }
 
   /**
-   * Gets the real row schema from the specified entity model.
+   * Assign all properties into a real or virtual column schema that corresponds to the specified entity type an column name.
+   * @param type Entity type.
+   * @param name Column name.
+   * @param properties Column properties.
+   * @returns Returns the assigned column schema.
+   */
+  @Class.Private()
+  private static assignRealOrVirtualColumn(type: any, name: string, properties?: Types.Entity): Columns.Real | Columns.Virtual {
+    const storage = this.assignStorage(type);
+    if (name in storage.virtual) {
+      Object.assign(storage.virtual[name], properties);
+      return storage.real[name];
+    } else if (name in storage.real) {
+      Object.assign(storage.real[name], properties);
+      return storage.real[name];
+    } else {
+      throw new Error(`There's no '${name}' column.`);
+    }
+  }
+
+  /**
+   * Gets the real row schema from the specified entity model, view mode.
    * @param model Entity model.
+   * @param view View mode.
    * @param cache Recursivity cache.
    * @returns Returns the row schema or undefined when the entity model does not exists.
+   * @throws Throws an error when the entity model isn't valid.
    */
   @Class.Public()
-  public static getRealRow(model: Types.Model, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow | undefined {
+  public static getRealRow(model: Types.Model, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow {
     const storage = this.storages.get(model.prototype.constructor);
-    if (storage) {
-      const row = <Columns.RealRow>{};
-      for (const name in storage.real) {
-        const column = <Columns.Real>{ ...storage.real[name] };
-        if (column.model) {
+    if (!storage) {
+      throw new Error(`Invalid entity model.`);
+    }
+    const row = <Columns.RealRow>{};
+    for (const name in storage.real) {
+      const schema = <Columns.Real>{ ...storage.real[name] };
+      if (view === Types.View.ALL || (schema.views && schema.views.includes(view))) {
+        if (schema.model) {
           cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
-          if (!(column.schema = cache.get(column.model))) {
-            cache.set(column.model, (column.schema = <Columns.RealRow>this.getRealRow(column.model, cache)));
+          if (!(schema.schema = cache.get(schema.model))) {
+            cache.set(schema.model, (schema.schema = this.getRealRow(schema.model, view, cache)));
           }
         }
-        row[name] = Object.freeze(column);
+        row[name] = Object.freeze(schema);
       }
-      return Object.freeze(row);
     }
-    return void 0;
+    return Object.freeze(row);
   }
 
   /**
    * Gets the virtual row schema from the specified entity model.
    * @param model Entity model.
+   * @param view View mode.
    * @returns Returns the joined schema or undefined when the entity model does not exists.
+   * @throws Throws an error when the entity model isn't valid.
    */
   @Class.Public()
-  public static getVirtualRow(model: Types.Model): Columns.VirtualRow | undefined {
+  public static getVirtualRow(model: Types.Model, view: string): Columns.VirtualRow {
     const storage = this.storages.get(model.prototype.constructor);
-    if (storage) {
-      return Object.freeze(<Columns.VirtualRow>{ ...storage.virtual });
+    if (!storage) {
+      throw new Error(`Invalid entity model.`);
     }
-    return void 0;
+    const row = <Columns.VirtualRow>{};
+    for (const name in storage.virtual) {
+      const schema = storage.virtual[name];
+      if (view === Types.View.ALL || (schema.views && schema.views.includes(view))) {
+        row[name] = Object.freeze({ ...schema });
+      }
+    }
+    return Object.freeze(row);
+  }
+
+  /**
+   * Gets the joint row schema from the specified entity model.
+   * @param model Entity model.
+   * @param view View mode.
+   * @returns Returns the virtual columns list.
+   */
+  @Class.Public()
+  public static getJointRow(model: Types.Model, view: string): Columns.JointRow {
+    const columns = this.getVirtualRow(model, view);
+    const row = <Columns.JointRow>{};
+    for (const name in columns) {
+      const schema = columns[name];
+      const local = this.getRealColumn(model, schema.local);
+      const foreign = this.getRealColumn(schema.model, schema.foreign);
+      row[name] = Object.freeze({
+        local: local.alias || local.name,
+        foreign: foreign.alias || foreign.name,
+        virtual: schema.name,
+        storage: this.getStorage(schema.model),
+        multiple: local.formats.includes(Types.Format.ARRAY)
+      });
+    }
+    return Object.freeze(row);
   }
 
   /**
@@ -168,49 +211,52 @@ export class Schema extends Class.Null {
    * @param name Column name.
    * @param cache Recursivity cache.
    * @returns Returns the column schema or undefined when the column does not exists.
+   * @throws Throws an error when the entity model isn't valid or the specified column was not found.
    */
   @Class.Public()
-  public static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real | undefined {
+  public static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real {
     const storage = this.storages.get(model.prototype.constructor);
-    if (storage && name in storage.real) {
-      const column = <Columns.Real>{ ...storage.real[name] };
-      if (column.model) {
-        cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
-        if (!(column.schema = cache.get(column.model))) {
-          cache.set(column.model, (column.schema = <Columns.RealRow>this.getRealRow(column.model, cache)));
-        }
-      }
-      return Object.freeze(column);
+    if (!storage || !(name in storage.real)) {
+      throw new Error(`Invalid entity model or the '${name}' column does not exists.`);
     }
-    return void 0;
+    const column = <Columns.Real>{ ...storage.real[name] };
+    if (column.model) {
+      cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
+      if (!(column.schema = cache.get(column.model))) {
+        cache.set(column.model, (column.schema = this.getRealRow(column.model, Types.View.ALL, cache)));
+      }
+    }
+    return Object.freeze(column);
   }
 
   /**
    * Gets the primary column schema from the specified entity model.
    * @param model Entity model.
    * @returns Returns the column schema or undefined when the column does not exists.
+   * @throws Throws an error when the entity model isn't valid.
    */
   @Class.Public()
-  public static getPrimaryColumn(model: Types.Model): Columns.Real | undefined {
+  public static getPrimaryColumn(model: Types.Model): Columns.Real {
     const storage = this.storages.get(model.prototype.constructor);
-    if (storage) {
-      return this.getRealColumn(model, <string>storage.primary);
+    if (!storage || !storage.primary) {
+      throw Error(`Invalid entity model or primary column not defined.`);
     }
-    return void 0;
+    return this.getRealColumn(model, <string>storage.primary);
   }
 
   /**
    * Gets the storage name from the specified entity model.
    * @param model Entity model.
    * @returns Returns the storage name or undefined when the entity does not exists.
+   * @throws Throws an error when the entity model isn't valid.
    */
   @Class.Public()
-  public static getStorage(model: Types.Model): string | undefined {
+  public static getStorage(model: Types.Model): string {
     const storage = this.storages.get(model.prototype.constructor);
-    if (storage) {
-      return storage.name;
+    if (!storage) {
+      throw Error(`Invalid entity model.`);
     }
-    return void 0;
+    return storage.name;
   }
 
   /**
@@ -231,9 +277,7 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Entity(name: string): ClassDecorator {
     return (model: any): void => {
-      this.assignStorage(model.prototype.constructor, {
-        name: name
-      });
+      this.assignStorage(model.prototype.constructor, { name: name });
     };
   }
 
@@ -298,6 +342,18 @@ export class Schema extends Class.Null {
       if (column.readOnly) {
         throw new Error(`Column '${property as string}' is already read-only.`);
       }
+    };
+  }
+
+  /**
+   * Decorates the specified property to be viewed only in specific scenarios.
+   * @param views List of view names.
+   * @returns Returns the decorator method.
+   */
+  @Class.Public()
+  public static Views(...views: string[]): PropertyDecorator {
+    return (scope: Object, property: PropertyKey): any => {
+      this.assignRealOrVirtualColumn(scope.constructor, <string>property, { views: views });
     };
   }
 
@@ -420,10 +476,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          minimum: minimum,
-          maximum: maximum
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { minimum: minimum, maximum: maximum }),
         new Validator.Common.Integer(minimum, maximum),
         Types.Format.INTEGER,
         descriptor
@@ -442,10 +495,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          minimum: minimum,
-          maximum: maximum
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { minimum: minimum, maximum: maximum }),
         new Validator.Common.Decimal(minimum, maximum),
         Types.Format.DECIMAL,
         descriptor
@@ -464,10 +514,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          minimum: minimum,
-          maximum: maximum
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { minimum: minimum, maximum: maximum }),
         new Validator.Common.Number(minimum, maximum),
         Types.Format.NUMBER,
         descriptor
@@ -486,10 +533,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          minimum: minimum,
-          maximum: maximum
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { minimum: minimum, maximum: maximum }),
         new Validator.Common.String(minimum, maximum),
         Types.Format.STRING,
         descriptor
@@ -507,9 +551,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          values: values
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { values: values }),
         new Validator.Common.Enumeration(...values),
         Types.Format.ENUMERATION,
         descriptor
@@ -528,9 +570,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          pattern: pattern
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { pattern: pattern }),
         new Validator.Common.Pattern(pattern, name),
         Types.Format.PATTERN,
         descriptor
@@ -612,9 +652,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          model: model
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { model: model }),
         new Validator.Common.InstanceOf(Object),
         Types.Format.MAP,
         descriptor
@@ -632,9 +670,7 @@ export class Schema extends Class.Null {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       return this.addValidation(
         scope,
-        this.assignRealColumn(scope.constructor, <string>property, {
-          model: model
-        }),
+        this.assignRealColumn(scope.constructor, <string>property, { model: model }),
         new Validator.Common.InstanceOf(Object),
         Types.Format.OBJECT,
         descriptor
