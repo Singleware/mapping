@@ -52,7 +52,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
         } else if (!input && schema.writeOnly) {
           throw new Error(`Column '${column}' in the entity '${storage}' is write-only.`);
         } else {
-          const value = schema.filter ? schema.filter(data[source]) : data[source];
+          const value = schema.converter ? schema.converter(data[source]) : data[source];
           entity[target] = this.castValue(schema, value, input, fully);
         }
       } else if (fully && schema.required && ((!input && !schema.writeOnly) || (input && !schema.readOnly))) {

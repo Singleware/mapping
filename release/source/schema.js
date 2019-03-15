@@ -261,13 +261,13 @@ let Schema = class Schema extends Class.Null {
         };
     }
     /**
-     * Decorates the specified property to be filtered.
-     * @param callback Filter callback.
+     * Decorates the specified property to convert its input and output values.
+     * @param callback Converter callback.
      * @returns Returns the decorator method.
      */
-    static Filter(callback) {
+    static Convert(callback) {
         return (scope, property) => {
-            this.assignRealColumn(scope.constructor, property, { filter: callback });
+            this.assignRealColumn(scope.constructor, property, { converter: callback });
         };
     }
     /**
@@ -533,7 +533,7 @@ __decorate([
 ], Schema, "WriteOnly", null);
 __decorate([
     Class.Public()
-], Schema, "Filter", null);
+], Schema, "Convert", null);
 __decorate([
     Class.Public()
 ], Schema, "Join", null);

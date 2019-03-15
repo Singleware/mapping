@@ -302,14 +302,14 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Decorates the specified property to be filtered.
-   * @param callback Filter callback.
+   * Decorates the specified property to convert its input and output values.
+   * @param callback Converter callback.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Filter(callback: Types.Filter): PropertyDecorator {
+  public static Convert(callback: Types.Converter): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignRealColumn(scope.constructor, <string>property, { filter: callback });
+      this.assignRealColumn(scope.constructor, <string>property, { converter: callback });
     };
   }
 

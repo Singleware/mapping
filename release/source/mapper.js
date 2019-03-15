@@ -57,7 +57,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
                     throw new Error(`Column '${column}' in the entity '${storage}' is write-only.`);
                 }
                 else {
-                    const value = schema.filter ? schema.filter(data[source]) : data[source];
+                    const value = schema.converter ? schema.converter(data[source]) : data[source];
                     entity[target] = this.castValue(schema, value, input, fully);
                 }
             }

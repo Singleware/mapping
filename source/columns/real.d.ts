@@ -27,9 +27,9 @@ export interface Real {
    */
   validation: Validator.Format[];
   /**
-   * Column filter callback.
+   * Column converter callback.
    */
-  filter?: Types.Filter;
+  converter?: Types.Converter;
   /**
    * Determines whether the column is unique or not.
    */

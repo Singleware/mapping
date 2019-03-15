@@ -16,9 +16,9 @@ export { Storage } from './storage';
 export type Model<T extends Entity = Entity> = Class.Constructor<T>;
 
 /**
- * Type declaration for filters callback.
+ * Type declaration for converters callback.
  */
-export type Filter<T = any> = (input: T | undefined) => T;
+export type Converter<T = any> = (input: T | undefined) => T;
 
 /**
  * Type declaration for class decorators.
