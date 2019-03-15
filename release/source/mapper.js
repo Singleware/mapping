@@ -45,23 +45,24 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         const entity = new model();
         const storage = schema_1.Schema.getStorage(model);
         const columns = schema_1.Schema.getRealRow(model);
-        for (const name in columns) {
-            const column = columns[name];
-            const source = input ? column.name : column.alias || column.name;
-            const target = input ? column.alias || column.name : column.name;
+        for (const column in columns) {
+            const schema = columns[column];
+            const source = input ? schema.name : schema.alias || schema.name;
+            const target = input ? schema.alias || schema.name : schema.name;
             if (source in data && data[source] !== void 0) {
-                if (input && column.readOnly) {
-                    throw new Error(`Column '${target}' in the entity '${storage}' is read-only.`);
+                if (input && schema.readOnly) {
+                    throw new Error(`Column '${column}' in the entity '${storage}' is read-only.`);
                 }
-                else if (!input && column.writeOnly) {
-                    throw new Error(`Column '${target}' in the entity '${storage}' is write-only.`);
+                else if (!input && schema.writeOnly) {
+                    throw new Error(`Column '${column}' in the entity '${storage}' is write-only.`);
                 }
                 else {
-                    entity[target] = this.castValue(column, data[source], input, fully);
+                    const value = schema.filter ? schema.filter(data[source]) : data[source];
+                    entity[target] = this.castValue(schema, value, input, fully);
                 }
             }
-            else if (fully && column.required && ((!input && !column.writeOnly) || (input && !column.readOnly))) {
-                throw new Error(`Column '${name}' in the entity '${storage}' is required.`);
+            else if (fully && schema.required && ((!input && !schema.writeOnly) || (input && !schema.readOnly))) {
+                throw new Error(`Column '${column}' in the entity '${storage}' is required.`);
             }
         }
         return entity;

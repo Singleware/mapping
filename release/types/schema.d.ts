@@ -112,6 +112,12 @@ export declare class Schema extends Class.Null {
      */
     static WriteOnly(): PropertyDecorator;
     /**
+     * Decorates the specified property to be filtered.
+     * @param callback Filter callback.
+     * @returns Returns the decorator method.
+     */
+    static Filter(callback: Types.Filter): PropertyDecorator;
+    /**
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.

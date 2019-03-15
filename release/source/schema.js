@@ -253,6 +253,16 @@ let Schema = class Schema extends Class.Null {
         };
     }
     /**
+     * Decorates the specified property to be filtered.
+     * @param callback Filter callback.
+     * @returns Returns the decorator method.
+     */
+    static Filter(callback) {
+        return (scope, property) => {
+            this.assignRealColumn(scope.constructor, property, { filter: callback });
+        };
+    }
+    /**
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
@@ -510,6 +520,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "WriteOnly", null);
+__decorate([
+    Class.Public()
+], Schema, "Filter", null);
 __decorate([
     Class.Public()
 ], Schema, "Join", null);

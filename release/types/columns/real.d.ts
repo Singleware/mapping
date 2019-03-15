@@ -27,6 +27,10 @@ export interface Real {
    */
   validation: Validator.Format[];
   /**
+   * Column filter callback.
+   */
+  filter?: Types.Filter;
+  /**
    * Determines whether the column is unique or not.
    */
   unique?: boolean;

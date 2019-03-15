@@ -292,6 +292,18 @@ export class Schema extends Class.Null {
   }
 
   /**
+   * Decorates the specified property to be filtered.
+   * @param callback Filter callback.
+   * @returns Returns the decorator method.
+   */
+  @Class.Public()
+  public static Filter(callback: Types.Filter): PropertyDecorator {
+    return (scope: Object, property: PropertyKey): void => {
+      this.assignRealColumn(scope.constructor, <string>property, { filter: callback });
+    };
+  }
+
+  /**
    * Decorates the specified property to be virtual column of a foreign entity.
    * @param foreign Foreign column name.
    * @param model Foreign entity model.
