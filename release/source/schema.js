@@ -6,8 +6,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-/**
- * Copyright (C) 2018 Silas B. Domingos
+/*
+ * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 const Class = require("@singleware/class");
@@ -231,7 +231,7 @@ let Schema = class Schema extends Class.Null {
      * @returns Returns the decorator method.
      * @throws Throws an error when the column is already write-only.
      */
-    static readOnly() {
+    static ReadOnly() {
         return (scope, property) => {
             const column = this.assignRealColumn(scope.constructor, property, { readOnly: true });
             if (column.writeOnly) {
@@ -244,7 +244,7 @@ let Schema = class Schema extends Class.Null {
      * @returns Returns the decorator method.
      * @throws Throws an error when the column is already read-only.
      */
-    static writeOnly() {
+    static WriteOnly() {
         return (scope, property) => {
             const column = this.assignRealColumn(scope.constructor, property, { writeOnly: true });
             if (column.readOnly) {
@@ -506,10 +506,10 @@ __decorate([
 ], Schema, "Hidden", null);
 __decorate([
     Class.Public()
-], Schema, "readOnly", null);
+], Schema, "ReadOnly", null);
 __decorate([
     Class.Public()
-], Schema, "writeOnly", null);
+], Schema, "WriteOnly", null);
 __decorate([
     Class.Public()
 ], Schema, "Join", null);

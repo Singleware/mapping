@@ -38,7 +38,7 @@
   },
   "scripts": {
     "build": "npm run make && npm run update",
-    "make": "tsc",
+    "make": "npx tsc -p ./source",
     "update": "npm run update-root && npm run update-types && npm run update-columns && npm run update-statements",
     "update-root": "cp -Rf ./source/*.d.ts ./release/types",
     "update-types": "cp -Rf ./source/types/*.d.ts ./release/types/types",

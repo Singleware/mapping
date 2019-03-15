@@ -1,7 +1,3 @@
-/**
- * Copyright (C) 2018 Silas B. Domingos
- * This source code is licensed under the MIT License as described in the file LICENSE.
- */
 import * as Class from '@singleware/class';
 import * as Types from './types';
 import * as Columns from './columns';
@@ -108,13 +104,13 @@ export declare class Schema extends Class.Null {
      * @returns Returns the decorator method.
      * @throws Throws an error when the column is already write-only.
      */
-    static readOnly(): PropertyDecorator;
+    static ReadOnly(): PropertyDecorator;
     /**
      * Decorates the specified property to be a write-only column.
      * @returns Returns the decorator method.
      * @throws Throws an error when the column is already read-only.
      */
-    static writeOnly(): PropertyDecorator;
+    static WriteOnly(): PropertyDecorator;
     /**
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.

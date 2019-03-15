@@ -1,5 +1,5 @@
-/**
- * Copyright (C) 2018 Silas B. Domingos
+/*
+ * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Class from '@singleware/class';
@@ -267,7 +267,7 @@ export class Schema extends Class.Null {
    * @throws Throws an error when the column is already write-only.
    */
   @Class.Public()
-  public static readOnly(): PropertyDecorator {
+  public static ReadOnly(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
       const column = this.assignRealColumn(scope.constructor, <string>property, { readOnly: true });
       if (column.writeOnly) {
@@ -282,7 +282,7 @@ export class Schema extends Class.Null {
    * @throws Throws an error when the column is already read-only.
    */
   @Class.Public()
-  public static writeOnly(): PropertyDecorator {
+  public static WriteOnly(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
       const column = this.assignRealColumn(scope.constructor, <string>property, { writeOnly: true });
       if (column.readOnly) {
