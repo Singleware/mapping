@@ -106,7 +106,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the original or the converted value.
      */
     static castValue(real, value, input, fully) {
-        if (real.model && !this.commons.includes(real.model)) {
+        if (real.model && schema_1.Schema.isEntity(real.model)) {
             if (real.formats.includes(Types.Format.ARRAY)) {
                 return this.createEntityArray(real.model, value, input, fully);
             }
@@ -152,7 +152,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized value.
      */
     static normalizeValue(real, value) {
-        if (real.model && !this.commons.includes(real.model)) {
+        if (real.model && schema_1.Schema.isEntity(real.model)) {
             if (real.formats.includes(Types.Format.ARRAY)) {
                 return this.normalizeArray(real.model, value);
             }
@@ -194,15 +194,6 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
             }
         }
         return data;
-    }
-    /**
-     * Adds the specified type as a common type to all mappers.
-     * @param type Class type.
-     */
-    static addCommonType(type) {
-        if (!this.commons.includes(type)) {
-            this.commons.push(type);
-        }
     }
     /**
      * Gets the list of joined columns.
@@ -370,10 +361,6 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return await this.driver.deleteById(this.model, id);
     }
 };
-/**
- * List of common types.
- */
-Mapper.commons = [Object, String, Number, Boolean, Date];
 __decorate([
     Class.Private()
 ], Mapper.prototype, "model", void 0);
@@ -424,9 +411,6 @@ __decorate([
 ], Mapper.prototype, "deleteById", null);
 __decorate([
     Class.Private()
-], Mapper, "commons", void 0);
-__decorate([
-    Class.Private()
 ], Mapper, "createEntity", null);
 __decorate([
     Class.Private()
@@ -449,9 +433,6 @@ __decorate([
 __decorate([
     Class.Public()
 ], Mapper, "normalize", null);
-__decorate([
-    Class.Public()
-], Mapper, "addCommonType", null);
 Mapper = Mapper_1 = __decorate([
     Class.Describe()
 ], Mapper);

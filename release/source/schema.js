@@ -187,6 +187,14 @@ let Schema = class Schema extends Class.Null {
         return void 0;
     }
     /**
+     * Determines whether the specified model is a valid entity.
+     * @param model Entity model.
+     * @returns Returns true when the specified model is a valid entity, false otherwise.
+     */
+    static isEntity(model) {
+        return this.storages.has(model.prototype.constructor);
+    }
+    /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
      * @returns Returns the decorator method.
@@ -502,6 +510,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "getStorage", null);
+__decorate([
+    Class.Public()
+], Schema, "isEntity", null);
 __decorate([
     Class.Public()
 ], Schema, "Entity", null);

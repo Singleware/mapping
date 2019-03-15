@@ -214,6 +214,16 @@ export class Schema extends Class.Null {
   }
 
   /**
+   * Determines whether the specified model is a valid entity.
+   * @param model Entity model.
+   * @returns Returns true when the specified model is a valid entity, false otherwise.
+   */
+  @Class.Public()
+  public static isEntity(model: Types.Model): boolean {
+    return this.storages.has(model.prototype.constructor);
+  }
+
+  /**
    * Decorates the specified class to be an entity model.
    * @param name Storage name.
    * @returns Returns the decorator method.

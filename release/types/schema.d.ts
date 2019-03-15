@@ -78,6 +78,12 @@ export declare class Schema extends Class.Null {
      */
     static getStorage(model: Types.Model): string | undefined;
     /**
+     * Determines whether the specified model is a valid entity.
+     * @param model Entity model.
+     * @returns Returns true when the specified model is a valid entity, false otherwise.
+     */
+    static isEntity(model: Types.Model): boolean;
+    /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
      * @returns Returns the decorator method.

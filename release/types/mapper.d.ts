@@ -7,10 +7,6 @@ import { Driver } from './driver';
  */
 export declare class Mapper<E extends Types.Entity> extends Class.Null {
     /**
-     * List of common types.
-     */
-    private static commons;
-    /**
      * Entity model.
      */
     private model;
@@ -83,11 +79,6 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      * @returns Returns the new normalized entity data.
      */
     static normalize(model: Types.Model, input: Types.Entity): Types.Entity;
-    /**
-     * Adds the specified type as a common type to all mappers.
-     * @param type Class type.
-     */
-    static addCommonType(type: Class.Constructor): void;
     /**
      * Gets the list of joined columns.
      * @returns Returns the virtual columns list.
