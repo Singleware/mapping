@@ -86,7 +86,7 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      * @param input Input data.
      * @returns Returns the new normalized entity data.
      */
-    protected static normalize(model: Types.Model, input: Types.Entity): Types.Entity;
+    static normalize(model: Types.Model, input: Types.Entity): Types.Entity;
     /**
      * Adds the specified type as a common type to all mappers.
      * @param type Class type.

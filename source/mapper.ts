@@ -179,8 +179,8 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    * @param input Input data.
    * @returns Returns the new normalized entity data.
    */
-  @Class.Protected()
-  protected static normalize(model: Types.Model, input: Types.Entity): Types.Entity {
+  @Class.Public()
+  public static normalize(model: Types.Model, input: Types.Entity): Types.Entity {
     const rColumns = <Columns.RealRow>Schema.getRealRow(model);
     const vColumns = <Columns.VirtualRow>Schema.getVirtualRow(model);
     const data = <Types.Entity>{};

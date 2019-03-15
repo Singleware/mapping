@@ -446,7 +446,7 @@ __decorate([
     Class.Private()
 ], Mapper, "normalizeValue", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper, "normalize", null);
 __decorate([
     Class.Public()
