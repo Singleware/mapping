@@ -36,13 +36,13 @@ export class Schema extends Class.Null {
     format: Types.Format,
     descriptor?: PropertyDescriptor
   ): PropertyDescriptor {
-    if (column.validation.length === 0) {
-      const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validation);
+    if (column.validations.length === 0) {
+      const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validations);
       descriptor = <PropertyDescriptor>Validator.Validate(validation)(scope, column.name, descriptor);
       descriptor.enumerable = true;
     }
     column.formats.push(format);
-    column.validation.push(validator);
+    column.validations.push(validator);
     return <PropertyDescriptor>descriptor;
   }
 
@@ -90,7 +90,7 @@ export class Schema extends Class.Null {
         ...properties,
         name: name,
         formats: [],
-        validation: []
+        validations: []
       };
     }
     return storage.real[name];
@@ -186,12 +186,12 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Gets the real primary column schema from the specified entity model.
+   * Gets the primary column schema from the specified entity model.
    * @param model Entity model.
    * @returns Returns the column schema or undefined when the column does not exists.
    */
   @Class.Public()
-  public static getRealPrimaryColumn(model: Types.Model): Columns.Real | undefined {
+  public static getPrimaryColumn(model: Types.Model): Columns.Real | undefined {
     const storage = this.storages.get(model.prototype.constructor);
     if (storage) {
       return this.getRealColumn(model, <string>storage.primary);

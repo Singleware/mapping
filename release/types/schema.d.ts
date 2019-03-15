@@ -66,11 +66,11 @@ export declare class Schema extends Class.Null {
      */
     static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real | undefined;
     /**
-     * Gets the real primary column schema from the specified entity model.
+     * Gets the primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getRealPrimaryColumn(model: Types.Model): Columns.Real | undefined;
+    static getPrimaryColumn(model: Types.Model): Columns.Real | undefined;
     /**
      * Gets the storage name from the specified entity model.
      * @param model Entity model.

@@ -283,7 +283,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected normalizeAsMap(...list: Types.Entity[]): Types.Entity {
-    const column = Schema.getRealPrimaryColumn(this.model);
+    const column = Schema.getPrimaryColumn(this.model);
     const map = <Types.Entity>{};
     if (!column) {
       throw new Error(`The specified data model has no primary column.`);

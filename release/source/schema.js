@@ -27,13 +27,13 @@ let Schema = class Schema extends Class.Null {
      * @returns Returns the wrapped property descriptor.
      */
     static addValidation(scope, column, validator, format, descriptor) {
-        if (column.validation.length === 0) {
-            const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validation);
+        if (column.validations.length === 0) {
+            const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validations);
             descriptor = Validator.Validate(validation)(scope, column.name, descriptor);
             descriptor.enumerable = true;
         }
         column.formats.push(format);
-        column.validation.push(validator);
+        column.validations.push(validator);
         return descriptor;
     }
     /**
@@ -76,7 +76,7 @@ let Schema = class Schema extends Class.Null {
                 ...properties,
                 name: name,
                 formats: [],
-                validation: []
+                validations: []
             };
         }
         return storage.real[name];
@@ -163,11 +163,11 @@ let Schema = class Schema extends Class.Null {
         return void 0;
     }
     /**
-     * Gets the real primary column schema from the specified entity model.
+     * Gets the primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
      */
-    static getRealPrimaryColumn(model) {
+    static getPrimaryColumn(model) {
         const storage = this.storages.get(model.prototype.constructor);
         if (storage) {
             return this.getRealColumn(model, storage.primary);
@@ -506,7 +506,7 @@ __decorate([
 ], Schema, "getRealColumn", null);
 __decorate([
     Class.Public()
-], Schema, "getRealPrimaryColumn", null);
+], Schema, "getPrimaryColumn", null);
 __decorate([
     Class.Public()
 ], Schema, "getStorage", null);

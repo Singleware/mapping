@@ -269,7 +269,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the map of normalized entities.
      */
     normalizeAsMap(...list) {
-        const column = schema_1.Schema.getRealPrimaryColumn(this.model);
+        const column = schema_1.Schema.getPrimaryColumn(this.model);
         const map = {};
         if (!column) {
             throw new Error(`The specified data model has no primary column.`);
