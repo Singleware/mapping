@@ -41,11 +41,11 @@ export interface Real {
   /**
    * Determines whether the column is read-only or not.
    */
-  readonly?: boolean;
+  readOnly?: boolean;
   /**
    * Determines whether the column is write-only or not.
    */
-  writeonly?: boolean;
+  writeOnly?: boolean;
   /**
    * Minimum column value.
    */

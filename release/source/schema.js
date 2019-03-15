@@ -205,9 +205,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Alias(name) {
         return (scope, property) => {
-            this.assignRealColumn(scope.constructor, property, {
-                alias: name
-            });
+            this.assignRealColumn(scope.constructor, property, { alias: name });
         };
     }
     /**
@@ -216,9 +214,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Required() {
         return (scope, property) => {
-            this.assignRealColumn(scope.constructor, property, {
-                required: true
-            });
+            this.assignRealColumn(scope.constructor, property, { required: true });
         };
     }
     /**
@@ -227,31 +223,33 @@ let Schema = class Schema extends Class.Null {
      */
     static Hidden() {
         return (scope, property) => {
-            this.assignRealColumn(scope.constructor, property, {
-                hidden: true
-            });
+            this.assignRealColumn(scope.constructor, property, { hidden: true });
         };
     }
     /**
      * Decorates the specified property to be a read-only column.
      * @returns Returns the decorator method.
+     * @throws Throws an error when the column is already write-only.
      */
-    static ReadOnly() {
+    static readOnly() {
         return (scope, property) => {
-            this.assignRealColumn(scope.constructor, property, {
-                readonly: true
-            });
+            const column = this.assignRealColumn(scope.constructor, property, { readOnly: true });
+            if (column.writeOnly) {
+                throw new Error(`Column '${property}' is already write-only.`);
+            }
         };
     }
     /**
      * Decorates the specified property to be a write-only column.
      * @returns Returns the decorator method.
+     * @throws Throws an error when the column is already read-only.
      */
-    static WriteOnly() {
+    static writeOnly() {
         return (scope, property) => {
-            this.assignRealColumn(scope.constructor, property, {
-                writeonly: true
-            });
+            const column = this.assignRealColumn(scope.constructor, property, { writeOnly: true });
+            if (column.readOnly) {
+                throw new Error(`Column '${property}' is already read-only.`);
+            }
         };
     }
     /**
@@ -275,9 +273,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Primary() {
         return (scope, property) => {
-            this.assignStorage(scope.constructor, {
-                primary: property
-            });
+            this.assignStorage(scope.constructor, { primary: property });
         };
     }
     /**
@@ -510,10 +506,10 @@ __decorate([
 ], Schema, "Hidden", null);
 __decorate([
     Class.Public()
-], Schema, "ReadOnly", null);
+], Schema, "readOnly", null);
 __decorate([
     Class.Public()
-], Schema, "WriteOnly", null);
+], Schema, "writeOnly", null);
 __decorate([
     Class.Public()
 ], Schema, "Join", null);

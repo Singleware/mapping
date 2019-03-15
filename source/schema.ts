@@ -235,9 +235,7 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Alias(name: string): PropertyDecorator {
     return (scope: Object, property: PropertyKey): any => {
-      this.assignRealColumn(scope.constructor, <string>property, {
-        alias: name
-      });
+      this.assignRealColumn(scope.constructor, <string>property, { alias: name });
     };
   }
 
@@ -248,9 +246,7 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Required(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignRealColumn(scope.constructor, <string>property, {
-        required: true
-      });
+      this.assignRealColumn(scope.constructor, <string>property, { required: true });
     };
   }
 
@@ -261,35 +257,37 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Hidden(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignRealColumn(scope.constructor, <string>property, {
-        hidden: true
-      });
+      this.assignRealColumn(scope.constructor, <string>property, { hidden: true });
     };
   }
 
   /**
    * Decorates the specified property to be a read-only column.
    * @returns Returns the decorator method.
+   * @throws Throws an error when the column is already write-only.
    */
   @Class.Public()
-  public static ReadOnly(): PropertyDecorator {
+  public static readOnly(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignRealColumn(scope.constructor, <string>property, {
-        readonly: true
-      });
+      const column = this.assignRealColumn(scope.constructor, <string>property, { readOnly: true });
+      if (column.writeOnly) {
+        throw new Error(`Column '${property as string}' is already write-only.`);
+      }
     };
   }
 
   /**
    * Decorates the specified property to be a write-only column.
    * @returns Returns the decorator method.
+   * @throws Throws an error when the column is already read-only.
    */
   @Class.Public()
-  public static WriteOnly(): PropertyDecorator {
+  public static writeOnly(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignRealColumn(scope.constructor, <string>property, {
-        writeonly: true
-      });
+      const column = this.assignRealColumn(scope.constructor, <string>property, { writeOnly: true });
+      if (column.readOnly) {
+        throw new Error(`Column '${property as string}' is already read-only.`);
+      }
     };
   }
 
@@ -317,9 +315,7 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Primary(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignStorage(scope.constructor, {
-        primary: <string>property
-      });
+      this.assignStorage(scope.constructor, { primary: <string>property });
     };
   }
 

@@ -106,13 +106,15 @@ export declare class Schema extends Class.Null {
     /**
      * Decorates the specified property to be a read-only column.
      * @returns Returns the decorator method.
+     * @throws Throws an error when the column is already write-only.
      */
-    static ReadOnly(): PropertyDecorator;
+    static readOnly(): PropertyDecorator;
     /**
      * Decorates the specified property to be a write-only column.
      * @returns Returns the decorator method.
+     * @throws Throws an error when the column is already read-only.
      */
-    static WriteOnly(): PropertyDecorator;
+    static writeOnly(): PropertyDecorator;
     /**
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.

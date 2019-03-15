@@ -26,7 +26,7 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      * Creates a new entity based on the specified model type and input data.
      * @param model Model type.
      * @param data Input data.
-     * @param input Determines whether the data will be used for an input or output.
+     * @param input Determines whether data will be used for an input or output.
      * @param fully Determines whether all required properties must be provided.
      * @returns Returns the new generated entity based on the model type.
      * @throws Throws an error when some required column was not supplied or some read-only/write-only property was set wrongly.

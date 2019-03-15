@@ -36,7 +36,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * Creates a new entity based on the specified model type and input data.
      * @param model Model type.
      * @param data Input data.
-     * @param input Determines whether the data will be used for an input or output.
+     * @param input Determines whether data will be used for an input or output.
      * @param fully Determines whether all required properties must be provided.
      * @returns Returns the new generated entity based on the model type.
      * @throws Throws an error when some required column was not supplied or some read-only/write-only property was set wrongly.
@@ -50,17 +50,17 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
             const source = input ? column.name : column.alias || column.name;
             const target = input ? column.alias || column.name : column.name;
             if (source in data && data[source] !== void 0) {
-                if (input && column.readonly) {
+                if (input && column.readOnly) {
                     throw new Error(`Column '${target}' in the entity '${storage}' is read-only.`);
                 }
-                else if (!input && column.writeonly) {
+                else if (!input && column.writeOnly) {
                     throw new Error(`Column '${target}' in the entity '${storage}' is write-only.`);
                 }
                 else {
                     entity[target] = this.castValue(column, data[source], input, fully);
                 }
             }
-            else if (fully && column.required) {
+            else if (fully && column.required && ((!input && !column.writeOnly) || (input && !column.readOnly))) {
                 throw new Error(`Column '${name}' in the entity '${storage}' is required.`);
             }
         }
