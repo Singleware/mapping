@@ -241,11 +241,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the list of normalized entities.
      */
     normalizeAll(...list) {
-        const entities = [];
-        for (const input of list) {
-            entities.push(this.normalize(input));
-        }
-        return entities;
+        return list.map((entity) => this.normalize(entity));
     }
     /**
      * Normalize all entities in the specified input list to a map of entities.
@@ -280,7 +276,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns a promise to get the id of inserted entry.
      */
     async insert(view, entity) {
-        return await this.driver.insert(this.model, view, [this.createEntity(view, entity, true, true)]);
+        return (await this.insertMany(view, [entity]))[0];
     }
     /**
      * Find the corresponding entity in the storage.

@@ -250,11 +250,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected normalizeAll(...list: Types.Entity[]): Types.Entity[] {
-    const entities = [];
-    for (const input of list) {
-      entities.push(this.normalize(input));
-    }
-    return entities;
+    return list.map((entity: Types.Entity) => this.normalize(entity));
   }
 
   /**
@@ -295,7 +291,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async insert(view: string, entity: E): Promise<any> {
-    return await this.driver.insert(this.model, view, [this.createEntity(view, entity, true, true)]);
+    return (await this.insertMany(view, [entity]))[0];
   }
 
   /**
