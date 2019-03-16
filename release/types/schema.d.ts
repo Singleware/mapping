@@ -80,11 +80,12 @@ export declare class Schema extends Class.Null {
      * Gets the real column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
+     * @param view View mode. (Only used by sub entities)
      * @param cache Recursivity cache.
      * @returns Returns the column schema or undefined when the column does not exists.
      * @throws Throws an error when the entity model isn't valid or the specified column was not found.
      */
-    static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real;
+    static getRealColumn(model: Types.Model, name: string, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real;
     /**
      * Gets the primary column schema from the specified entity model.
      * @param model Entity model.

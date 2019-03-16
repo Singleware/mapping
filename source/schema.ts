@@ -139,19 +139,19 @@ export class Schema extends Class.Null {
   public static getRealRow(model: Types.Model, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow {
     const storage = this.storages.get(model.prototype.constructor);
     if (!storage) {
-      throw new Error(`Invalid entity model.`);
+      throw new Error(`Invalid entity model '${model.prototype.constructor.name}'.`);
     }
     const row = <Columns.RealRow>{};
     for (const name in storage.real) {
-      const schema = <Columns.Real>{ ...storage.real[name] };
-      if (view === Types.View.ALL || (schema.views && schema.views.includes(view))) {
-        if (schema.model) {
+      const column = <Columns.Real>{ ...storage.real[name] };
+      if (view === Types.View.ALL || (column.views && column.views.includes(view))) {
+        if (column.model && this.isEntity(column.model)) {
           cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
-          if (!(schema.schema = cache.get(schema.model))) {
-            cache.set(schema.model, (schema.schema = this.getRealRow(schema.model, view, cache)));
+          if (!(column.schema = cache.get(column.model))) {
+            cache.set(column.model, (column.schema = this.getRealRow(column.model, view, cache)));
           }
         }
-        row[name] = Object.freeze(schema);
+        row[name] = Object.freeze(column);
       }
     }
     return Object.freeze(row);
@@ -168,13 +168,13 @@ export class Schema extends Class.Null {
   public static getVirtualRow(model: Types.Model, view: string): Columns.VirtualRow {
     const storage = this.storages.get(model.prototype.constructor);
     if (!storage) {
-      throw new Error(`Invalid entity model.`);
+      throw new Error(`Invalid entity model '${model.prototype.constructor.name}'.`);
     }
     const row = <Columns.VirtualRow>{};
     for (const name in storage.virtual) {
-      const schema = storage.virtual[name];
-      if (view === Types.View.ALL || (schema.views && schema.views.includes(view))) {
-        row[name] = Object.freeze({ ...schema });
+      const column = storage.virtual[name];
+      if (view === Types.View.ALL || (column.views && column.views.includes(view))) {
+        row[name] = Object.freeze({ ...column });
       }
     }
     return Object.freeze(row);
@@ -191,14 +191,14 @@ export class Schema extends Class.Null {
     const columns = this.getVirtualRow(model, view);
     const row = <Columns.JointRow>{};
     for (const name in columns) {
-      const schema = columns[name];
-      const local = this.getRealColumn(model, schema.local);
-      const foreign = this.getRealColumn(schema.model, schema.foreign);
+      const column = columns[name];
+      const local = this.getRealColumn(model, column.local, view);
+      const foreign = this.getRealColumn(column.model, column.foreign, view);
       row[name] = Object.freeze({
         local: local.alias || local.name,
         foreign: foreign.alias || foreign.name,
-        virtual: schema.name,
-        storage: this.getStorage(schema.model),
+        virtual: column.name,
+        storage: this.getStorage(column.model),
         multiple: local.formats.includes(Types.Format.ARRAY)
       });
     }
@@ -209,21 +209,22 @@ export class Schema extends Class.Null {
    * Gets the real column schema from the specified entity model and column name.
    * @param model Entity model.
    * @param name Column name.
+   * @param view View mode. (Only used by sub entities)
    * @param cache Recursivity cache.
    * @returns Returns the column schema or undefined when the column does not exists.
    * @throws Throws an error when the entity model isn't valid or the specified column was not found.
    */
   @Class.Public()
-  public static getRealColumn(model: Types.Model, name: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real {
+  public static getRealColumn(model: Types.Model, name: string, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real {
     const storage = this.storages.get(model.prototype.constructor);
     if (!storage || !(name in storage.real)) {
-      throw new Error(`Invalid entity model or the '${name}' column does not exists.`);
+      throw new Error(`Invalid entity model '${model.prototype.constructor.name}' or column '${name}' does not exists.`);
     }
     const column = <Columns.Real>{ ...storage.real[name] };
-    if (column.model) {
+    if (column.model && this.isEntity(column.model)) {
       cache = cache || new WeakMap<Types.Model, Columns.RealRow>();
       if (!(column.schema = cache.get(column.model))) {
-        cache.set(column.model, (column.schema = this.getRealRow(column.model, Types.View.ALL, cache)));
+        cache.set(column.model, (column.schema = this.getRealRow(column.model, view, cache)));
       }
     }
     return Object.freeze(column);
@@ -241,7 +242,7 @@ export class Schema extends Class.Null {
     if (!storage || !storage.primary) {
       throw Error(`Invalid entity model or primary column not defined.`);
     }
-    return this.getRealColumn(model, <string>storage.primary);
+    return this.getRealColumn(model, <string>storage.primary, Types.View.ALL);
   }
 
   /**
@@ -254,7 +255,7 @@ export class Schema extends Class.Null {
   public static getStorage(model: Types.Model): string {
     const storage = this.storages.get(model.prototype.constructor);
     if (!storage) {
-      throw Error(`Invalid entity model.`);
+      throw Error(`Invalid entity model '${model.prototype.constructor}'.`);
     }
     return storage.name;
   }
