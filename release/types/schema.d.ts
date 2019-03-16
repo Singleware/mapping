@@ -53,44 +53,54 @@ export declare class Schema extends Class.Null {
      */
     private static assignRealOrVirtualColumn;
     /**
-     * Gets the real row schema from the specified entity model, view mode.
+     * Determines whether the specified model is a valid entity.
      * @param model Entity model.
-     * @param view View mode.
-     * @param cache Recursivity cache.
+     * @returns Returns true when the specified model is a valid entity, false otherwise.
+     */
+    static isEntity(model: Types.Model): boolean;
+    /**
+     * Determines whether one view in the given view list exists in the specified column schema.
+     * @param views List of views.
+     * @param column Column base schema.
+     * @returns Returns true when the view is valid or false otherwise.
+     */
+    static isView(column: Columns.Base, ...views: string[]): boolean;
+    /**
+     * Gets the real row schema from the specified entity model and list of view modes.
+     * @param model Entity model.
+     * @param views List of view modes.
      * @returns Returns the row schema or undefined when the entity model does not exists.
      * @throws Throws an error when the entity model isn't valid.
      */
-    static getRealRow(model: Types.Model, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.RealRow;
+    static getRealRow(model: Types.Model, ...views: string[]): Columns.RealRow;
     /**
-     * Gets the virtual row schema from the specified entity model.
+     * Gets the virtual row schema from the specified entity model and list of view modes.
      * @param model Entity model.
-     * @param view View mode.
+     * @param views List of view modes.
      * @returns Returns the joined schema or undefined when the entity model does not exists.
      * @throws Throws an error when the entity model isn't valid.
      */
-    static getVirtualRow(model: Types.Model, view: string): Columns.VirtualRow;
+    static getVirtualRow(model: Types.Model, ...views: string[]): Columns.VirtualRow;
     /**
-     * Gets the joint row schema from the specified entity model.
+     * Gets the joint row schema from the specified entity model and list of view modes.
      * @param model Entity model.
-     * @param view View mode.
+     * @param views List of view modes.
      * @returns Returns the virtual columns list.
      */
-    static getJointRow(model: Types.Model, view: string): Columns.JointRow;
+    static getJointRow(model: Types.Model, ...views: string[]): Columns.JointRow;
     /**
      * Gets the real column schema from the specified entity model and column name.
      * @param model Entity model.
      * @param name Column name.
-     * @param view View mode. (Only used by sub entities)
-     * @param cache Recursivity cache.
      * @returns Returns the column schema or undefined when the column does not exists.
      * @throws Throws an error when the entity model isn't valid or the specified column was not found.
      */
-    static getRealColumn(model: Types.Model, name: string, view: string, cache?: WeakMap<Types.Model, Columns.RealRow>): Columns.Real;
+    static getRealColumn(model: Types.Model, name: string): Columns.Real;
     /**
      * Gets the primary column schema from the specified entity model.
      * @param model Entity model.
      * @returns Returns the column schema or undefined when the column does not exists.
-     * @throws Throws an error when the entity model isn't valid.
+     * @throws Throws an error when the entity model isn't valid or the primary column was not defined
      */
     static getPrimaryColumn(model: Types.Model): Columns.Real;
     /**
@@ -100,12 +110,6 @@ export declare class Schema extends Class.Null {
      * @throws Throws an error when the entity model isn't valid.
      */
     static getStorage(model: Types.Model): string;
-    /**
-     * Determines whether the specified model is a valid entity.
-     * @param model Entity model.
-     * @returns Returns true when the specified model is a valid entity, false otherwise.
-     */
-    static isEntity(model: Types.Model): boolean;
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -118,6 +122,18 @@ export declare class Schema extends Class.Null {
      * @returns Returns the decorator method.
      */
     static Alias(name: string): PropertyDecorator;
+    /**
+     * Decorates the specified property to be visible only in specific scenarios.
+     * @param views List of views.
+     * @returns Returns the decorator method.
+     */
+    static Views(...views: RegExp[]): PropertyDecorator;
+    /**
+     * Decorates the specified property to convert its input and output values.
+     * @param callback Converter callback.
+     * @returns Returns the decorator method.
+     */
+    static Convert(callback: Types.Converter): PropertyDecorator;
     /**
      * Decorates the specified property to be a required column.
      * @returns Returns the decorator method.
@@ -140,18 +156,6 @@ export declare class Schema extends Class.Null {
      * @throws Throws an error when the column is already read-only.
      */
     static WriteOnly(): PropertyDecorator;
-    /**
-     * Decorates the specified property to be viewed only in specific scenarios.
-     * @param views List of view names.
-     * @returns Returns the decorator method.
-     */
-    static Views(...views: string[]): PropertyDecorator;
-    /**
-     * Decorates the specified property to convert its input and output values.
-     * @param callback Converter callback.
-     * @returns Returns the decorator method.
-     */
-    static Convert(callback: Types.Converter): PropertyDecorator;
     /**
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.

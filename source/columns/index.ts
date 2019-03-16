@@ -3,13 +3,21 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Types from '../types';
+
+import { Base } from './base';
 import { Real } from './real';
 import { Virtual } from './virtual';
 import { Joint } from './joint';
 
+export { Base } from './base';
 export { Real } from './real';
 export { Virtual } from './virtual';
 export { Joint } from './joint';
+
+/**
+ * Type declaration for map of columns base.
+ */
+export type BaseRow = Types.Map<Base>;
 
 /**
  * Type declaration for map of real columns.

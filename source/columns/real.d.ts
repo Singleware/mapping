@@ -6,14 +6,12 @@ import * as Validator from '@singleware/types';
 
 import * as Types from '../types';
 
+import { Base } from './base';
+
 /**
  * Real column interface.
  */
-export interface Real {
-  /**
-   * Column name.
-   */
-  name: string;
+export interface Real extends Base {
   /**
    * Column alias name.
    */
@@ -27,33 +25,9 @@ export interface Real {
    */
   validations: Validator.Format[];
   /**
-   * Column views.
-   */
-  views?: string[];
-  /**
-   * Column converter callback.
-   */
-  converter?: Types.Converter;
-  /**
    * Determines whether the column is unique or not.
    */
   unique?: boolean;
-  /**
-   * Determines whether the column is required or not.
-   */
-  required?: boolean;
-  /**
-   * Determines whether the column is hidden or not.
-   */
-  hidden?: boolean;
-  /**
-   * Determines whether the column is read-only or not.
-   */
-  readOnly?: boolean;
-  /**
-   * Determines whether the column is write-only or not.
-   */
-  writeOnly?: boolean;
   /**
    * Minimum column value.
    */
@@ -70,12 +44,4 @@ export interface Real {
    * Valid column values for enumerations.
    */
   values?: string[];
-  /**
-   * Column entity model.
-   */
-  model?: Types.Model<Types.Entity>;
-  /**
-   * Map of sub schemas.
-   */
-  schema?: Types.Map<Real>;
 }

@@ -34,92 +34,145 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         }
     }
     /**
-     * Creates a new entity based on the specified model type, view mode and input data.
+     * Creates a new input entity based on the specified model type, view modes and the input data.
      * @param model Model type.
-     * @param view View mode.
+     * @param views View modes.
      * @param data Input data.
-     * @param input Determines whether data will be used for an input or output.
      * @param full Determines whether all required properties must be provided.
-     * @returns Returns the new generated entity based on the model type.
-     * @throws Throws an error when some required column was not supplied or some read-only/write-only property was set wrongly.
+     * @returns Returns the generated entity.
+     * @throws Throws an error when some required column was not supplied or some read-only property was set.
      */
-    static createEntity(model, view, data, input, full) {
+    static createInputEntity(model, views, data, full) {
         const entity = new model();
-        const storage = schema_1.Schema.getStorage(model);
-        const columns = schema_1.Schema.getRealRow(model, view);
-        for (const column in columns) {
-            const schema = columns[column];
-            const source = input ? schema.name : schema.alias || schema.name;
-            const target = input ? schema.alias || schema.name : schema.name;
+        const rows = schema_1.Schema.getRealRow(model, ...views);
+        for (const name in rows) {
+            const schema = rows[name];
+            const source = schema.name;
+            const target = schema.alias || schema.name;
             if (source in data && data[source] !== void 0) {
-                if (input && schema.readOnly) {
-                    throw new Error(`Column '${column}' in the '${view}' view of the entity '${storage}' is read-only.`);
-                }
-                else if (!input && schema.writeOnly) {
-                    throw new Error(`Column '${column}' in the '${view}' view of the entity '${storage}' is write-only.`);
+                if (schema.readOnly) {
+                    throw new Error(`Column '${name}' in the entity '${schema_1.Schema.getStorage(model)}' is read-only.`);
                 }
                 else {
-                    const value = schema.converter ? schema.converter(data[source]) : data[source];
-                    entity[target] = this.castValue(schema, view, value, input, full);
+                    const converted = schema.converter ? schema.converter(data[source]) : data[source];
+                    const casted = this.castValue(model, views, schema, converted, true, full);
+                    if (casted !== void 0) {
+                        entity[target] = casted;
+                    }
                 }
             }
-            else if (full && schema.required && ((!input && !schema.writeOnly) || (input && !schema.readOnly))) {
-                throw new Error(`Column '${column}' in the '${view}' of the entity '${storage}' is required.`);
+            else if (full && schema.required && !schema.readOnly) {
+                throw new Error(`Required column '${name}' in the entity '${schema_1.Schema.getStorage(model)}' was not given.`);
             }
         }
         return entity;
     }
     /**
-     * Creates a new list of entities based on the specified model type, view mode and the list of data.
+     * Creates a new output entity based on the specified model type, view modes and the output data.
      * @param model Model type.
-     * @param view View mode.
+     * @param views View modes.
+     * @param data Output data.
+     * @param full Determines whether all required properties must be provided.
+     * @param wanted Determines whether all properties are wanted by the upper entity.
+     * @returns Returns the generated entity or undefined when the entity has no data.
+     * @throws Throws an error when some required column was not supplied or some write-only property was set.
+     */
+    static createOutputEntity(model, views, data, full, wanted) {
+        const required = [];
+        const entity = new model();
+        const rows = { ...schema_1.Schema.getRealRow(model, ...views), ...schema_1.Schema.getVirtualRow(model, ...views) };
+        let empty = true;
+        for (const name in rows) {
+            const schema = rows[name];
+            const source = schema.alias || schema.name;
+            const target = schema.name;
+            if (source in data && data[source] !== void 0) {
+                if (schema.writeOnly) {
+                    throw new Error(`Column '${name}' in the entity '${schema_1.Schema.getStorage(model)}' is write-only.`);
+                }
+                else {
+                    const converted = schema.converter ? schema.converter(data[source]) : data[source];
+                    const casted = this.castValue(model, views, schema, converted, false, full);
+                    if (casted !== void 0 && casted !== null && (wanted || !empty || !this.isEmpty(casted))) {
+                        entity[target] = casted;
+                        empty = false;
+                    }
+                }
+            }
+            else if (full && schema.required && !schema.writeOnly) {
+                required.push(name);
+            }
+        }
+        if (empty) {
+            return void 0;
+        }
+        else if (required.length) {
+            throw new Error(`Required column(s) '${required.join(',')}' in the entity '${schema_1.Schema.getStorage(model)}' was not given.`);
+        }
+        return entity;
+    }
+    /**
+     * Creates a new list of entities based on the specified model type, view modes and the list of data.
+     * @param model Model type.
+     * @param views View modes.
      * @param list List of data.
      * @param input Determines whether the data will be used for an input or output.
      * @param full Determines whether all required properties must be provided.
-     * @returns Returns the new generated list of entities based on the model type.
+     * @returns Returns the new generated list of entities.
      */
-    static createEntityArray(model, view, list, input, full) {
+    static createEntityArray(model, views, list, input, full) {
         const entities = [];
         for (const data of list) {
-            entities.push(this.createEntity(model, view, data, input, full));
+            const entity = input ? this.createInputEntity(model, views, data, full) : this.createOutputEntity(model, views, data, full, false);
+            if (entity !== void 0) {
+                entities.push(entity);
+            }
         }
         return entities;
     }
     /**
-     * Create a new map of entities based on the specified model type, view mode and map of data.
+     * Create a new map of entities based on the specified model type, view modes and the map of data.
      * @param model Model type.
-     * @param view View mode.
+     * @param views View modes.
      * @param map Map of data.
      * @param input Determines whether the data will be used for an input or output.
      * @param full Determines whether all required properties must be provided.
-     * @returns Returns the new generated map of entities based on the model type.
+     * @returns Returns the generated map of entities.
      */
-    static createEntityMap(model, view, map, input, full) {
+    static createEntityMap(model, views, map, input, full) {
         const entities = {};
         for (const name in map) {
-            entities[name] = this.createEntity(model, view, map[name], input, full);
+            const entity = input ? this.createInputEntity(model, views, map[name], full) : this.createOutputEntity(model, views, map[name], full, false);
+            if (entity !== void 0) {
+                entities[name] = entity;
+            }
         }
         return entities;
     }
     /**
-     * Check whether the specified value can be converted to an entity.
-     * @param real Real column schema.
-     * @param view View mode.
+     * Converts the specified value into an entity when possible.
+     * @param model Model type.
+     * @param views View modes.
+     * @param schema Column schema.
      * @param value Value to be converted.
      * @param input Determines whether the value will be used for an input or output.
      * @param full Determines whether all required properties must be provided.
      * @returns Returns the original or the converted value.
      */
-    static castValue(real, view, value, input, full) {
-        if (real.model && schema_1.Schema.isEntity(real.model)) {
-            if (real.formats.includes(Types.Format.ARRAY)) {
-                return this.createEntityArray(real.model, view, value, input, full);
+    static castValue(model, views, schema, value, input, full) {
+        if (schema.model && schema_1.Schema.isEntity(schema.model)) {
+            const formats = (schema.type !== 'real' ? schema_1.Schema.getRealColumn(model, schema.local) : schema).formats;
+            if (formats.includes(Types.Format.ARRAY)) {
+                return this.createEntityArray(schema.model, views, value, input, full);
             }
-            else if (real.formats.includes(Types.Format.MAP)) {
-                return this.createEntityMap(real.model, view, value, input, full);
+            else if (formats.includes(Types.Format.MAP)) {
+                return this.createEntityMap(schema.model, views, value, input, full);
+            }
+            else if (input) {
+                return this.createInputEntity(schema.model, views, value, full);
             }
             else {
-                return this.createEntity(real.model, view, value, input, full);
+                return this.createOutputEntity(schema.model, views, value, full, schema.required && schema.type === 'real');
             }
         }
         return value;
@@ -177,23 +230,23 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized entity data.
      */
     static normalize(model, input) {
-        const rColumns = schema_1.Schema.getRealRow(model, Types.View.ALL);
-        const vColumns = schema_1.Schema.getVirtualRow(model, Types.View.ALL);
+        const real = schema_1.Schema.getRealRow(model, Types.View.ALL);
+        const virtual = schema_1.Schema.getVirtualRow(model, Types.View.ALL);
         const data = {};
         for (const name in input) {
             const value = input[name];
             if (value !== void 0) {
-                if (name in rColumns) {
-                    if (!rColumns[name].hidden) {
-                        data[name] = this.normalizeValue(rColumns[name], value);
+                if (name in real) {
+                    if (!real[name].hidden) {
+                        data[name] = this.normalizeValue(real[name], value);
                     }
                 }
-                else if (name in vColumns) {
+                else if (name in virtual) {
                     if (value instanceof Array) {
-                        data[name] = this.normalizeArray(vColumns[name].model || model, value);
+                        data[name] = this.normalizeArray(virtual[name].model || model, value);
                     }
                     else {
-                        data[name] = this.normalize(vColumns[name].model || model, value);
+                        data[name] = this.normalize(virtual[name].model || model, value);
                     }
                 }
             }
@@ -201,31 +254,47 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return data;
     }
     /**
-     * Creates a new entity based on the current model type, view mode and input data.
-     * @param view View mode.
-     * @param data Input data.
-     * @param input Determines whether the data will be used for an input or output.
-     * @param full Determines whether all required properties must be provided.
-     * @returns Returns the new generated entity.
+     * Determines whether the specified value is empty or not.
+     * @param value Value to be checked.
+     * @returns Returns true when the specified value is empty or false otherwise.
      */
-    createEntity(view, data, input, full) {
-        return Mapper_1.createEntity(this.model, view, data, input, full);
+    static isEmpty(value) {
+        if (value instanceof Array) {
+            return value.length === 0;
+        }
+        else if (value instanceof Object) {
+            return !schema_1.Schema.isEntity(value) && Object.keys(value).length === 0;
+        }
+        else {
+            return value === void 0 || value === null;
+        }
     }
     /**
-     * Assign to the given target all virtual columns joined into the specified source.
-     * @param view View mode.
-     * @param target Target data.
-     * @param source Source entity.
-     * @returns Returns the specified target data.
+     * Creates a new entity based on the current model type, view mode and input data.
+     * @param data Input data.
+     * @param views View modes.
+     * @param input Determines whether the data will be used for an input or output.
+     * @param full Determines whether all required properties must be provided.
+     * @returns Returns the new generated entity or undefined when the entity is empty.
      */
-    assignVirtualColumns(view, target, source) {
-        const columns = schema_1.Schema.getVirtualRow(this.model, view);
-        for (const name in columns) {
-            if (name in source) {
-                target[name] = source[name];
-            }
+    createEntity(data, views, input, full) {
+        if (input) {
+            return Mapper_1.createInputEntity(this.model, views, data, full);
         }
-        return target;
+        else {
+            return Mapper_1.createOutputEntity(this.model, views, data, true, full);
+        }
+    }
+    /**
+     * Creates a new list of entities based on the specified model type, view mode and data list.
+     * @param list Data list.
+     * @param views View modes.
+     * @param input Determines whether the data will be used for an input or output.
+     * @param full Determines whether all required properties must be provided.
+     * @returns Returns the new generated list of entities or undefined when the list is empty.
+     */
+    createEntityArray(list, views, input, full) {
+        return Mapper_1.createEntityArray(this.model, views, list, input, full);
     }
     /**
      * Generate a new normalized entity based on the specified input data.
@@ -262,65 +331,64 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
     }
     /**
      * Insert the specified entity list into the storage.
-     * @param view Entity view, use Types.View.ALL to all fields.
      * @param entities Entity list.
+     * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
-    async insertMany(view, entities) {
-        return await this.driver.insert(this.model, view, entities.map((entity) => this.createEntity(view, entity, true, true)));
+    async insertMany(entities, views = [Types.View.ALL]) {
+        return await this.driver.insert(this.model, views, this.createEntityArray(entities, views, true, true));
     }
     /**
      * Insert the specified entity into the storage.
-     * @param view Entity view, use Types.View.ALL to all fields.
      * @param entity Entity data.
+     * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the id of inserted entry.
      */
-    async insert(view, entity) {
-        return (await this.insertMany(view, [entity]))[0];
+    async insert(entity, views = [Types.View.ALL]) {
+        return (await this.insertMany([entity], views))[0];
     }
     /**
      * Find the corresponding entity in the storage.
-     * @param view Entity view, use Types.View.ALL to all fields.
      * @param filter Field filters.
      * @param sort Sorting fields.
      * @param limit Result limits.
+     * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the list of entities found.
      */
-    async find(view, filter, sort, limit) {
-        return (await this.driver.find(this.model, view, filter, sort, limit)).map((entity) => this.assignVirtualColumns(view, this.createEntity(view, entity, false, true), entity));
+    async find(filter, sort, limit, views = [Types.View.ALL]) {
+        return this.createEntityArray(await this.driver.find(this.model, views, filter, sort, limit), views, false, true);
     }
     /**
      * Find the entity that corresponds to the specified entity id.
-     * @param view Entity view, use Types.View.ALL to all fields.
      * @param id Entity id.
+     * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
-    async findById(view, id) {
-        const entity = await this.driver.findById(this.model, view, id);
-        if (entity) {
-            return this.assignVirtualColumns(view, this.createEntity(view, entity, false, true), entity);
-        }
-        return void 0;
+    async findById(id, views = [Types.View.ALL]) {
+        const data = await this.driver.findById(this.model, views, id);
+        return data ? this.createEntity(data, views, false, true) : void 0;
     }
     /**
      * Update all entities that corresponds to the specified filter.
-     * @param view Entity view.
      * @param filter Filter expression.
      * @param entity Entity data to be updated.
+     * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the number of updated entities.
      */
-    async update(view, filter, entity) {
-        return await this.driver.update(this.model, view, this.createEntity(view, entity, true, false), filter);
+    async update(filter, entity, views = [Types.View.ALL]) {
+        const data = this.createEntity(entity, views, true, false);
+        return data ? await this.driver.update(this.model, views, filter, data) : 0;
     }
     /**
      * Update a entity that corresponds to the specified id.
-     * @param view Entity view, use Types.View.ALL to all fields.
      * @param id Entity id.
      * @param entity Entity data to be updated.
+     * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
-    async updateById(view, id, entity) {
-        return await this.driver.updateById(this.model, view, this.createEntity(view, entity, true, false), id);
+    async updateById(id, entity, views = [Types.View.ALL]) {
+        const data = this.createEntity(entity, views, true, false);
+        return data ? await this.driver.updateById(this.model, views, id, data) : false;
     }
     /**
      * Delete all entities that corresponds to the specified filter.
@@ -350,7 +418,7 @@ __decorate([
 ], Mapper.prototype, "createEntity", null);
 __decorate([
     Class.Private()
-], Mapper.prototype, "assignVirtualColumns", null);
+], Mapper.prototype, "createEntityArray", null);
 __decorate([
     Class.Protected()
 ], Mapper.prototype, "normalize", null);
@@ -386,7 +454,10 @@ __decorate([
 ], Mapper.prototype, "deleteById", null);
 __decorate([
     Class.Private()
-], Mapper, "createEntity", null);
+], Mapper, "createInputEntity", null);
+__decorate([
+    Class.Private()
+], Mapper, "createOutputEntity", null);
 __decorate([
     Class.Private()
 ], Mapper, "createEntityArray", null);
@@ -408,6 +479,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Mapper, "normalize", null);
+__decorate([
+    Class.Public()
+], Mapper, "isEmpty", null);
 Mapper = Mapper_1 = __decorate([
     Class.Describe()
 ], Mapper);

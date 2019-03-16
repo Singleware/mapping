@@ -4,28 +4,22 @@
  */
 import * as Types from '../types';
 
+import { Base } from './base';
+
 /**
  * Virtual column interface.
  */
-export interface Virtual {
-  /**
-   * Column name.
-   */
-  name: string;
-  /**
-   * Foreign column name.
-   */
-  foreign: string;
-  /**
-   * Foreign entity model.
-   */
-  model: Types.Model<Types.Entity>;
+export interface Virtual extends Base {
   /**
    * Local column name.
    */
   local: string;
   /**
-   * Virtual views.
+   * Foreign column name.
    */
-  views?: string[];
+  foreign: string;
+  /**
+   * Column entity model.
+   */
+  model: Types.Model<Types.Entity>;
 }
