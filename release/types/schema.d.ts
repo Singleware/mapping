@@ -1,6 +1,7 @@
 import * as Class from '@singleware/class';
 import * as Types from './types';
 import * as Columns from './columns';
+import { Statements } from '.';
 /**
  * Schema helper class.
  */
@@ -41,6 +42,7 @@ export declare class Schema extends Class.Null {
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local column name.
+     * @param filter Column filter.
      * @returns Returns the created column schema.
      */
     private static assignVirtualColumn;
@@ -160,10 +162,11 @@ export declare class Schema extends Class.Null {
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
-     * @param local Local id column name. (When omitted the primary ID column will be used as default)
+     * @param local Local id column name.
+     * @param filter Column filter.
      * @returns Returns the decorator method.
      */
-    static Join(foreign: string, model: Types.Model, local: string): PropertyDecorator;
+    static Join(foreign: string, model: Types.Model, local: string, filter?: Statements.Filter): PropertyDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.

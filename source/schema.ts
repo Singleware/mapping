@@ -7,6 +7,7 @@ import * as Validator from '@singleware/types';
 
 import * as Types from './types';
 import * as Columns from './columns';
+import { Statements } from '.';
 
 /**
  * Schema helper class.
@@ -98,10 +99,11 @@ export class Schema extends Class.Null {
    * @param foreign Foreign column name.
    * @param model Foreign entity model.
    * @param local Local column name.
+   * @param filter Column filter.
    * @returns Returns the created column schema.
    */
   @Class.Private()
-  private static assignVirtualColumn(type: any, name: string, foreign: string, model: Types.Model, local: string): Columns.Virtual {
+  private static assignVirtualColumn(type: any, name: string, foreign: string, model: Types.Model, local: string, filter?: Statements.Filter): Columns.Virtual {
     const storage = this.assignStorage(type);
     if (name in storage.real) {
       throw new Error(`A real column named '${name}' already exists.`);
@@ -113,7 +115,8 @@ export class Schema extends Class.Null {
         views: [new RegExp(`^${name}$`)],
         foreign: foreign,
         local: local,
-        model: model
+        model: model,
+        filter: filter
       };
     }
     return storage.virtual[name];
@@ -396,13 +399,14 @@ export class Schema extends Class.Null {
    * Decorates the specified property to be virtual column of a foreign entity.
    * @param foreign Foreign column name.
    * @param model Foreign entity model.
-   * @param local Local id column name. (When omitted the primary ID column will be used as default)
+   * @param local Local id column name.
+   * @param filter Column filter.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Join(foreign: string, model: Types.Model, local: string): PropertyDecorator {
+  public static Join(foreign: string, model: Types.Model, local: string, filter?: Statements.Filter): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
-      this.assignVirtualColumn(scope.constructor, <string>property, foreign, model, local);
+      this.assignVirtualColumn(scope.constructor, <string>property, foreign, model, local, filter);
       descriptor = <PropertyDescriptor>Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);
       descriptor.enumerable = true;
       return descriptor;

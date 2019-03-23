@@ -151,14 +151,12 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     protected insert(entity: E, views?: string[]): Promise<any>;
     /**
-     * Find the corresponding entity in the storage.
-     * @param filter Field filters.
-     * @param sort Sorting fields.
-     * @param limit Result limits.
+     * Find all corresponding entity in the storage.
+     * @param filter Field filter.
      * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the list of entities found.
      */
-    protected find(filter: Statements.Filter, sort?: Statements.Sort, limit?: Statements.Limit, views?: string[]): Promise<E[]>;
+    protected find(filter: Statements.Filter, views?: string[]): Promise<E[]>;
     /**
      * Find the entity that corresponds to the specified entity id.
      * @param id Entity id.
@@ -167,13 +165,13 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     protected findById(id: any, views?: string[]): Promise<E | undefined>;
     /**
-     * Update all entities that corresponds to the specified filter.
-     * @param filter Filter expression.
+     * Update all entities that corresponds to the specified match.
+     * @param match Matching fields.
      * @param entity Entity data to be updated.
      * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the number of updated entities.
      */
-    protected update(filter: Statements.Filter, entity: Types.Entity, views?: string[]): Promise<number>;
+    protected update(match: Statements.Match, entity: Types.Entity, views?: string[]): Promise<number>;
     /**
      * Update a entity that corresponds to the specified id.
      * @param id Entity id.
@@ -183,11 +181,11 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     protected updateById(id: any, entity: Types.Entity, views?: string[]): Promise<boolean>;
     /**
-     * Delete all entities that corresponds to the specified filter.
-     * @param filter Filter columns.
+     * Delete all entities that corresponds to the specified match.
+     * @param match Matching fields.
      * @return Returns a promise to get the number of deleted entities.
      */
-    protected delete(filter: Statements.Filter): Promise<number>;
+    protected delete(match: Statements.Match): Promise<number>;
     /**
      * Delete the entity that corresponds to the specified entity id.
      * @param id Entity id.

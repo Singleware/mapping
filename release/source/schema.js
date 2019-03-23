@@ -92,9 +92,10 @@ let Schema = class Schema extends Class.Null {
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local column name.
+     * @param filter Column filter.
      * @returns Returns the created column schema.
      */
-    static assignVirtualColumn(type, name, foreign, model, local) {
+    static assignVirtualColumn(type, name, foreign, model, local, filter) {
         const storage = this.assignStorage(type);
         if (name in storage.real) {
             throw new Error(`A real column named '${name}' already exists.`);
@@ -106,7 +107,8 @@ let Schema = class Schema extends Class.Null {
                 views: [new RegExp(`^${name}$`)],
                 foreign: foreign,
                 local: local,
-                model: model
+                model: model,
+                filter: filter
             };
         }
         return storage.virtual[name];
@@ -356,12 +358,13 @@ let Schema = class Schema extends Class.Null {
      * Decorates the specified property to be virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
-     * @param local Local id column name. (When omitted the primary ID column will be used as default)
+     * @param local Local id column name.
+     * @param filter Column filter.
      * @returns Returns the decorator method.
      */
-    static Join(foreign, model, local) {
+    static Join(foreign, model, local, filter) {
         return (scope, property, descriptor) => {
-            this.assignVirtualColumn(scope.constructor, property, foreign, model, local);
+            this.assignVirtualColumn(scope.constructor, property, foreign, model, local, filter);
             descriptor = Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);
             descriptor.enumerable = true;
             return descriptor;

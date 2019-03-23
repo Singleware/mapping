@@ -348,15 +348,13 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return (await this.insertMany([entity], views))[0];
     }
     /**
-     * Find the corresponding entity in the storage.
-     * @param filter Field filters.
-     * @param sort Sorting fields.
-     * @param limit Result limits.
+     * Find all corresponding entity in the storage.
+     * @param filter Field filter.
      * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the list of entities found.
      */
-    async find(filter, sort, limit, views = [Types.View.ALL]) {
-        return this.createEntityArray(await this.driver.find(this.model, views, filter, sort, limit), views, false, true);
+    async find(filter, views = [Types.View.ALL]) {
+        return this.createEntityArray(await this.driver.find(this.model, views, filter), views, false, true);
     }
     /**
      * Find the entity that corresponds to the specified entity id.
@@ -369,15 +367,15 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return data ? this.createEntity(data, views, false, true) : void 0;
     }
     /**
-     * Update all entities that corresponds to the specified filter.
-     * @param filter Filter expression.
+     * Update all entities that corresponds to the specified match.
+     * @param match Matching fields.
      * @param entity Entity data to be updated.
      * @param views View modes, use Types.View.ALL to see all fields.
      * @returns Returns a promise to get the number of updated entities.
      */
-    async update(filter, entity, views = [Types.View.ALL]) {
+    async update(match, entity, views = [Types.View.ALL]) {
         const data = this.createEntity(entity, views, true, false);
-        return data ? await this.driver.update(this.model, views, filter, data) : 0;
+        return data ? await this.driver.update(this.model, views, match, data) : 0;
     }
     /**
      * Update a entity that corresponds to the specified id.
@@ -391,12 +389,12 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return data ? await this.driver.updateById(this.model, views, id, data) : false;
     }
     /**
-     * Delete all entities that corresponds to the specified filter.
-     * @param filter Filter columns.
+     * Delete all entities that corresponds to the specified match.
+     * @param match Matching fields.
      * @return Returns a promise to get the number of deleted entities.
      */
-    async delete(filter) {
-        return await this.driver.delete(this.model, filter);
+    async delete(match) {
+        return await this.driver.delete(this.model, match);
     }
     /**
      * Delete the entity that corresponds to the specified entity id.

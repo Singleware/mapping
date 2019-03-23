@@ -7,7 +7,7 @@
   "name": "@singleware/mapping",
   "description": "Singleware generic data mapping class package.",
   "license": "MIT",
-  "version": "1.2.20",
+  "version": "1.2.21",
   "main": "release/source/index.js",
   "types": "release/types/index.d.ts",
   "keywords": [

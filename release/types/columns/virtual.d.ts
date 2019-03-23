@@ -3,6 +3,7 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Types from '../types';
+import * as Statements from '../statements';
 
 import { Base } from './base';
 
@@ -22,4 +23,8 @@ export interface Virtual extends Base {
    * Column entity model.
    */
   model: Types.Model<Types.Entity>;
+  /**
+   * Column filter.
+   */
+  filter?: Statements.Filter;
 }

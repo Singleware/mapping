@@ -18,21 +18,13 @@ export interface Driver {
    */
   insert<T extends Types.Entity>(model: Types.Model<T>, views: string[], entities: T[]): Promise<any[]>;
   /**
-   * Find the corresponding entities from the storage.
+   * Find all corresponding entities from the storage.
    * @param model Model type.
    * @param views View modes.
-   * @param filter Field filters.
-   * @param sort Sorting fields.
-   * @param limit Result limits.
+   * @param filter Field filter.
    * @returns Returns the  promise to get the list of entities found.
    */
-  find<T extends Types.Entity>(
-    model: Types.Model<T>,
-    views: string[],
-    filter: Statements.Filter,
-    sort?: Statements.Sort,
-    limit?: Statements.Limit
-  ): Promise<T[]>;
+  find<T extends Types.Entity>(model: Types.Model<T>, views: string[], filter: Statements.Filter): Promise<T[]>;
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param model Model type.
@@ -42,14 +34,14 @@ export interface Driver {
    */
   findById<T extends Types.Entity>(model: Types.Model<T>, views: string[], id: any): Promise<T | undefined>;
   /**
-   * Update all entities that corresponds to the specified filter.
+   * Update all entities that corresponds to the specified match.
    * @param model Model type.
    * @param views Views mode.
-   * @param filter Expression filter.
+   * @param match Matching fields.
    * @param entity Entity data to be updated.
    * @returns Returns the promise to get the number of updated entities.
    */
-  update(model: Types.Model, views: string[], filter: Statements.Filter, entity: Types.Entity): Promise<number>;
+  update(model: Types.Model, views: string[], match: Statements.Match, entity: Types.Entity): Promise<number>;
   /**
    * Update a entity that corresponds to the specified entity id.
    * @param model Model type.
@@ -60,12 +52,12 @@ export interface Driver {
    */
   updateById(model: Types.Model, views: string[], id: any, entity: Types.Entity): Promise<boolean>;
   /**
-   * Delete all entities that corresponds to the specified filter.
+   * Delete all entities that corresponds to the specified match.
    * @param model Model type.
-   * @param filter Filter columns.
+   * @param match Matching fields.
    * @return Returns the promise to get the number of deleted entities.
    */
-  delete(model: Types.Model, filter: Statements.Filter): Promise<number>;
+  delete(model: Types.Model, match: Statements.Match): Promise<number>;
   /**
    * Delete the entity that corresponds to the specified entity id.
    * @param model Model type.

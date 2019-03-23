@@ -362,16 +362,14 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Find the corresponding entity in the storage.
-   * @param filter Field filters.
-   * @param sort Sorting fields.
-   * @param limit Result limits.
+   * Find all corresponding entity in the storage.
+   * @param filter Field filter.
    * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Protected()
-  protected async find(filter: Statements.Filter, sort?: Statements.Sort, limit?: Statements.Limit, views: string[] = [Types.View.ALL]): Promise<E[]> {
-    return this.createEntityArray(await this.driver.find(this.model, views, filter, sort, limit), views, false, true);
+  protected async find(filter: Statements.Filter, views: string[] = [Types.View.ALL]): Promise<E[]> {
+    return this.createEntityArray(await this.driver.find(this.model, views, filter), views, false, true);
   }
 
   /**
@@ -387,16 +385,16 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Update all entities that corresponds to the specified filter.
-   * @param filter Filter expression.
+   * Update all entities that corresponds to the specified match.
+   * @param match Matching fields.
    * @param entity Entity data to be updated.
    * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Protected()
-  protected async update(filter: Statements.Filter, entity: Types.Entity, views: string[] = [Types.View.ALL]): Promise<number> {
+  protected async update(match: Statements.Match, entity: Types.Entity, views: string[] = [Types.View.ALL]): Promise<number> {
     const data = this.createEntity(entity, views, true, false);
-    return data ? await this.driver.update(this.model, views, filter, data) : 0;
+    return data ? await this.driver.update(this.model, views, match, data) : 0;
   }
 
   /**
@@ -413,13 +411,13 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Delete all entities that corresponds to the specified filter.
-   * @param filter Filter columns.
+   * Delete all entities that corresponds to the specified match.
+   * @param match Matching fields.
    * @return Returns a promise to get the number of deleted entities.
    */
   @Class.Protected()
-  protected async delete(filter: Statements.Filter): Promise<number> {
-    return await this.driver.delete(this.model, filter);
+  protected async delete(match: Statements.Match): Promise<number> {
+    return await this.driver.delete(this.model, match);
   }
 
   /**
