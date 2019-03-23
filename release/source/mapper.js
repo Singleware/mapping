@@ -406,12 +406,12 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
     }
     /**
      * Count all corresponding entities from the storage.
-     * @param match Matching fields.
+     * @param filter Field filter.
      * @param views View modes.
      * @returns Returns a promise to get the total of found entities.
      */
-    async count(match, views = [Types.View.ALL]) {
-        return await this.driver.count(this.model, views, match);
+    async count(filter, views = [Types.View.ALL]) {
+        return await this.driver.count(this.model, views, filter);
     }
 };
 __decorate([

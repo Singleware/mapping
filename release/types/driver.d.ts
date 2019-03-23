@@ -69,8 +69,8 @@ export interface Driver {
    * Count all corresponding entities from the storage.
    * @param model Model type.
    * @param views View modes.
-   * @param match Matching fields.
+   * @param filter Field filter.
    * @returns Returns a promise to get the total of found entities.
    */
-  count(model: Types.Model, views: string[], match: Statements.Match): Promise<number>;
+  count(model: Types.Model, views: string[], filter: Statements.Filter): Promise<number>;
 }

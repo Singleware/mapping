@@ -11,15 +11,19 @@ import { Sort } from './sort';
  */
 export interface Filter {
   /**
-   * Matching fields.
+   * Pre matching fields. (Performed before any join operation)
    */
-  match: Match | Match[];
+  pre: Match | Match[];
+  /**
+   * Post matching fields. (Performed after all join operations)
+   */
+  post?: Match | Match[];
   /**
    * Sorting fields.
    */
-  sort: Sort;
+  sort?: Sort;
   /**
    * Limit results.
    */
-  limit: Limit;
+  limit?: Limit;
 }
