@@ -400,11 +400,28 @@ export class Schema extends Class.Null {
    * @param foreign Foreign column name.
    * @param model Foreign entity model.
    * @param local Local id column name.
+   * @returns Returns the decorator method.
+   */
+  @Class.Public()
+  public static Join(foreign: string, model: Types.Model, local: string): PropertyDecorator {
+    return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
+      this.assignVirtualColumn(scope.constructor, <string>property, foreign, model, local);
+      descriptor = <PropertyDescriptor>Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);
+      descriptor.enumerable = true;
+      return descriptor;
+    };
+  }
+
+  /**
+   * Decorates the specified property to be virtual column of a foreign entity list.
+   * @param foreign Foreign column name.
+   * @param model Foreign entity model.
+   * @param local Local id column name.
    * @param filter Column filter.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Join(foreign: string, model: Types.Model, local: string, filter?: Statements.Filter): PropertyDecorator {
+  public static JoinAll(foreign: string, model: Types.Model, local: string, filter?: Statements.Filter): PropertyDecorator {
     return (scope: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       this.assignVirtualColumn(scope.constructor, <string>property, foreign, model, local, filter);
       descriptor = <PropertyDescriptor>Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);

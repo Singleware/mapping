@@ -359,10 +359,25 @@ let Schema = class Schema extends Class.Null {
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
+     * @returns Returns the decorator method.
+     */
+    static Join(foreign, model, local) {
+        return (scope, property, descriptor) => {
+            this.assignVirtualColumn(scope.constructor, property, foreign, model, local);
+            descriptor = Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);
+            descriptor.enumerable = true;
+            return descriptor;
+        };
+    }
+    /**
+     * Decorates the specified property to be virtual column of a foreign entity list.
+     * @param foreign Foreign column name.
+     * @param model Foreign entity model.
+     * @param local Local id column name.
      * @param filter Column filter.
      * @returns Returns the decorator method.
      */
-    static Join(foreign, model, local, filter) {
+    static JoinAll(foreign, model, local, filter) {
         return (scope, property, descriptor) => {
             this.assignVirtualColumn(scope.constructor, property, foreign, model, local, filter);
             descriptor = Validator.Validate(new Validator.Common.Any())(scope, property, descriptor);
@@ -614,6 +629,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "Join", null);
+__decorate([
+    Class.Public()
+], Schema, "JoinAll", null);
 __decorate([
     Class.Public()
 ], Schema, "Primary", null);

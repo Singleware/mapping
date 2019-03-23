@@ -13,7 +13,7 @@ export interface Filter {
   /**
    * Pre matching fields. (Performed before any join operation)
    */
-  pre: Match | Match[];
+  pre?: Match | Match[];
   /**
    * Post matching fields. (Performed after all join operations)
    */
