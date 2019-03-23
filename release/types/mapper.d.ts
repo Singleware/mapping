@@ -193,6 +193,13 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     protected deleteById(id: any): Promise<boolean>;
     /**
+     * Count all corresponding entities from the storage.
+     * @param match Matching fields.
+     * @param views View modes.
+     * @returns Returns a promise to get the total of found entities.
+     */
+    protected count(match: Statements.Match, views?: string[]): Promise<number>;
+    /**
      * Default constructor.
      * @param driver Data driver.
      * @param model Entity model.

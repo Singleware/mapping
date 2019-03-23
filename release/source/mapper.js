@@ -404,6 +404,15 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
     async deleteById(id) {
         return await this.driver.deleteById(this.model, id);
     }
+    /**
+     * Count all corresponding entities from the storage.
+     * @param match Matching fields.
+     * @param views View modes.
+     * @returns Returns a promise to get the total of found entities.
+     */
+    async count(match, views = [Types.View.ALL]) {
+        return await this.driver.count(this.model, views, match);
+    }
 };
 __decorate([
     Class.Private()
@@ -450,6 +459,9 @@ __decorate([
 __decorate([
     Class.Protected()
 ], Mapper.prototype, "deleteById", null);
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "count", null);
 __decorate([
     Class.Private()
 ], Mapper, "createInputEntity", null);

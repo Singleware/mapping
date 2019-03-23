@@ -431,6 +431,17 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
+   * Count all corresponding entities from the storage.
+   * @param match Matching fields.
+   * @param views View modes.
+   * @returns Returns a promise to get the total of found entities.
+   */
+  @Class.Protected()
+  protected async count(match: Statements.Match, views: string[] = [Types.View.ALL]): Promise<number> {
+    return await this.driver.count(this.model, views, match);
+  }
+
+  /**
    * Default constructor.
    * @param driver Data driver.
    * @param model Entity model.
