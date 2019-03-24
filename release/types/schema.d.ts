@@ -21,95 +21,80 @@ export declare class Schema extends Class.Null {
      */
     private static addValidation;
     /**
-     * Assign all properties into the storage that corresponds to the specified entity type.
-     * @param type Entity type.
+     * Assign all properties into the storage that corresponds to the specified model type.
+     * @param model Model type.
      * @param properties Storage properties.
      * @returns Returns the assigned storage object.
      */
     private static assignStorage;
     /**
-     * Assign all properties into the real column schema that corresponds to the specified entity type an column name.
-     * @param type Entity type.
+     * Assign all properties into the column schema that corresponds to the specified model type and column name.
+     * @param model Model type.
+     * @param type Column type.
      * @param name Column name.
      * @param properties Column properties.
      * @returns Returns the assigned column schema.
+     * @throws Throws an error when a column with the same name and another type already exists.
      */
-    private static assignRealColumn;
+    private static assignColumn;
     /**
-     * Assign all properties into the virtual column schema that corresponds to the specified entity type an column name.
-     * @param type Entity type.
-     * @param name Column name.
-     * @param foreign Foreign column name.
-     * @param model Foreign entity model.
-     * @param local Local column name.
-     * @param filter Column filter.
-     * @returns Returns the created column schema.
-     */
-    private static assignVirtualColumn;
-    /**
-     * Assign all properties into a real or virtual column schema that corresponds to the specified entity type an column name.
-     * @param type Entity type.
+     * Assign all properties into a real or virtual column schema that corresponds to the specified model type and column name.
+     * @param model Model type.
      * @param name Column name.
      * @param properties Column properties.
      * @returns Returns the assigned column schema.
+     * @throws Throws an error when the column does not exists yet.
      */
     private static assignRealOrVirtualColumn;
     /**
-     * Determines whether the specified model is a valid entity.
-     * @param model Entity model.
-     * @returns Returns true when the specified model is a valid entity, false otherwise.
+     * Determines whether the specified model type is a valid entity.
+     * @param model Model type.
+     * @returns Returns true when the specified model is valid, false otherwise.
      */
     static isEntity(model: Types.Model): boolean;
     /**
-     * Determines whether one view in the given view list exists in the specified column schema.
+     * Determines whether one of the views in the given list of views exists in the specified column schema.
      * @param views List of views.
-     * @param column Column base schema.
+     * @param column Column schema.
      * @returns Returns true when the view is valid or false otherwise.
      */
     static isView(column: Columns.Base, ...views: string[]): boolean;
     /**
-     * Gets the real row schema from the specified entity model and list of view modes.
-     * @param model Entity model.
+     * Gets the real row schema from the specified model type and list of view modes.
+     * @param model Model type.
      * @param views List of view modes.
-     * @returns Returns the row schema or undefined when the entity model does not exists.
-     * @throws Throws an error when the entity model isn't valid.
+     * @returns Returns the real row schema.
+     * @throws Throws an error when the model type isn't valid.
      */
     static getRealRow(model: Types.Model, ...views: string[]): Columns.RealRow;
     /**
-     * Gets the virtual row schema from the specified entity model and list of view modes.
-     * @param model Entity model.
+     * Gets the virtual row schema from the specified model type and list of view modes.
+     * @param model Model type.
      * @param views List of view modes.
-     * @returns Returns the joined schema or undefined when the entity model does not exists.
-     * @throws Throws an error when the entity model isn't valid.
+     * @returns Returns the virtual row schema.
+     * @throws Throws an error when the model type isn't valid.
      */
     static getVirtualRow(model: Types.Model, ...views: string[]): Columns.VirtualRow;
     /**
-     * Gets the joint row schema from the specified entity model and list of view modes.
-     * @param model Entity model.
-     * @param views List of view modes.
-     * @returns Returns the virtual columns list.
-     */
-    static getJointRow(model: Types.Model, ...views: string[]): Columns.JointRow;
-    /**
-     * Gets the real column schema from the specified entity model and column name.
-     * @param model Entity model.
+     * Gets the real column schema from the specified model type and column name.
+     * @param model Model type.
      * @param name Column name.
-     * @returns Returns the column schema or undefined when the column does not exists.
-     * @throws Throws an error when the entity model isn't valid or the specified column was not found.
+     * @returns Returns the real column schema.
+     * @throws Throws an error when the model type isn't valid or the specified column was not found.
      */
     static getRealColumn(model: Types.Model, name: string): Columns.Real;
     /**
-     * Gets the primary column schema from the specified entity model.
-     * @param model Entity model.
+     * Gets the primary column schema from the specified model type.
+     * @param model Model type.
      * @returns Returns the column schema or undefined when the column does not exists.
      * @throws Throws an error when the entity model isn't valid or the primary column was not defined
      */
     static getPrimaryColumn(model: Types.Model): Columns.Real;
     /**
-     * Gets the storage name from the specified entity model.
-     * @param model Entity model.
-     * @returns Returns the storage name or undefined when the entity does not exists.
-     * @throws Throws an error when the entity model isn't valid.
+     * Gets the storage name from the specified model type.
+     * @param model Model type.
+     * @returns Returns the storage name.
+     * @throws Throws an error when the model type isn't valid.
      */
     static getStorage(model: Types.Model): string;
     /**
@@ -131,7 +116,7 @@ export declare class Schema extends Class.Null {
      */
     static Views(...views: RegExp[]): PropertyDecorator;
     /**
-     * Decorates the specified property to convert its input and output values.
+     * Decorates the specified property to convert its input and output value.
      * @param callback Converter callback.
      * @returns Returns the decorator method.
      */
@@ -159,15 +144,16 @@ export declare class Schema extends Class.Null {
      */
     static WriteOnly(): PropertyDecorator;
     /**
-     * Decorates the specified property to be virtual column of a foreign entity.
+     * Decorates the specified property to be a virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
+     * @param match Column match.
      * @returns Returns the decorator method.
      */
-    static Join(foreign: string, model: Types.Model, local: string): PropertyDecorator;
+    static Join(foreign: string, model: Types.Model, local: string, match?: Statements.Match): PropertyDecorator;
     /**
-     * Decorates the specified property to be virtual column of a foreign entity list.
+     * Decorates the specified property to be a virtual column of a foreign entity list.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
@@ -181,7 +167,7 @@ export declare class Schema extends Class.Null {
      */
     static Primary(): PropertyDecorator;
     /**
-     * Decorates the specified property to be an id column.
+     * Decorates the specified property to be an Id column.
      * @returns Returns the decorator method.
      */
     static Id(): PropertyDecorator;
@@ -201,7 +187,7 @@ export declare class Schema extends Class.Null {
      */
     static Boolean(): PropertyDecorator;
     /**
-     * Decorates the specified property to be a integer column.
+     * Decorates the specified property to be an integer column.
      * @param minimum Minimum value.
      * @param maximum Maximum value.
      * @returns Returns the decorator method.
@@ -229,7 +215,7 @@ export declare class Schema extends Class.Null {
      */
     static String(minimum?: number, maximum?: number): PropertyDecorator;
     /**
-     * Decorates the specified property to be a enumeration column.
+     * Decorates the specified property to be an enumeration column.
      * @param values Enumeration values.
      * @returns Returns the decorator method.
      */
@@ -265,7 +251,7 @@ export declare class Schema extends Class.Null {
      */
     static Array(model: Types.Model, unique?: boolean, minimum?: number, maximum?: number): PropertyDecorator;
     /**
-     * Decorates the specified property to be an map column.
+     * Decorates the specified property to be a map column.
      * @param model Model type.
      * @returns Returns the decorator method.
      */

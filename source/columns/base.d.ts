@@ -14,7 +14,7 @@ export interface Base {
   /**
    * Column type.
    */
-  type: 'real' | 'virtual' | 'joint';
+  type: 'real' | 'virtual';
   /**
    * Column name.
    */
@@ -23,6 +23,14 @@ export interface Base {
    * Column views.
    */
   views: RegExp[];
+  /**
+   * Column data formats.
+   */
+  formats: Types.Format[];
+  /**
+   * Column data format validation.
+   */
+  validations: Validator.Format[];
   /**
    * Column converter callback.
    */

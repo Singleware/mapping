@@ -42,6 +42,7 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      * @param list List of data.
      * @param input Determines whether the data will be used for an input or output.
      * @param full Determines whether all required properties must be provided.
+     * @param multiple Determines whether the each value from the specified list is another list or not.
      * @returns Returns the new generated list of entities.
      */
     private static createEntityArray;
@@ -57,7 +58,6 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
     private static createEntityMap;
     /**
      * Converts the specified value into an entity when possible.
-     * @param model Model type.
      * @param views View modes.
      * @param schema Column schema.
      * @param value Value to be converted.
@@ -67,22 +67,23 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     private static castValue;
     /**
-     * Generates a new normalized array of entities data based on the specified model type and input values.
+     * Generates a new normalized list of data based on the specified model type and list of entities.
      * @param model Model type.
-     * @param values Entities list.
-     * @returns Returns the new normalized list of entities.
+     * @param list List od entities.
+     * @param multiple Determines whether each value from the specified list is another list or not.
+     * @returns Returns the new normalized list of data.
      */
     private static normalizeArray;
     /**
-     * Generates a new normalized map of entities data based on the specified model type and value.
+     * Generates a new normalized map of data based on the specified model type and map of entities.
      * @param model Model type.
-     * @param value Entity map.
-     * @returns Returns the new normalized map of entities.
+     * @param map Map of entities.
+     * @returns Returns the new normalized map of data.
      */
     private static normalizeMap;
     /**
-     * Generates a new normalized value from the specified real column schema and value.
-     * @param real Real column schema.
+     * Generates a new normalized value from the specified value and column schema.
+     * @param column Column schema.
      * @param value Value to be normalized.
      * @returns Returns the new normalized value.
      */

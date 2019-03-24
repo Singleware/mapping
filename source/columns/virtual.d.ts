@@ -27,4 +27,12 @@ export interface Virtual extends Base {
    * Column filter.
    */
   filter?: Statements.Filter;
+  /**
+   * Determines whether the local column contains multiples IDs.
+   */
+  multiple?: boolean;
+  /**
+   * Determines whether all values from the foreign column must be loaded.
+   */
+  all?: boolean;
 }

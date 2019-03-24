@@ -44,9 +44,9 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      */
     static createInputEntity(model, views, data, full) {
         const entity = new model();
-        const rows = schema_1.Schema.getRealRow(model, ...views);
-        for (const name in rows) {
-            const schema = rows[name];
+        const row = schema_1.Schema.getRealRow(model, ...views);
+        for (const name in row) {
+            const schema = row[name];
             const source = schema.name;
             const target = schema.alias || schema.name;
             if (source in data && data[source] !== void 0) {
@@ -55,7 +55,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
                 }
                 else {
                     const converted = schema.converter ? schema.converter(data[source]) : data[source];
-                    const casted = this.castValue(model, views, schema, converted, true, full);
+                    const casted = this.castValue(views, schema, converted, true, full);
                     if (casted !== void 0) {
                         entity[target] = casted;
                     }
@@ -92,7 +92,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
                 }
                 else {
                     const converted = schema.converter ? schema.converter(data[source]) : data[source];
-                    const casted = this.castValue(model, views, schema, converted, false, full);
+                    const casted = this.castValue(views, schema, converted, false, full);
                     if (casted !== void 0 && casted !== null && (wanted || !empty || !this.isEmpty(casted))) {
                         entity[target] = casted;
                         empty = false;
@@ -118,12 +118,22 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @param list List of data.
      * @param input Determines whether the data will be used for an input or output.
      * @param full Determines whether all required properties must be provided.
+     * @param multiple Determines whether the each value from the specified list is another list or not.
      * @returns Returns the new generated list of entities.
      */
-    static createEntityArray(model, views, list, input, full) {
+    static createEntityArray(model, views, list, input, full, multiple) {
         const entities = [];
         for (const data of list) {
-            const entity = input ? this.createInputEntity(model, views, data, full) : this.createOutputEntity(model, views, data, full, false);
+            let entity;
+            if (multiple && data instanceof Array) {
+                entity = this.createEntityArray(model, views, data, input, full, false);
+            }
+            else if (input) {
+                entity = this.createInputEntity(model, views, data, full);
+            }
+            else {
+                entity = this.createOutputEntity(model, views, data, full, false);
+            }
             if (entity !== void 0) {
                 entities.push(entity);
             }
@@ -151,7 +161,6 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
     }
     /**
      * Converts the specified value into an entity when possible.
-     * @param model Model type.
      * @param views View modes.
      * @param schema Column schema.
      * @param value Value to be converted.
@@ -159,13 +168,12 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @param full Determines whether all required properties must be provided.
      * @returns Returns the original or the converted value.
      */
-    static castValue(model, views, schema, value, input, full) {
+    static castValue(views, schema, value, input, full) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
-            const formats = (schema.type !== 'real' ? schema_1.Schema.getRealColumn(model, schema.local) : schema).formats;
-            if (formats.includes(Types.Format.ARRAY)) {
-                return this.createEntityArray(schema.model, views, value, input, full);
+            if (schema.formats.includes(Types.Format.ARRAY)) {
+                return this.createEntityArray(schema.model, views, value, input, full, schema.all);
             }
-            else if (formats.includes(Types.Format.MAP)) {
+            else if (schema.formats.includes(Types.Format.MAP)) {
                 return this.createEntityMap(schema.model, views, value, input, full);
             }
             else if (input) {
@@ -178,47 +186,53 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
         return value;
     }
     /**
-     * Generates a new normalized array of entities data based on the specified model type and input values.
+     * Generates a new normalized list of data based on the specified model type and list of entities.
      * @param model Model type.
-     * @param values Entities list.
-     * @returns Returns the new normalized list of entities.
+     * @param list List od entities.
+     * @param multiple Determines whether each value from the specified list is another list or not.
+     * @returns Returns the new normalized list of data.
      */
-    static normalizeArray(model, values) {
-        const list = [];
-        for (const value of values) {
-            list.push(this.normalize(model, value));
+    static normalizeArray(model, list, multiple) {
+        const data = [];
+        for (const entity of list) {
+            if (multiple && entity instanceof Array) {
+                data.push(this.normalizeArray(model, entity, false));
+            }
+            else {
+                data.push(this.normalize(model, entity));
+            }
         }
-        return list;
+        return data;
     }
     /**
-     * Generates a new normalized map of entities data based on the specified model type and value.
+     * Generates a new normalized map of data based on the specified model type and map of entities.
      * @param model Model type.
-     * @param value Entity map.
-     * @returns Returns the new normalized map of entities.
+     * @param map Map of entities.
+     * @returns Returns the new normalized map of data.
      */
-    static normalizeMap(model, value) {
-        const map = {};
-        for (const name in value) {
-            map[name] = this.normalize(model, value[name]);
+    static normalizeMap(model, map) {
+        const data = {};
+        for (const name in map) {
+            data[name] = this.normalize(model, map[name]);
         }
-        return map;
+        return data;
     }
     /**
-     * Generates a new normalized value from the specified real column schema and value.
-     * @param real Real column schema.
+     * Generates a new normalized value from the specified value and column schema.
+     * @param column Column schema.
      * @param value Value to be normalized.
      * @returns Returns the new normalized value.
      */
-    static normalizeValue(real, value) {
-        if (real.model && schema_1.Schema.isEntity(real.model)) {
-            if (real.formats.includes(Types.Format.ARRAY)) {
-                return this.normalizeArray(real.model, value);
+    static normalizeValue(column, value) {
+        if (column.model && schema_1.Schema.isEntity(column.model)) {
+            if (column.formats.includes(Types.Format.ARRAY)) {
+                return this.normalizeArray(column.model, value, column.all);
             }
-            else if (real.formats.includes(Types.Format.MAP)) {
-                return this.normalizeMap(real.model, value);
+            else if (column.formats.includes(Types.Format.MAP)) {
+                return this.normalizeMap(column.model, value);
             }
             else {
-                return this.normalize(real.model, value);
+                return this.normalize(column.model, value);
             }
         }
         return value;
@@ -230,25 +244,13 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new normalized entity data.
      */
     static normalize(model, input) {
-        const real = schema_1.Schema.getRealRow(model, Types.View.ALL);
-        const virtual = schema_1.Schema.getVirtualRow(model, Types.View.ALL);
+        const rows = { ...schema_1.Schema.getRealRow(model, Types.View.ALL), ...schema_1.Schema.getVirtualRow(model, Types.View.ALL) };
         const data = {};
         for (const name in input) {
             const value = input[name];
-            if (value !== void 0) {
-                if (name in real) {
-                    if (!real[name].hidden) {
-                        data[name] = this.normalizeValue(real[name], value);
-                    }
-                }
-                else if (name in virtual) {
-                    if (value instanceof Array) {
-                        data[name] = this.normalizeArray(virtual[name].model || model, value);
-                    }
-                    else {
-                        data[name] = this.normalize(virtual[name].model || model, value);
-                    }
-                }
+            const schema = rows[name];
+            if (value !== void 0 && schema !== void 0 && !schema.hidden) {
+                data[name] = this.normalizeValue(schema, value);
             }
         }
         return data;
@@ -294,7 +296,7 @@ let Mapper = Mapper_1 = class Mapper extends Class.Null {
      * @returns Returns the new generated list of entities or undefined when the list is empty.
      */
     createEntityArray(list, views, input, full) {
-        return Mapper_1.createEntityArray(this.model, views, list, input, full);
+        return Mapper_1.createEntityArray(this.model, views, list, input, full, false);
     }
     /**
      * Generate a new normalized entity based on the specified input data.

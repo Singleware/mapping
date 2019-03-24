@@ -17,14 +17,6 @@ export interface Real extends Base {
    */
   alias?: string;
   /**
-   * Column data formats.
-   */
-  formats: Types.Format[];
-  /**
-   * Column data format validation.
-   */
-  validations: Validator.Format[];
-  /**
    * Determines whether the column is unique or not.
    */
   unique?: boolean;
