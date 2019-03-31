@@ -11,7 +11,7 @@ import { Base } from './base';
 /**
  * Real column interface.
  */
-export interface Real extends Base {
+export interface Real<T extends Types.Entity = Types.Entity> extends Base<T> {
   /**
    * Column alias name.
    */

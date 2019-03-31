@@ -2,8 +2,9 @@
  * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
-export { Schema } from './schema';
+export { Entity } from './entity';
 export { Mapper } from './mapper';
+export { Schema } from './schema';
 export { Driver } from './driver';
 
 import * as Types from './types';

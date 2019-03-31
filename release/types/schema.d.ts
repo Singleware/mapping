@@ -51,14 +51,14 @@ export declare class Schema extends Class.Null {
      * @param model Model type.
      * @returns Returns true when the specified model is valid, false otherwise.
      */
-    static isEntity(model: Types.Model): boolean;
+    static isEntity<E extends Types.Entity>(model: Types.Model<E>): boolean;
     /**
      * Determines whether one of the views in the given list of views exists in the specified column schema.
      * @param views List of views.
      * @param column Column schema.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isView(column: Columns.Base, ...views: string[]): boolean;
+    static isView<E extends Types.Entity>(column: Columns.Base<E>, ...views: string[]): boolean;
     /**
      * Gets the real row schema from the specified model type and list of view modes.
      * @param model Model type.
@@ -82,14 +82,14 @@ export declare class Schema extends Class.Null {
      * @returns Returns the real column schema.
      * @throws Throws an error when the model type isn't valid or the specified column was not found.
      */
-    static getRealColumn(model: Types.Model, name: string): Columns.Real;
+    static getRealColumn<E extends Types.Entity>(model: Types.Model<E>, name: string): Columns.Real<E>;
     /**
      * Gets the primary column schema from the specified model type.
      * @param model Model type.
      * @returns Returns the column schema or undefined when the column does not exists.
      * @throws Throws an error when the entity model isn't valid or the primary column was not defined
      */
-    static getPrimaryColumn(model: Types.Model): Columns.Real;
+    static getPrimaryColumn<E extends Types.Entity>(model: Types.Model<E>): Columns.Real<E>;
     /**
      * Gets the storage name from the specified model type.
      * @param model Model type.
@@ -151,7 +151,7 @@ export declare class Schema extends Class.Null {
      * @param match Column match.
      * @returns Returns the decorator method.
      */
-    static Join(foreign: string, model: Types.Model, local: string, match?: Statements.Match): PropertyDecorator;
+    static Join<E extends Types.Entity>(foreign: string, model: Types.Model<E>, local: string, match?: Statements.Match): PropertyDecorator;
     /**
      * Decorates the specified property to be a virtual column of a foreign entity list.
      * @param foreign Foreign column name.
@@ -160,7 +160,7 @@ export declare class Schema extends Class.Null {
      * @param filter Column filter.
      * @returns Returns the decorator method.
      */
-    static JoinAll(foreign: string, model: Types.Model, local: string, filter?: Statements.Filter): PropertyDecorator;
+    static JoinAll<E extends Types.Entity>(foreign: string, model: Types.Model<E>, local: string, filter?: Statements.Filter): PropertyDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.

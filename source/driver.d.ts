@@ -70,7 +70,7 @@ export interface Driver {
    * @param model Model type.
    * @param views View modes.
    * @param filter Field filter.
-   * @returns Returns a promise to get the total of found entities.
+   * @returns Returns a promise to get the total amount of found entities.
    */
   count(model: Types.Model, views: string[], filter: Statements.Filter): Promise<number>;
 }

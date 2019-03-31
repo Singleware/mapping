@@ -10,7 +10,7 @@ import { Base } from './base';
 /**
  * Virtual column interface.
  */
-export interface Virtual extends Base {
+export interface Virtual<T extends Types.Entity = Types.Entity> extends Base<T> {
   /**
    * Local column name.
    */
@@ -22,7 +22,7 @@ export interface Virtual extends Base {
   /**
    * Column entity model.
    */
-  model: Types.Model<Types.Entity>;
+  model: Types.Model<T>;
   /**
    * Column filter.
    */

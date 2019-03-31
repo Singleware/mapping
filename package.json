@@ -7,7 +7,7 @@
   "name": "@singleware/mapping",
   "description": "Singleware generic data mapping class package.",
   "license": "MIT",
-  "version": "1.2.32",
+  "version": "1.2.36",
   "main": "release/source/index.js",
   "types": "release/types/index.d.ts",
   "keywords": [
@@ -31,7 +31,7 @@
     "typescript": "^2.9.2"
   },
   "prettier": {
-    "printWidth": 180,
+    "printWidth": 240,
     "tabWidth": 2,
     "singleQuote": true,
     "semi": true

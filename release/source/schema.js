@@ -323,21 +323,16 @@ let Schema = class Schema extends Class.Null {
             const localModel = scope.constructor;
             const localSchema = this.getRealColumn(localModel, local);
             const foreignSchema = this.getRealColumn(model, foreign);
-            const virtualColumn = this.assignColumn(localModel, 'virtual', property, {
+            const multiple = localSchema.formats.includes(Types.Format.ARRAY);
+            return this.addValidation(scope, this.assignColumn(localModel, 'virtual', property, {
                 local: localSchema.alias || localSchema.name,
                 foreign: foreignSchema.alias || foreignSchema.name,
-                multiple: localSchema.formats.includes(Types.Format.ARRAY),
+                multiple: multiple,
                 model: model,
                 filter: {
                     pre: match
                 }
-            });
-            if (virtualColumn.multiple) {
-                return this.addValidation(scope, virtualColumn, new Validator.Common.InstanceOf(Array), Types.Format.ARRAY, descriptor);
-            }
-            else {
-                return this.addValidation(scope, virtualColumn, new Validator.Common.InstanceOf(model), Types.Format.OBJECT, descriptor);
-            }
+            }), new Validator.Common.InstanceOf(multiple ? Array : model), multiple ? Types.Format.ARRAY : Types.Format.OBJECT, descriptor);
         };
     }
     /**

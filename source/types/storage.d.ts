@@ -3,7 +3,9 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Columns from '../columns';
+
 import { Map } from './map';
+import { Entity } from './entity';
 
 /**
  * Data storage interface.
@@ -20,9 +22,9 @@ export interface Storage {
   /**
    * Real columns.
    */
-  real: Map<Columns.Real>;
+  real: Map<Columns.Real<Entity>>;
   /**
    * Virtual columns.
    */
-  virtual: Map<Columns.Virtual>;
+  virtual: Map<Columns.Virtual<Entity>>;
 }

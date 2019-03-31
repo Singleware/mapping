@@ -10,7 +10,7 @@ import { Columns } from '..';
 /**
  * Base column interface.
  */
-export interface Base {
+export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column type.
    */
@@ -54,5 +54,5 @@ export interface Base {
   /**
    * Column entity model.
    */
-  model?: Types.Model<Types.Entity>;
+  model?: Types.Model<T>;
 }

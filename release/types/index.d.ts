@@ -1,5 +1,6 @@
-export { Schema } from './schema';
+export { Entity } from './entity';
 export { Mapper } from './mapper';
+export { Schema } from './schema';
 export { Driver } from './driver';
 import * as Types from './types';
 export import Types = Types;
