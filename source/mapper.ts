@@ -110,7 +110,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Statements.Match, entity: T, views: string[] = [Types.View.ALL]): Promise<number> {
-    return await this.driver.update(model, views, match, Entity.createInput(model, views, entity));
+    return await this.driver.update(model, views, match, Entity.createFullInput(model, views, entity));
   }
 
   /**
@@ -122,7 +122,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async update(match: Statements.Match, entity: Types.Entity, views: string[] = [Types.View.ALL]): Promise<number> {
-    return await this.updateEx(this.model, match, entity, views);
+    return await this.driver.update(this.model, views, match, Entity.createInput(this.model, views, entity));
   }
 
   /**
@@ -135,7 +135,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T, views: string[] = [Types.View.ALL]): Promise<boolean> {
-    return await this.driver.updateById(model, views, id, Entity.createInput(model, views, entity));
+    return await this.driver.updateById(model, views, id, Entity.createFullInput(model, views, entity));
   }
 
   /**
@@ -147,7 +147,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateById(id: any, entity: Types.Entity, views: string[] = [Types.View.ALL]): Promise<boolean> {
-    return await this.updateByIdEx(this.model, id, entity, views);
+    return await this.driver.updateById(this.model, views, id, Entity.createInput(this.model, views, entity));
   }
 
   /**

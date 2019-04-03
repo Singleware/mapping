@@ -101,7 +101,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the number of updated entities.
      */
     async updateEx(model, match, entity, views = [Types.View.ALL]) {
-        return await this.driver.update(model, views, match, entity_1.Entity.createInput(model, views, entity));
+        return await this.driver.update(model, views, match, entity_1.Entity.createFullInput(model, views, entity));
     }
     /**
      * Update all entities that corresponds to the specified match.
@@ -111,7 +111,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the number of updated entities.
      */
     async update(match, entity, views = [Types.View.ALL]) {
-        return await this.updateEx(this.model, match, entity, views);
+        return await this.driver.update(this.model, views, match, entity_1.Entity.createInput(this.model, views, entity));
     }
     /**
      * Update the entity that corresponds to the specified id using a custom model type.
@@ -122,7 +122,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateByIdEx(model, id, entity, views = [Types.View.ALL]) {
-        return await this.driver.updateById(model, views, id, entity_1.Entity.createInput(model, views, entity));
+        return await this.driver.updateById(model, views, id, entity_1.Entity.createFullInput(model, views, entity));
     }
     /**
      * Update the entity that corresponds to the specified id.
@@ -132,7 +132,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateById(id, entity, views = [Types.View.ALL]) {
-        return await this.updateByIdEx(this.model, id, entity, views);
+        return await this.driver.updateById(this.model, views, id, entity_1.Entity.createInput(this.model, views, entity));
     }
     /**
      * Delete all entities that corresponds to the specified match.
