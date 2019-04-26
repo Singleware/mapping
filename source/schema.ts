@@ -127,10 +127,7 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static isEntity<E extends Types.Entity>(model: Types.Model<E>): boolean {
-    if (model && model.prototype) {
-      return this.storages.has(model.prototype.constructor);
-    }
-    return false;
+    return model && model.prototype && this.storages.has(model.prototype.constructor);
   }
 
   /**
@@ -158,16 +155,23 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static getRealRow(model: Types.Model, ...views: string[]): Columns.RealRow {
-    const storage = this.storages.get(model.prototype.constructor);
-    if (!storage) {
-      throw new Error(`Invalid model type '${model.prototype.constructor.name}', unable to get the real row.`);
-    }
+    const last = Reflect.getPrototypeOf(Function);
     const row = <Columns.RealRow>{};
-    for (const name in storage.real) {
-      const column = <Columns.Real>{ ...storage.real[name] };
-      if (this.isView(column, ...views)) {
-        row[name] = Object.freeze(column);
+    let type, storage;
+    do {
+      type = model.prototype.constructor;
+      if (this.storages.has(type)) {
+        storage = <Types.Storage>this.storages.get(type);
+        for (const name in storage.real) {
+          const column = <Columns.Real>{ ...storage.real[name] };
+          if (this.isView(column, ...views) && !(name in row)) {
+            row[name] = Object.freeze(column);
+          }
+        }
       }
+    } while ((model = <any>Reflect.getPrototypeOf(type)) !== last);
+    if (!storage) {
+      throw new Error(`Invalid model type '${type.name}', unable to get the real row.`);
     }
     return Object.freeze(row);
   }
@@ -181,16 +185,23 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static getVirtualRow(model: Types.Model, ...views: string[]): Columns.VirtualRow {
-    const storage = this.storages.get(model.prototype.constructor);
-    if (!storage) {
-      throw new Error(`Invalid model type '${model.prototype.constructor.name}', unable to get the virtual row.`);
-    }
+    const last = Reflect.getPrototypeOf(Function);
     const row = <Columns.VirtualRow>{};
-    for (const name in storage.virtual) {
-      const column = storage.virtual[name];
-      if (this.isView(column, ...views)) {
-        row[name] = Object.freeze({ ...column });
+    let type, storage;
+    do {
+      type = model.prototype.constructor;
+      if (this.storages.has(type)) {
+        storage = <Types.Storage>this.storages.get(type);
+        for (const name in storage.virtual) {
+          const column = storage.virtual[name];
+          if (this.isView(column, ...views) && !(name in row)) {
+            row[name] = Object.freeze({ ...column });
+          }
+        }
       }
+    } while ((model = <any>Reflect.getPrototypeOf(type)) !== last);
+    if (!storage) {
+      throw new Error(`Invalid model type '${type.name}', unable to get the virtual row.`);
     }
     return Object.freeze(row);
   }
@@ -204,14 +215,22 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static getRealColumn<E extends Types.Entity>(model: Types.Model<E>, name: string): Columns.Real<E> {
-    const storage = this.storages.get(model.prototype.constructor);
-    if (!storage) {
-      throw new Error(`Invalid model type '${model.prototype.constructor.name}', unable to get the specified column.`);
-    }
-    if (!(name in storage.real)) {
+    const last = Reflect.getPrototypeOf(Function);
+    let type, storage;
+    do {
+      type = model.prototype.constructor;
+      if (this.storages.has(type)) {
+        storage = <Types.Storage>this.storages.get(type);
+        if (name in storage.real) {
+          return <Columns.Real<E>>Object.freeze({ ...storage.real[name] });
+        }
+      }
+    } while ((model = <any>Reflect.getPrototypeOf(type)) !== last);
+    if (storage) {
       throw new Error(`Column '${name}' does not exists in the entity '${storage.name}'.`);
+    } else {
+      throw new Error(`Invalid model type '${type.name}', unable to get the column '${name}'.`);
     }
-    return <Columns.Real<E>>Object.freeze({ ...storage.real[name] });
   }
 
   /**
@@ -222,14 +241,22 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static getPrimaryColumn<E extends Types.Entity>(model: Types.Model<E>): Columns.Real<E> {
-    const storage = this.storages.get(model.prototype.constructor);
-    if (!storage) {
-      throw Error(`Invalid model type '${model.prototype.constructor}', unable to get the primary column.`);
-    }
-    if (!storage.primary) {
+    const last = Reflect.getPrototypeOf(Function);
+    let type, storage;
+    do {
+      type = model.prototype.constructor;
+      if (this.storages.has(type)) {
+        storage = <Types.Storage>this.storages.get(type);
+        if (storage.primary) {
+          return <Columns.Real<E>>Object.freeze({ ...storage.real[storage.primary] });
+        }
+      }
+    } while ((model = <any>Reflect.getPrototypeOf(type)) !== last);
+    if (storage) {
       throw Error(`Entity '${storage.name}' without primary column.`);
+    } else {
+      throw Error(`Invalid model type '${type.name}', unable to get the primary column.`);
     }
-    return this.getRealColumn(model, <string>storage.primary);
   }
 
   /**
@@ -240,9 +267,10 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static getStorage(model: Types.Model): string {
-    const storage = this.storages.get(model.prototype.constructor);
+    const type = model.prototype.constructor;
+    const storage = this.storages.get(type);
     if (!storage) {
-      throw Error(`Invalid model type '${model.prototype.constructor}', unable to get the storage name.`);
+      throw Error(`Invalid model type '${type.name}', unable to get the storage name.`);
     }
     return storage.name;
   }

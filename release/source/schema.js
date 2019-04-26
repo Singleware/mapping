@@ -119,10 +119,7 @@ let Schema = class Schema extends Class.Null {
      * @returns Returns true when the specified model is valid, false otherwise.
      */
     static isEntity(model) {
-        if (model && model.prototype) {
-            return this.storages.has(model.prototype.constructor);
-        }
-        return false;
+        return model && model.prototype && this.storages.has(model.prototype.constructor);
     }
     /**
      * Determines whether one of the views in the given list of views exists in the specified column schema.
@@ -146,16 +143,23 @@ let Schema = class Schema extends Class.Null {
      * @throws Throws an error when the model type isn't valid.
      */
     static getRealRow(model, ...views) {
-        const storage = this.storages.get(model.prototype.constructor);
-        if (!storage) {
-            throw new Error(`Invalid model type '${model.prototype.constructor.name}', unable to get the real row.`);
-        }
+        const last = Reflect.getPrototypeOf(Function);
         const row = {};
-        for (const name in storage.real) {
-            const column = { ...storage.real[name] };
-            if (this.isView(column, ...views)) {
-                row[name] = Object.freeze(column);
+        let type, storage;
+        do {
+            type = model.prototype.constructor;
+            if (this.storages.has(type)) {
+                storage = this.storages.get(type);
+                for (const name in storage.real) {
+                    const column = { ...storage.real[name] };
+                    if (this.isView(column, ...views) && !(name in row)) {
+                        row[name] = Object.freeze(column);
+                    }
+                }
             }
+        } while ((model = Reflect.getPrototypeOf(type)) !== last);
+        if (!storage) {
+            throw new Error(`Invalid model type '${type.name}', unable to get the real row.`);
         }
         return Object.freeze(row);
     }
@@ -167,16 +171,23 @@ let Schema = class Schema extends Class.Null {
      * @throws Throws an error when the model type isn't valid.
      */
     static getVirtualRow(model, ...views) {
-        const storage = this.storages.get(model.prototype.constructor);
-        if (!storage) {
-            throw new Error(`Invalid model type '${model.prototype.constructor.name}', unable to get the virtual row.`);
-        }
+        const last = Reflect.getPrototypeOf(Function);
         const row = {};
-        for (const name in storage.virtual) {
-            const column = storage.virtual[name];
-            if (this.isView(column, ...views)) {
-                row[name] = Object.freeze({ ...column });
+        let type, storage;
+        do {
+            type = model.prototype.constructor;
+            if (this.storages.has(type)) {
+                storage = this.storages.get(type);
+                for (const name in storage.virtual) {
+                    const column = storage.virtual[name];
+                    if (this.isView(column, ...views) && !(name in row)) {
+                        row[name] = Object.freeze({ ...column });
+                    }
+                }
             }
+        } while ((model = Reflect.getPrototypeOf(type)) !== last);
+        if (!storage) {
+            throw new Error(`Invalid model type '${type.name}', unable to get the virtual row.`);
         }
         return Object.freeze(row);
     }
@@ -188,14 +199,23 @@ let Schema = class Schema extends Class.Null {
      * @throws Throws an error when the model type isn't valid or the specified column was not found.
      */
     static getRealColumn(model, name) {
-        const storage = this.storages.get(model.prototype.constructor);
-        if (!storage) {
-            throw new Error(`Invalid model type '${model.prototype.constructor.name}', unable to get the specified column.`);
-        }
-        if (!(name in storage.real)) {
+        const last = Reflect.getPrototypeOf(Function);
+        let type, storage;
+        do {
+            type = model.prototype.constructor;
+            if (this.storages.has(type)) {
+                storage = this.storages.get(type);
+                if (name in storage.real) {
+                    return Object.freeze({ ...storage.real[name] });
+                }
+            }
+        } while ((model = Reflect.getPrototypeOf(type)) !== last);
+        if (storage) {
             throw new Error(`Column '${name}' does not exists in the entity '${storage.name}'.`);
         }
-        return Object.freeze({ ...storage.real[name] });
+        else {
+            throw new Error(`Invalid model type '${type.name}', unable to get the column '${name}'.`);
+        }
     }
     /**
      * Gets the primary column schema from the specified model type.
@@ -204,14 +224,23 @@ let Schema = class Schema extends Class.Null {
      * @throws Throws an error when the entity model isn't valid or the primary column was not defined
      */
     static getPrimaryColumn(model) {
-        const storage = this.storages.get(model.prototype.constructor);
-        if (!storage) {
-            throw Error(`Invalid model type '${model.prototype.constructor}', unable to get the primary column.`);
-        }
-        if (!storage.primary) {
+        const last = Reflect.getPrototypeOf(Function);
+        let type, storage;
+        do {
+            type = model.prototype.constructor;
+            if (this.storages.has(type)) {
+                storage = this.storages.get(type);
+                if (storage.primary) {
+                    return Object.freeze({ ...storage.real[storage.primary] });
+                }
+            }
+        } while ((model = Reflect.getPrototypeOf(type)) !== last);
+        if (storage) {
             throw Error(`Entity '${storage.name}' without primary column.`);
         }
-        return this.getRealColumn(model, storage.primary);
+        else {
+            throw Error(`Invalid model type '${type.name}', unable to get the primary column.`);
+        }
     }
     /**
      * Gets the storage name from the specified model type.
@@ -220,9 +249,10 @@ let Schema = class Schema extends Class.Null {
      * @throws Throws an error when the model type isn't valid.
      */
     static getStorage(model) {
-        const storage = this.storages.get(model.prototype.constructor);
+        const type = model.prototype.constructor;
+        const storage = this.storages.get(type);
         if (!storage) {
-            throw Error(`Invalid model type '${model.prototype.constructor}', unable to get the storage name.`);
+            throw Error(`Invalid model type '${type.name}', unable to get the storage name.`);
         }
         return storage.name;
     }

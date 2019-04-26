@@ -95,7 +95,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   protected async findById(id: any, views: string[] = [Types.View.ALL]): Promise<E | undefined> {
     const data = await this.driver.findById(this.model, views, id);
     if (data !== void 0) {
-      return Entity.createOutput(this.model, views, data);
+      return Entity.createFullOutput(this.model, views, data);
     }
     return void 0;
   }

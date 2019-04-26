@@ -88,7 +88,7 @@ let Mapper = class Mapper extends Class.Null {
     async findById(id, views = [Types.View.ALL]) {
         const data = await this.driver.findById(this.model, views, id);
         if (data !== void 0) {
-            return entity_1.Entity.createOutput(this.model, views, data);
+            return entity_1.Entity.createFullOutput(this.model, views, data);
         }
         return void 0;
     }
