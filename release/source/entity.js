@@ -87,11 +87,11 @@ let Entity = class Entity extends Class.Null {
                 required.push(name);
             }
         }
-        if (empty) {
+        if (empty && !wanted) {
             return void 0;
         }
-        else if (required.length) {
-            throw new Error(`Required column(s) '${required.join(', ')}' in the entity '${schema_1.Schema.getStorage(model)}' was not given.`);
+        if (required.length) {
+            throw new Error(`Required column '${required.join(', ')}' in the entity '${schema_1.Schema.getStorage(model)}' was not given.`);
         }
         return entity;
     }

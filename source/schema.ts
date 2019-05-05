@@ -112,7 +112,7 @@ export class Schema extends Class.Null {
     const storage = this.assignStorage(model);
     if (name in storage.virtual) {
       Object.assign(storage.virtual[name], properties);
-      return storage.real[name];
+      return storage.virtual[name];
     } else if (name in storage.real) {
       Object.assign(storage.real[name], properties);
       return storage.real[name];
