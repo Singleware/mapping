@@ -36,6 +36,7 @@ export class Schema extends Class.Null {
       const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validations);
       descriptor = <PropertyDescriptor>Validator.Validate(validation)(scope, column.name, descriptor);
       descriptor.enumerable = true;
+      column.validations.push(new Validator.Common.Undefined());
     }
     column.formats.push(format);
     column.validations.push(validator);
@@ -330,7 +331,9 @@ export class Schema extends Class.Null {
   @Class.Public()
   public static Required(): PropertyDecorator {
     return (scope: Object, property: PropertyKey): void => {
-      this.assignRealOrVirtualColumn(<Types.Model>scope.constructor, <string>property, { required: true });
+      const column = this.assignRealOrVirtualColumn(<Types.Model>scope.constructor, <string>property, { required: true });
+      const index = column.validations.findIndex((validator: Validator.Format) => validator instanceof Validator.Common.Undefined);
+      column.validations.splice(index, 1);
     };
   }
 

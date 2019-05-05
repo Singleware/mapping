@@ -31,6 +31,7 @@ let Schema = class Schema extends Class.Null {
             const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validations);
             descriptor = Validator.Validate(validation)(scope, column.name, descriptor);
             descriptor.enumerable = true;
+            column.validations.push(new Validator.Common.Undefined());
         }
         column.formats.push(format);
         column.validations.push(validator);
@@ -302,7 +303,9 @@ let Schema = class Schema extends Class.Null {
      */
     static Required() {
         return (scope, property) => {
-            this.assignRealOrVirtualColumn(scope.constructor, property, { required: true });
+            const column = this.assignRealOrVirtualColumn(scope.constructor, property, { required: true });
+            const index = column.validations.findIndex((validator) => validator instanceof Validator.Common.Undefined);
+            column.validations.splice(index, 1);
         };
     }
     /**
