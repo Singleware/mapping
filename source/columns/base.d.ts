@@ -20,10 +20,6 @@ export interface Base<T extends Types.Entity = Types.Entity> {
    */
   name: string;
   /**
-   * Column views.
-   */
-  views: RegExp[];
-  /**
    * Column data formats.
    */
   formats: Types.Format[];

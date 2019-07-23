@@ -25,3 +25,4 @@ var Format;
     Format[Format["MAP"] = 13] = "MAP";
     Format[Format["OBJECT"] = 14] = "OBJECT";
 })(Format = exports.Format || (exports.Format = {}));
+//# sourceMappingURL=format.js.map

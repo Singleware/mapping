@@ -10,7 +10,6 @@ export { Map } from './map';
 export { Entity } from './entity';
 export { Format } from './format';
 export { Storage } from './storage';
-export { View } from './view';
 
 /**
  * Type declaration for entity model constructors.

@@ -85,7 +85,6 @@ let Schema = class Schema extends Class.Null {
                 ...properties,
                 type: type,
                 name: name,
-                views: [new RegExp(`^${name}$`)],
                 formats: [],
                 validations: []
             };
@@ -123,27 +122,25 @@ let Schema = class Schema extends Class.Null {
         return model && model.prototype && this.storages.has(model.prototype.constructor);
     }
     /**
-     * Determines whether one of the views in the given list of views exists in the specified column schema.
-     * @param views List of views.
+     * Determines whether the specified column schema can be viewed based on the given fields.
      * @param column Column schema.
+     * @param fields Fields to be selected.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isView(column, ...views) {
-        for (const view of views) {
-            if (view === Types.View.ALL || column.views.some((current) => current.test(view))) {
-                return true;
-            }
+    static isViewed(column, ...fields) {
+        if (fields.length > 0) {
+            return fields.includes(column.name);
         }
-        return false;
+        return true;
     }
     /**
-     * Gets the real row schema from the specified model type and list of view modes.
+     * Gets the real row schema from the specified model type and fields.
      * @param model Model type.
-     * @param views List of view modes.
+     * @param fields Fields to be selected.
      * @returns Returns the real row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getRealRow(model, ...views) {
+    static getRealRow(model, ...fields) {
         const last = Reflect.getPrototypeOf(Function);
         const row = {};
         let type, storage;
@@ -153,7 +150,7 @@ let Schema = class Schema extends Class.Null {
                 storage = this.storages.get(type);
                 for (const name in storage.real) {
                     const column = { ...storage.real[name] };
-                    if (this.isView(column, ...views) && !(name in row)) {
+                    if (this.isViewed(column, ...fields) && !(name in row)) {
                         row[name] = Object.freeze(column);
                     }
                 }
@@ -165,13 +162,13 @@ let Schema = class Schema extends Class.Null {
         return Object.freeze(row);
     }
     /**
-     * Gets the virtual row schema from the specified model type and list of view modes.
+     * Gets the virtual row schema from the specified model type and fields.
      * @param model Model type.
-     * @param views List of view modes.
+     * @param fields Fields to be selected.
      * @returns Returns the virtual row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getVirtualRow(model, ...views) {
+    static getVirtualRow(model, ...fields) {
         const last = Reflect.getPrototypeOf(Function);
         const row = {};
         let type, storage;
@@ -181,7 +178,7 @@ let Schema = class Schema extends Class.Null {
                 storage = this.storages.get(type);
                 for (const name in storage.virtual) {
                     const column = storage.virtual[name];
-                    if (this.isView(column, ...views) && !(name in row)) {
+                    if (this.isViewed(column, ...fields) && !(name in row)) {
                         row[name] = Object.freeze({ ...column });
                     }
                 }
@@ -275,16 +272,6 @@ let Schema = class Schema extends Class.Null {
     static Alias(name) {
         return (scope, property) => {
             this.assignColumn(scope.constructor, 'real', property, { alias: name });
-        };
-    }
-    /**
-     * Decorates the specified property to be visible only in specific scenarios.
-     * @param views List of views.
-     * @returns Returns the decorator method.
-     */
-    static Views(...views) {
-        return (scope, property) => {
-            this.assignRealOrVirtualColumn(scope.constructor, property, { views: views });
         };
     }
     /**
@@ -586,7 +573,7 @@ __decorate([
 ], Schema, "isEntity", null);
 __decorate([
     Class.Public()
-], Schema, "isView", null);
+], Schema, "isViewed", null);
 __decorate([
     Class.Public()
 ], Schema, "getRealRow", null);
@@ -608,9 +595,6 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "Alias", null);
-__decorate([
-    Class.Public()
-], Schema, "Views", null);
 __decorate([
     Class.Public()
 ], Schema, "Convert", null);
@@ -684,3 +668,4 @@ Schema = __decorate([
     Class.Describe()
 ], Schema);
 exports.Schema = Schema;
+//# sourceMappingURL=schema.js.map

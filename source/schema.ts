@@ -91,7 +91,6 @@ export class Schema extends Class.Null {
         ...properties,
         type: type,
         name: name,
-        views: [new RegExp(`^${name}$`)],
         formats: [],
         validations: []
       };
@@ -132,30 +131,28 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Determines whether one of the views in the given list of views exists in the specified column schema.
-   * @param views List of views.
+   * Determines whether the specified column schema can be viewed based on the given fields.
    * @param column Column schema.
+   * @param fields Fields to be selected.
    * @returns Returns true when the view is valid or false otherwise.
    */
   @Class.Public()
-  public static isView<E extends Types.Entity>(column: Columns.Base<E>, ...views: string[]): boolean {
-    for (const view of views) {
-      if (view === Types.View.ALL || column.views.some((current: RegExp) => current.test(view))) {
-        return true;
-      }
+  public static isViewed<E extends Types.Entity>(column: Columns.Base<E>, ...fields: string[]): boolean {
+    if (fields.length > 0) {
+      return fields.includes(column.name);
     }
-    return false;
+    return true;
   }
 
   /**
-   * Gets the real row schema from the specified model type and list of view modes.
+   * Gets the real row schema from the specified model type and fields.
    * @param model Model type.
-   * @param views List of view modes.
+   * @param fields Fields to be selected.
    * @returns Returns the real row schema.
    * @throws Throws an error when the model type isn't valid.
    */
   @Class.Public()
-  public static getRealRow(model: Types.Model, ...views: string[]): Columns.RealRow {
+  public static getRealRow(model: Types.Model, ...fields: string[]): Columns.RealRow {
     const last = Reflect.getPrototypeOf(Function);
     const row = <Columns.RealRow>{};
     let type, storage;
@@ -165,7 +162,7 @@ export class Schema extends Class.Null {
         storage = <Types.Storage>this.storages.get(type);
         for (const name in storage.real) {
           const column = <Columns.Real>{ ...storage.real[name] };
-          if (this.isView(column, ...views) && !(name in row)) {
+          if (this.isViewed(column, ...fields) && !(name in row)) {
             row[name] = Object.freeze(column);
           }
         }
@@ -178,14 +175,14 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Gets the virtual row schema from the specified model type and list of view modes.
+   * Gets the virtual row schema from the specified model type and fields.
    * @param model Model type.
-   * @param views List of view modes.
+   * @param fields Fields to be selected.
    * @returns Returns the virtual row schema.
    * @throws Throws an error when the model type isn't valid.
    */
   @Class.Public()
-  public static getVirtualRow(model: Types.Model, ...views: string[]): Columns.VirtualRow {
+  public static getVirtualRow(model: Types.Model, ...fields: string[]): Columns.VirtualRow {
     const last = Reflect.getPrototypeOf(Function);
     const row = <Columns.VirtualRow>{};
     let type, storage;
@@ -195,7 +192,7 @@ export class Schema extends Class.Null {
         storage = <Types.Storage>this.storages.get(type);
         for (const name in storage.virtual) {
           const column = storage.virtual[name];
-          if (this.isView(column, ...views) && !(name in row)) {
+          if (this.isViewed(column, ...fields) && !(name in row)) {
             row[name] = Object.freeze({ ...column });
           }
         }
@@ -297,18 +294,6 @@ export class Schema extends Class.Null {
   public static Alias(name: string): PropertyDecorator {
     return (scope: Object, property: PropertyKey): any => {
       this.assignColumn(<Types.Model>scope.constructor, 'real', <string>property, { alias: name });
-    };
-  }
-
-  /**
-   * Decorates the specified property to be visible only in specific scenarios.
-   * @param views List of views.
-   * @returns Returns the decorator method.
-   */
-  @Class.Public()
-  public static Views(...views: RegExp[]): PropertyDecorator {
-    return (scope: Object, property: PropertyKey): any => {
-      this.assignRealOrVirtualColumn(<Types.Model>scope.constructor, <string>property, { views: views });
     };
   }
 

@@ -7,7 +7,7 @@
   "name": "@singleware/mapping",
   "description": "Singleware generic data mapping class package.",
   "license": "MIT",
-  "version": "1.2.42",
+  "version": "1.3.2",
   "main": "release/source/index.js",
   "types": "release/types/index.d.ts",
   "keywords": [
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "prettier": "^1.17.0",
-    "typescript": "^2.9.2"
+    "typescript": "^3.5.3"
   },
   "prettier": {
     "printWidth": 240,
@@ -37,7 +37,8 @@
     "semi": true
   },
   "scripts": {
-    "build": "npm run make && npm run update",
+    "build": "npm run clean && npm run make && npm run update",
+    "clean": "rm -rf ./release",
     "make": "npx tsc -p ./source",
     "update": "npm run update-root && npm run update-types && npm run update-columns && npm run update-statements",
     "update-root": "cp -Rf ./source/*.d.ts ./release/types",

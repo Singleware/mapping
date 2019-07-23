@@ -32,70 +32,66 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    * Insert the specified entity list into the storage using a custom model type.
    * @param model Model type.
    * @param entities Entity list.
-   * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the id list of all inserted entities.
    */
   @Class.Protected()
-  protected async insertManyEx<T extends Types.Entity>(model: Types.Model<T>, entities: T[], views: string[] = [Types.View.ALL]): Promise<any[]> {
-    return await this.driver.insert(model, views, Entity.createFullInputArray(model, views, entities));
+  protected async insertManyEx<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]> {
+    return await this.driver.insert(model, Entity.createFullInputArray(model, entities));
   }
 
   /**
    * Insert the specified entity list into the storage.
    * @param entities Entity list.
-   * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the id list of all inserted entities.
    */
   @Class.Protected()
-  protected async insertMany(entities: E[], views: string[] = [Types.View.ALL]): Promise<any[]> {
-    return await this.insertManyEx(this.model, entities, views);
+  protected async insertMany(entities: E[]): Promise<any[]> {
+    return await this.insertManyEx(this.model, entities);
   }
 
   /**
    * Insert the specified entity into the storage using a custom model type.
    * @param model Model type.
    * @param entity Entity data.
-   * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the id of the inserted entry.
    */
   @Class.Protected()
-  protected async insertEx<T extends Types.Entity>(model: Types.Model<T>, entity: T, views: string[] = [Types.View.ALL]): Promise<any> {
-    return (await this.insertManyEx(model, [entity], views))[0];
+  protected async insertEx<T extends Types.Entity>(model: Types.Model<T>, entity: T): Promise<any> {
+    return (await this.insertManyEx(model, [entity]))[0];
   }
 
   /**
    * Insert the specified entity into the storage.
    * @param entity Entity data.
-   * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the id of the inserted entity.
    */
   @Class.Protected()
-  protected async insert(entity: E, views: string[] = [Types.View.ALL]): Promise<any> {
-    return await this.insertEx(this.model, entity, views);
+  protected async insert(entity: E): Promise<any> {
+    return await this.insertEx(this.model, entity);
   }
 
   /**
    * Find all corresponding entity in the storage.
    * @param filter Field filter.
-   * @param views View modes, use Types.View.ALL to see all fields.
+   * @param fields Fields to be selected, when not provided all fields will be selected.
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Protected()
-  protected async find(filter: Statements.Filter, views: string[] = [Types.View.ALL]): Promise<E[]> {
-    return <E[]>Entity.createFullOutputArray(this.model, views, await this.driver.find(this.model, views, filter));
+  protected async find(filter: Statements.Filter, fields: string[] = []): Promise<E[]> {
+    return <E[]>Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, filter, fields));
   }
 
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param id Entity id.
-   * @param views View modes, use Types.View.ALL to see all fields.
+   * @param fields Fields to be selected, when not provided all fields will be selected.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
   @Class.Protected()
-  protected async findById(id: any, views: string[] = [Types.View.ALL]): Promise<E | undefined> {
-    const data = await this.driver.findById(this.model, views, id);
+  protected async findById(id: any, fields: string[] = []): Promise<E | undefined> {
+    const data = await this.driver.findById(this.model, id, fields);
     if (data !== void 0) {
-      return Entity.createFullOutput(this.model, views, data);
+      return Entity.createFullOutput(this.model, fields, data);
     }
     return void 0;
   }
@@ -105,24 +101,22 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    * @param model Model type.
    * @param match Matching fields.
    * @param entity Entity data to be updated.
-   * @param views View modes.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Protected()
-  protected async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Statements.Match, entity: T, views: string[] = [Types.View.ALL]): Promise<number> {
-    return await this.driver.update(model, views, match, Entity.createFullInput(model, views, entity));
+  protected async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Statements.Match, entity: T): Promise<number> {
+    return await this.driver.update(model, match, Entity.createFullInput(model, entity));
   }
 
   /**
    * Update all entities that corresponds to the specified match.
    * @param match Matching fields.
    * @param entity Entity data to be updated.
-   * @param views View modes, use Types.View.ALL to see all fields.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Protected()
-  protected async update(match: Statements.Match, entity: Types.Entity, views: string[] = [Types.View.ALL]): Promise<number> {
-    return await this.driver.update(this.model, views, match, Entity.createInput(this.model, views, entity));
+  protected async update(match: Statements.Match, entity: Types.Entity): Promise<number> {
+    return await this.driver.update(this.model, match, Entity.createInput(this.model, entity));
   }
 
   /**
@@ -130,24 +124,22 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    * @param model Model type.
    * @param id Entity id.
    * @param entity Entity data to be updated.
-   * @param views View modes.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Protected()
-  protected async updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T, views: string[] = [Types.View.ALL]): Promise<boolean> {
-    return await this.driver.updateById(model, views, id, Entity.createFullInput(model, views, entity));
+  protected async updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T): Promise<boolean> {
+    return await this.driver.updateById(model, id, Entity.createFullInput(model, entity));
   }
 
   /**
    * Update the entity that corresponds to the specified id.
    * @param id Entity id.
    * @param entity Entity data to be updated.
-   * @param views View modes.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Protected()
-  protected async updateById(id: any, entity: Types.Entity, views: string[] = [Types.View.ALL]): Promise<boolean> {
-    return await this.driver.updateById(this.model, views, id, Entity.createInput(this.model, views, entity));
+  protected async updateById(id: any, entity: Types.Entity): Promise<boolean> {
+    return await this.driver.updateById(this.model, id, Entity.createInput(this.model, entity));
   }
 
   /**
@@ -173,12 +165,11 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   /**
    * Count all corresponding entities from the storage.
    * @param filter Field filter.
-   * @param views View modes.
    * @returns Returns a promise to get the total amount of found entities.
    */
   @Class.Protected()
-  protected async count(filter: Statements.Filter, views: string[] = [Types.View.ALL]): Promise<number> {
-    return await this.driver.count(this.model, views, filter);
+  protected async count(filter: Statements.Filter): Promise<number> {
+    return await this.driver.count(this.model, filter);
   }
 
   /**
@@ -209,10 +200,11 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   @Class.Protected()
   protected normalizeAsMap(...list: E[]): E {
     const column = Schema.getPrimaryColumn(this.model);
+    const primary = column.alias || column.name;
     const map = <E>{};
     for (const input of list) {
       const normalized = this.normalize(input);
-      map[normalized[column.alias || column.name]] = normalized;
+      (<any>map)[normalized[primary]] = normalized;
     }
     return map;
   }

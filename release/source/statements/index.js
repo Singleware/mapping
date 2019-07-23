@@ -4,3 +4,4 @@ var operator_1 = require("./operator");
 exports.Operator = operator_1.Operator;
 var order_1 = require("./order");
 exports.Order = order_1.Order;
+//# sourceMappingURL=index.js.map

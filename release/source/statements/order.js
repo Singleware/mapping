@@ -12,3 +12,4 @@ var Order;
     Order[Order["ASCENDING"] = 0] = "ASCENDING";
     Order[Order["DESCENDING"] = 1] = "DESCENDING";
 })(Order = exports.Order || (exports.Order = {}));
+//# sourceMappingURL=order.js.map

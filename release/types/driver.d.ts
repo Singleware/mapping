@@ -12,45 +12,42 @@ export interface Driver {
   /**
    * Insert the specified entity list into the storage.
    * @param model Model type.
-   * @param views Views mode.
    * @param entities Entity list.
    * @returns Returns a promise to get the id list of inserted entities.
    */
-  insert<T extends Types.Entity>(model: Types.Model<T>, views: string[], entities: T[]): Promise<any[]>;
+  insert<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]>;
   /**
    * Find all corresponding entities from the storage.
    * @param model Model type.
-   * @param views View modes.
    * @param filter Field filter.
+   * @param fields Fields to be selected.
    * @returns Returns a promise to get the list of entities found.
    */
-  find<T extends Types.Entity>(model: Types.Model<T>, views: string[], filter: Statements.Filter): Promise<T[]>;
+  find<T extends Types.Entity>(model: Types.Model<T>, filter: Statements.Filter, fields: string[]): Promise<T[]>;
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param model Model type.
-   * @param views View mode.
    * @param id Entity id.
+   * @param fields Fields to be selected.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
-  findById<T extends Types.Entity>(model: Types.Model<T>, views: string[], id: any): Promise<T | undefined>;
+  findById<T extends Types.Entity>(model: Types.Model<T>, id: any, fields: string[]): Promise<T | undefined>;
   /**
    * Update all entities that corresponds to the specified match.
    * @param model Model type.
-   * @param views Views mode.
    * @param match Matching fields.
    * @param entity Entity data to be updated.
    * @returns Returns a promise to get the number of updated entities.
    */
-  update(model: Types.Model, views: string[], match: Statements.Match, entity: Types.Entity): Promise<number>;
+  update(model: Types.Model, match: Statements.Match, entity: Types.Entity): Promise<number>;
   /**
    * Update a entity that corresponds to the specified entity id.
    * @param model Model type.
-   * @param views Views mode.
    * @param id Entity id.
    * @param entity Entity data to be updated.
    * @returns Returns a promise to get true when the entity has been updated or false otherwise.
    */
-  updateById(model: Types.Model, views: string[], id: any, entity: Types.Entity): Promise<boolean>;
+  updateById(model: Types.Model, id: any, entity: Types.Entity): Promise<boolean>;
   /**
    * Delete all entities that corresponds to the specified match.
    * @param model Model type.
@@ -68,9 +65,8 @@ export interface Driver {
   /**
    * Count all corresponding entities from the storage.
    * @param model Model type.
-   * @param views View modes.
    * @param filter Field filter.
    * @returns Returns a promise to get the total amount of found entities.
    */
-  count(model: Types.Model, views: string[], filter: Statements.Filter): Promise<number>;
+  count(model: Types.Model, filter: Statements.Filter): Promise<number>;
 }

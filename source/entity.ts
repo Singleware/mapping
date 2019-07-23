@@ -25,18 +25,78 @@ type GenericValue<G, T> = G | T | ArrayValue<T> | Types.Map<T>;
 @Class.Describe()
 export class Entity extends Class.Null {
   /**
-   * Creates a new input entity based on the specified model type, view modes and the input data.
-   * @param model Model type.
+   * Converts the specified input value to an entity, if possible.
+   * @param column Column schema.
+   * @param value Value to be converted.
+   * @param full Determines whether all required properties must be provided.
+   * @returns Returns the original or the converted value.
+   */
+  @Class.Private()
+  private static createInputValue<I extends Types.Entity, O extends Types.Entity, G>(column: Columns.Base<O>, value: GenericValue<G, I>, full: boolean): GenericValue<G, O> | undefined {
+    if (!column.model || !Schema.isEntity(column.model)) {
+      return <G>value;
+    } else if (column.formats.includes(Types.Format.ARRAY)) {
+      if (!(value instanceof Array)) {
+        const name = (column as Columns.Real<O>).alias || column.name;
+        throw new TypeError(`Column '${name}' in the model '${Schema.getStorage(column.model)}' must be an array.`);
+      } else {
+        return this.createInputArrayEntity(column.model, value, full, <boolean>(<Columns.Virtual<O>>column).all);
+      }
+    } else if (column.formats.includes(Types.Format.MAP)) {
+      if (!(value instanceof Object)) {
+        const name = (column as Columns.Real<O>).alias || column.name;
+        throw new TypeError(`Column '${name}' in the model '${Schema.getStorage(column.model)}' must be an map.`);
+      } else {
+        return this.createInputMapEntity(column.model, value, full);
+      }
+    } else {
+      return this.createInputEntity(column.model, value, full);
+    }
+  }
+
+  /**
+   * Converts the specified output value to an entity, if possible.
    * @param views View modes.
+   * @param column Column schema.
+   * @param value Value to be converted.
+   * @param full Determines whether all required properties must be provided.
+   * @returns Returns the original or the converted value.
+   */
+  @Class.Private()
+  private static createOutputValue<I extends Types.Entity, O extends Types.Entity, G>(views: string[], column: Columns.Base<O>, value: GenericValue<G, I>, full: boolean): GenericValue<G, O> | undefined {
+    if (!column.model || !Schema.isEntity(column.model)) {
+      return <G>value;
+    } else if (column.formats.includes(Types.Format.ARRAY)) {
+      if (!(value instanceof Array)) {
+        const name = (column as Columns.Real<O>).alias || column.name;
+        throw new TypeError(`Column '${name}' in the model '${Schema.getStorage(column.model)}' must be an array.`);
+      } else {
+        return this.createOutputArrayEntity(column.model, views, value, full, <boolean>(<Columns.Virtual<O>>column).all);
+      }
+    } else if (column.formats.includes(Types.Format.MAP)) {
+      if (!(value instanceof Object)) {
+        const name = (column as Columns.Real<O>).alias || column.name;
+        throw new TypeError(`Column '${name}' in the model '${Schema.getStorage(column.model)}' must be an map.`);
+      } else {
+        return this.createOutputMapEntity(column.model, views, value, full);
+      }
+    } else {
+      return this.createOutputEntity(column.model, views, value, full, <boolean>column.required && column.type === 'real');
+    }
+  }
+
+  /**
+   * Creates a new input entity based on the specified model type and the input data.
+   * @param model Model type.
    * @param data Input data.
    * @param full Determines whether all required properties must be provided.
    * @returns Returns the generated entity.
    * @throws Throws an error when some required column was not supplied or some read-only property was set.
    */
   @Class.Private()
-  private static createInputEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], data: I, full: boolean): O {
+  private static createInputEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, data: I, full: boolean): O {
     const entity = new model();
-    const row = Schema.getRealRow(model, ...views);
+    const row = Schema.getRealRow(model);
     for (const name in row) {
       const schema = row[name];
       const source = schema.name;
@@ -46,9 +106,9 @@ export class Entity extends Class.Null {
           throw new Error(`Column '${name}' in the entity '${Schema.getStorage(model)}' is read-only.`);
         } else {
           const converted = schema.converter ? schema.converter(data[source]) : data[source];
-          const casted = this.castValue(views, schema, converted, true, full);
-          if (casted !== void 0) {
-            entity[target] = casted;
+          const value = this.createInputValue(schema, converted, full);
+          if (value !== void 0) {
+            (<any>entity)[target] = value;
           }
         }
       } else if (full && schema.required && !schema.readOnly) {
@@ -68,8 +128,8 @@ export class Entity extends Class.Null {
    * @returns Returns the generated entity or undefined when the entity has no data.
    * @throws Throws an error when some required column was not supplied or some write-only property was set.
    */
-  @Class.Public()
-  public static createOutputEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], data: I, full: boolean, wanted: boolean): O | undefined {
+  @Class.Private()
+  private static createOutputEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], data: I, full: boolean, wanted: boolean): O | undefined {
     const required = [];
     const entity = new model();
     const rows = { ...Schema.getRealRow(model, ...views), ...Schema.getVirtualRow(model, ...views) };
@@ -83,9 +143,9 @@ export class Entity extends Class.Null {
           throw new Error(`Column '${name}' in the entity '${Schema.getStorage(model)}' is write-only.`);
         } else {
           const converted = schema.converter ? schema.converter(data[source]) : data[source];
-          const casted = this.castValue(views, schema, converted, false, full);
-          if (casted !== void 0 && casted !== null && (wanted || !empty || !this.isEmpty(casted))) {
-            entity[target] = casted;
+          const value = this.createOutputValue(views, schema, converted, full);
+          if (value !== void 0 && value !== null && (wanted || !empty || !this.isEmpty(value))) {
+            (<any>entity)[target] = value;
             empty = false;
           }
         }
@@ -97,44 +157,99 @@ export class Entity extends Class.Null {
       return void 0;
     }
     if (required.length) {
-      throw new Error(`Required column '${required.join(', ')}' in the entity '${Schema.getStorage(model)}' was not given.`);
+      throw new Error(`Required column(s) '${required.join(', ')}' in the entity '${Schema.getStorage(model)}' was not given.`);
     }
     return entity;
   }
 
   /**
-   * Converts the specified value to an entity when possible.
-   * @param views View modes.
-   * @param schema Column schema.
-   * @param value Value to be converted.
-   * @param input Determines whether the value will be used for an input or output.
+   * Creates a new input array of entities based on the specified model type and the list of data.
+   * @param model Model type.
+   * @param list List of data.
    * @param full Determines whether all required properties must be provided.
-   * @returns Returns the original or the converted value.
+   * @param multiple Determines whether each value from the specified list is another list or not.
+   * @returns Returns the new generated list of entities.
    */
   @Class.Private()
-  private static castValue<I extends Types.Entity, O extends Types.Entity, G>(views: string[], column: Columns.Base<O>, value: GenericValue<G, I>, input: boolean, full: boolean): GenericValue<G, O> | undefined {
-    if (column.model && Schema.isEntity(column.model)) {
-      if (column.formats.includes(Types.Format.ARRAY)) {
-        if (!(value instanceof Array)) {
-          const name = (column as Columns.Real<O>).alias || column.name;
-          throw new TypeError(`Column '${name}' in the model '${Schema.getStorage(column.model)}' must be an array.`);
-        } else {
-          return this.createArrayEntity(column.model, views, value, input, full, <boolean>(<Columns.Virtual<O>>column).all);
-        }
-      } else if (column.formats.includes(Types.Format.MAP)) {
-        if (!(value instanceof Object)) {
-          const name = (column as Columns.Real<O>).alias || column.name;
-          throw new TypeError(`Column '${name}' in the model '${Schema.getStorage(column.model)}' must be an map.`);
-        } else {
-          return this.createMapEntity(column.model, views, value, input, full);
-        }
-      } else if (input) {
-        return this.createInputEntity(column.model, views, value, full);
+  private static createInputArrayEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, list: ArrayValue<I>, full: boolean, multiple: boolean): ArrayValue<O> {
+    const entities = [];
+    for (const data of list) {
+      let entity;
+      if (multiple && data instanceof Array) {
+        entity = <O[]>this.createInputArrayEntity(model, data, full, false);
       } else {
-        return this.createOutputEntity(column.model, views, value, full, <boolean>column.required && column.type === 'real');
+        entity = this.createInputEntity(model, data, full);
+      }
+      if (entity !== void 0) {
+        entities.push(entity);
       }
     }
-    return <G>value;
+    return entities;
+  }
+
+  /**
+   * Creates a new output array of entities based on the specified model type, view modes and the list of data.
+   * @param model Model type.
+   * @param views View modes.
+   * @param list List of data.
+   * @param full Determines whether all required properties must be provided.
+   * @param multiple Determines whether each value from the specified list is another list or not.
+   * @returns Returns the new generated list of entities.
+   */
+  @Class.Private()
+  private static createOutputArrayEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], list: ArrayValue<I>, full: boolean, multiple: boolean): ArrayValue<O> {
+    const entities = [];
+    for (const data of list) {
+      let entity;
+      if (multiple && data instanceof Array) {
+        entity = <O[]>this.createOutputArrayEntity(model, views, data, full, false);
+      } else {
+        entity = this.createOutputEntity(model, views, data, full, false);
+      }
+      if (entity !== void 0) {
+        entities.push(entity);
+      }
+    }
+    return entities;
+  }
+
+  /**
+   * Create a new input map of entities based on the specified model type and the map of data.
+   * @param model Model type.
+   * @param map Map of data.
+   * @param full Determines whether all required properties must be provided.
+   * @returns Returns the generated map of entities.
+   */
+  @Class.Private()
+  private static createInputMapEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, map: Types.Map<I>, full: boolean): Types.Map<O> {
+    const entities = <Types.Map<O>>{};
+    for (const name in map) {
+      const entity = this.createInputEntity(model, map[name], full);
+      if (entity !== void 0) {
+        entities[name] = entity;
+      }
+    }
+    return entities;
+  }
+
+  /**
+   * Create a new output map of entities based on the specified model type, view modes and the map of data.
+   * @param model Model type.
+   * @param views View modes.
+   * @param map Map of data.
+   * @param full Determines whether all required properties must be provided.
+   * @returns Returns the generated map of entities.
+   */
+  @Class.Private()
+  private static createOutputMapEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], map: Types.Map<I>, full: boolean): Types.Map<O> {
+    const entities = <Types.Map<O>>{};
+    for (const name in map) {
+      const entity = this.createOutputEntity(model, views, map[name], full, false);
+      if (entity !== void 0) {
+        entities[name] = entity;
+      }
+    }
+    return entities;
   }
 
   /**
@@ -180,107 +295,49 @@ export class Entity extends Class.Null {
    */
   @Class.Private()
   private static normalizeValue<I extends Types.Entity, O extends Types.Entity, G>(column: Columns.Base<I>, value: GenericValue<G, I>): GenericValue<G, O> {
-    if (column.model && Schema.isEntity(column.model)) {
-      if (column.formats.includes(Types.Format.ARRAY)) {
-        if (!(value instanceof Array)) {
-          const name = (column as Columns.Real<I>).alias || column.name;
-          throw new TypeError(`Column '${name}' in the entity '${Schema.getStorage(column.model)}' must be an array.`);
-        } else {
-          return this.normalizeArray(column.model, value, <boolean>(<Columns.Virtual<I>>column).all);
-        }
-      } else if (column.formats.includes(Types.Format.MAP)) {
-        if (!(value instanceof Object)) {
-          const name = (column as Columns.Real<I>).alias || column.name;
-          throw new TypeError(`Column '${name}' in the entity '${Schema.getStorage(column.model)}' must be a map.`);
-        } else {
-          return this.normalizeMap(column.model, value);
-        }
+    if (!column.model || !Schema.isEntity(column.model)) {
+      return <G>value;
+    } else if (column.formats.includes(Types.Format.ARRAY)) {
+      if (!(value instanceof Array)) {
+        const name = (column as Columns.Real<I>).alias || column.name;
+        throw new TypeError(`Column '${name}' in the entity '${Schema.getStorage(column.model)}' must be an array.`);
       } else {
-        return this.normalize(column.model, value);
+        return this.normalizeArray(column.model, value, <boolean>(<Columns.Virtual<I>>column).all);
       }
+    } else if (column.formats.includes(Types.Format.MAP)) {
+      if (!(value instanceof Object)) {
+        const name = (column as Columns.Real<I>).alias || column.name;
+        throw new TypeError(`Column '${name}' in the entity '${Schema.getStorage(column.model)}' must be a map.`);
+      } else {
+        return this.normalizeMap(column.model, value);
+      }
+    } else {
+      return this.normalize(column.model, value);
     }
-    return <G>value;
   }
 
   /**
-   * Creates a new array of entities based on the specified model type, view modes and the list of data.
+   * Creates a new input entity based on the specified model type and the input data.
    * @param model Model type.
-   * @param views View modes.
-   * @param list List of data.
-   * @param input Determines whether the data will be used for an input or output.
-   * @param full Determines whether all required properties must be provided.
-   * @param multiple Determines whether each value from the specified list is another list or not.
-   * @returns Returns the new generated list of entities.
-   */
-  @Class.Public()
-  public static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], list: ArrayValue<I>, input: boolean, full: boolean, multiple: boolean): ArrayValue<O> {
-    const entities = [];
-    for (const data of list) {
-      let entity;
-      if (multiple && data instanceof Array) {
-        entity = <O[]>this.createArrayEntity(model, views, data, input, full, false);
-      } else if (input) {
-        entity = this.createInputEntity(model, views, data, full);
-      } else {
-        entity = this.createOutputEntity(model, views, data, full, false);
-      }
-      if (entity !== void 0) {
-        entities.push(entity);
-      }
-    }
-    return entities;
-  }
-
-  /**
-   * Create a new map of entities based on the specified model type, view modes and the map of data.
-   * @param model Model type.
-   * @param views View modes.
-   * @param map Map of data.
-   * @param input Determines whether the data will be used for an input or output.
-   * @param full Determines whether all required properties must be provided.
-   * @returns Returns the generated map of entities.
-   */
-  @Class.Public()
-  public static createMapEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], map: Types.Map<I>, input: boolean, full: boolean): Types.Map<O> {
-    const entities = <Types.Map<O>>{};
-    for (const name in map) {
-      let entity;
-      if (input) {
-        entity = this.createInputEntity(model, views, map[name], full);
-      } else {
-        entity = this.createOutputEntity(model, views, map[name], full, false);
-      }
-      if (entity !== void 0) {
-        entities[name] = entity;
-      }
-    }
-    return entities;
-  }
-
-  /**
-   * Creates a new input entity based on the specified model type, view modes and the input data.
-   * @param model Model type.
-   * @param views View modes.
    * @param data Input data.
    * @returns Returns the generated entity.
    * @throws Throws an error when some required column was not supplied or some read-only property was set.
    */
   @Class.Public()
-  public static createInput<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], data: I): O {
-    return this.createInputEntity(model, views, data, false);
+  public static createInput<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, data: I): O {
+    return this.createInputEntity(model, data, false);
   }
 
   /**
-   * Creates a new full input entity based on the specified model type, view modes and the input data.
+   * Creates a new full input entity based on the specified model type and the input data.
    * @param model Model type.
-   * @param views View modes.
    * @param data Input data.
    * @returns Returns the generated entity.
    * @throws Throws an error when some required column was not supplied or some read-only property was set.
    */
   @Class.Public()
-  public static createFullInput<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], data: I): O {
-    return this.createInputEntity(model, views, data, true);
+  public static createFullInput<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, data: I): O {
+    return this.createInputEntity(model, data, true);
   }
 
   /**
@@ -310,27 +367,25 @@ export class Entity extends Class.Null {
   }
 
   /**
-   * Creates a new input array of entities based on the specified model type, view modes and the list of data.
+   * Creates a new input array of entities based on the specified model type and the list of data.
    * @param model Model type.
-   * @param views View modes.
    * @param list List of data.
    * @returns Returns the new generated list of entities.
    */
   @Class.Public()
-  public static createInputArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], list: ArrayValue<I>): ArrayValue<O> {
-    return this.createArrayEntity(model, views, list, true, false, false);
+  public static createInputArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, list: ArrayValue<I>): ArrayValue<O> {
+    return this.createInputArrayEntity(model, list, false, false);
   }
 
   /**
-   * Creates a new full input array of entities based on the specified model type, view modes and the list of data.
+   * Creates a new full input array of entities based on the specified model type and the list of data.
    * @param model Model type.
-   * @param views View modes.
    * @param list List of data.
    * @returns Returns the new generated list of entities.
    */
   @Class.Public()
-  public static createFullInputArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], list: ArrayValue<I>): ArrayValue<O> {
-    return this.createArrayEntity(model, views, list, true, true, false);
+  public static createFullInputArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, list: ArrayValue<I>): ArrayValue<O> {
+    return this.createInputArrayEntity(model, list, true, false);
   }
 
   /**
@@ -342,7 +397,7 @@ export class Entity extends Class.Null {
    */
   @Class.Public()
   public static createOutputArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], list: ArrayValue<I>): ArrayValue<O> {
-    return this.createArrayEntity(model, views, list, false, false, false);
+    return this.createOutputArrayEntity(model, views, list, false, false);
   }
 
   /**
@@ -354,31 +409,29 @@ export class Entity extends Class.Null {
    */
   @Class.Public()
   public static createFullOutputArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], list: ArrayValue<I>): ArrayValue<O> {
-    return this.createArrayEntity(model, views, list, false, true, false);
+    return this.createOutputArrayEntity(model, views, list, true, false);
   }
 
   /**
-   * Create a new input map of entities based on the specified model type, view modes and the map of data.
+   * Create a new input map of entities based on the specified model type and the map of data.
    * @param model Model type.
-   * @param views View modes.
    * @param map Map of data.
    * @returns Returns the generated map of entities.
    */
   @Class.Public()
-  public static createInputMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], map: Types.Map<I>): Types.Map<O> {
-    return this.createMapEntity(model, views, map, true, false);
+  public static createInputMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, map: Types.Map<I>): Types.Map<O> {
+    return this.createInputMapEntity(model, map, false);
   }
 
   /**
-   * Create a new full input map of entities based on the specified model type, view modes and the map of data.
+   * Create a new full input map of entities based on the specified model type and the map of data.
    * @param model Model type.
-   * @param views View modes.
    * @param map Map of data.
    * @returns Returns the generated map of entities.
    */
   @Class.Public()
-  public static createFullInputMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], map: Types.Map<I>): Types.Map<O> {
-    return this.createMapEntity(model, views, map, true, true);
+  public static createFullInputMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, map: Types.Map<I>): Types.Map<O> {
+    return this.createInputMapEntity(model, map, true);
   }
 
   /**
@@ -390,7 +443,7 @@ export class Entity extends Class.Null {
    */
   @Class.Public()
   public static createOutputMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], map: Types.Map<I>): Types.Map<O> {
-    return this.createMapEntity(model, views, map, false, false);
+    return this.createOutputMapEntity(model, views, map, false);
   }
 
   /**
@@ -402,7 +455,7 @@ export class Entity extends Class.Null {
    */
   @Class.Public()
   public static createFullOutputMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], map: Types.Map<I>): Types.Map<O> {
-    return this.createMapEntity(model, views, map, false, true);
+    return this.createOutputMapEntity(model, views, map, true);
   }
 
   /**
@@ -413,7 +466,7 @@ export class Entity extends Class.Null {
    */
   @Class.Public()
   public static normalize<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<I>, data: I): O {
-    const rows = { ...Schema.getRealRow(model, Types.View.ALL), ...Schema.getVirtualRow(model, Types.View.ALL) };
+    const rows = { ...Schema.getRealRow(model), ...Schema.getVirtualRow(model) };
     const entity = <O>{};
     for (const name in data) {
       const value = data[name];

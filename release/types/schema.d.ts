@@ -57,28 +57,28 @@ export declare class Schema extends Class.Null {
      */
     static isEntity<E extends Types.Entity>(model: Types.Model<E>): boolean;
     /**
-     * Determines whether one of the views in the given list of views exists in the specified column schema.
-     * @param views List of views.
+     * Determines whether the specified column schema can be viewed based on the given fields.
      * @param column Column schema.
+     * @param fields Fields to be selected.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isView<E extends Types.Entity>(column: Columns.Base<E>, ...views: string[]): boolean;
+    static isViewed<E extends Types.Entity>(column: Columns.Base<E>, ...fields: string[]): boolean;
     /**
-     * Gets the real row schema from the specified model type and list of view modes.
+     * Gets the real row schema from the specified model type and fields.
      * @param model Model type.
-     * @param views List of view modes.
+     * @param fields Fields to be selected.
      * @returns Returns the real row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getRealRow(model: Types.Model, ...views: string[]): Columns.RealRow;
+    static getRealRow(model: Types.Model, ...fields: string[]): Columns.RealRow;
     /**
-     * Gets the virtual row schema from the specified model type and list of view modes.
+     * Gets the virtual row schema from the specified model type and fields.
      * @param model Model type.
-     * @param views List of view modes.
+     * @param fields Fields to be selected.
      * @returns Returns the virtual row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getVirtualRow(model: Types.Model, ...views: string[]): Columns.VirtualRow;
+    static getVirtualRow(model: Types.Model, ...fields: string[]): Columns.VirtualRow;
     /**
      * Gets the real column schema from the specified model type and column name.
      * @param model Model type.
@@ -113,12 +113,6 @@ export declare class Schema extends Class.Null {
      * @returns Returns the decorator method.
      */
     static Alias(name: string): PropertyDecorator;
-    /**
-     * Decorates the specified property to be visible only in specific scenarios.
-     * @param views List of views.
-     * @returns Returns the decorator method.
-     */
-    static Views(...views: RegExp[]): PropertyDecorator;
     /**
      * Decorates the specified property to convert its input and output value.
      * @param callback Converter callback.

@@ -20,3 +20,4 @@ var Operator;
     Operator[Operator["NOT_CONTAIN"] = 8] = "NOT_CONTAIN";
     Operator[Operator["REGEX"] = 9] = "REGEX";
 })(Operator = exports.Operator || (exports.Operator = {}));
+//# sourceMappingURL=operator.js.map

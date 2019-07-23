@@ -3,9 +3,13 @@
     "target": "esnext",
     "module": "commonjs",
     "strict": true,
+    "sourceMap": true,
+    "incremental": true,
     "experimentalDecorators": true,
     "suppressExcessPropertyErrors": true,
     "outDir": "../release/"
   },
-  "include": ["./**/*"]
+  "include": [
+    "./**/*"
+  ]
 }
