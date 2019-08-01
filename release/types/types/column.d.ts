@@ -2,11 +2,10 @@
  * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
-import { Order } from './order';
-
 /**
- * Sort statement interface.
+ * Column types.
  */
-export interface Sort {
-  [column: string]: Order;
+export declare enum Column {
+    Real = "real",
+    Virtual = "virtual"
 }

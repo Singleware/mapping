@@ -6,19 +6,19 @@
  * Data formats.
  */
 export declare enum Format {
-    ID = 0,
-    NULL = 1,
-    BINARY = 2,
-    BOOLEAN = 3,
-    INTEGER = 4,
-    DECIMAL = 5,
-    NUMBER = 6,
-    STRING = 7,
-    ENUMERATION = 8,
-    PATTERN = 9,
-    TIMESTAMP = 10,
-    DATE = 11,
-    ARRAY = 12,
-    MAP = 13,
-    OBJECT = 14
+    Id = 0,
+    Null = 1,
+    Binary = 2,
+    Boolean = 3,
+    Integer = 4,
+    Decimal = 5,
+    Number = 6,
+    String = 7,
+    Enumeration = 8,
+    Pattern = 9,
+    Timestamp = 10,
+    Date = 11,
+    Array = 12,
+    Map = 13,
+    Object = 14
 }

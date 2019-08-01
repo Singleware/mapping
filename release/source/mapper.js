@@ -67,17 +67,17 @@ let Mapper = class Mapper extends Class.Null {
     }
     /**
      * Find all corresponding entity in the storage.
-     * @param filter Field filter.
-     * @param fields Fields to be selected, when not provided all fields will be selected.
+     * @param query Query filter
+     * @param fields Viewed fields.
      * @returns Returns a promise to get the list of entities found.
      */
-    async find(filter, fields = []) {
-        return entity_1.Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, filter, fields));
+    async find(query, fields = []) {
+        return entity_1.Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, query, fields));
     }
     /**
      * Find the entity that corresponds to the specified entity id.
      * @param id Entity id.
-     * @param fields Fields to be selected, when not provided all fields will be selected.
+     * @param fields Viewed fields.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
     async findById(id, fields = []) {
@@ -90,8 +90,8 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Update all entities that corresponds to the specified match using a custom model type.
      * @param model Model type.
-     * @param match Matching fields.
-     * @param entity Entity data to be updated.
+     * @param match Matching filter.
+     * @param entity Entity data.
      * @returns Returns a promise to get the number of updated entities.
      */
     async updateEx(model, match, entity) {
@@ -99,8 +99,8 @@ let Mapper = class Mapper extends Class.Null {
     }
     /**
      * Update all entities that corresponds to the specified match.
-     * @param match Matching fields.
-     * @param entity Entity data to be updated.
+     * @param match Matching filter.
+     * @param entity Entity data.
      * @returns Returns a promise to get the number of updated entities.
      */
     async update(match, entity) {
@@ -110,7 +110,7 @@ let Mapper = class Mapper extends Class.Null {
      * Update the entity that corresponds to the specified id using a custom model type.
      * @param model Model type.
      * @param id Entity id.
-     * @param entity Entity data to be updated.
+     * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateByIdEx(model, id, entity) {
@@ -119,15 +119,33 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Update the entity that corresponds to the specified id.
      * @param id Entity id.
-     * @param entity Entity data to be updated.
+     * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateById(id, entity) {
         return await this.driver.updateById(this.model, id, entity_1.Entity.createInput(this.model, entity));
     }
     /**
+     * Replace the entity that corresponds to the specified id using a custom model type.
+     * @param id Entity id.
+     * @param entity Entity data.
+     * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+     */
+    async replaceByIdEx(model, id, entity) {
+        return await this.driver.replaceById(model, id, entity_1.Entity.createInput(model, entity));
+    }
+    /**
+     * Replace the entity that corresponds to the specified id.
+     * @param id Entity id.
+     * @param entity Entity data.
+     * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+     */
+    async replaceById(id, entity) {
+        return await this.driver.replaceById(this.model, id, entity_1.Entity.createInput(this.model, entity));
+    }
+    /**
      * Delete all entities that corresponds to the specified match.
-     * @param match Matching fields.
+     * @param match Matching filter.
      * @return Returns a promise to get the number of deleted entities.
      */
     async delete(match) {
@@ -143,11 +161,11 @@ let Mapper = class Mapper extends Class.Null {
     }
     /**
      * Count all corresponding entities from the storage.
-     * @param filter Field filter.
+     * @param query Query filter.
      * @returns Returns a promise to get the total amount of found entities.
      */
-    async count(filter) {
-        return await this.driver.count(this.model, filter);
+    async count(query) {
+        return await this.driver.count(this.model, query);
     }
     /**
      * Generate a new normalized entity based on the specified input data.
@@ -217,6 +235,12 @@ __decorate([
 __decorate([
     Class.Protected()
 ], Mapper.prototype, "updateById", null);
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "replaceByIdEx", null);
+__decorate([
+    Class.Protected()
+], Mapper.prototype, "replaceById", null);
 __decorate([
     Class.Protected()
 ], Mapper.prototype, "delete", null);

@@ -4,17 +4,17 @@
  */
 
 /**
- * Statement operators.
+ * Operator filter.
  */
 export enum Operator {
-  LESS,
-  LESS_OR_EQUAL,
-  EQUAL,
-  NOT_EQUAL,
-  GREATER_OR_EQUAL,
-  GREATER,
-  CONTAIN,
-  BETWEEN,
-  NOT_CONTAIN,
-  REGEX
+  Less,
+  LessOrEqual,
+  Equal,
+  NotEqual,
+  GreaterOrEqual,
+  Greater,
+  Contain,
+  Between,
+  NotContain,
+  RegEx
 }

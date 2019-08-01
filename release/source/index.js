@@ -10,10 +10,25 @@ var mapper_1 = require("./mapper");
 exports.Mapper = mapper_1.Mapper;
 var schema_1 = require("./schema");
 exports.Schema = schema_1.Schema;
+// Imported aliases.
 const Types = require("./types");
-exports.Types = Types;
 const Columns = require("./columns");
+const Filters = require("./filters");
+const Castings = require("./castings");
+/**
+ * Types namespace.
+ */
+exports.Types = Types;
+/**
+ * Columns namespace.
+ */
 exports.Columns = Columns;
-const Statements = require("./statements");
-exports.Statements = Statements;
+/**
+ * Filters namespace.
+ */
+exports.Filters = Filters;
+/**
+ * Castings namespace.
+ */
+exports.Castings = Castings;
 //# sourceMappingURL=index.js.map

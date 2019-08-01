@@ -5,7 +5,7 @@
 import { Order } from './order';
 
 /**
- * Limit statement interface.
+ * Limit filter interface.
  */
 export interface Limit {
   /**

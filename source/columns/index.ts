@@ -2,15 +2,16 @@
  * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
+export { Base } from './base';
+export { Real } from './real';
+export { Virtual } from './virtual';
+
+// Imported aliases.
 import * as Types from '../types';
 
 import { Base } from './base';
 import { Real } from './real';
 import { Virtual } from './virtual';
-
-export { Base } from './base';
-export { Real } from './real';
-export { Virtual } from './virtual';
 
 /**
  * Type declaration for map of columns base.

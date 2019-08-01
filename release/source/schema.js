@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Class = require("@singleware/class");
 const Validator = require("@singleware/types");
 const Types = require("./types");
+const Castings = require("./castings");
 /**
  * Schema helper class.
  */
@@ -71,10 +72,10 @@ let Schema = class Schema extends Class.Null {
     static assignColumn(model, type, name, properties) {
         const storage = this.assignStorage(model);
         const row = storage[type];
-        if (type === 'real' && name in storage.virtual) {
+        if (type === Types.Column.Real && name in storage.virtual) {
             throw new Error(`A virtual column named '${name}' already exists.`);
         }
-        else if (type === 'virtual' && name in storage.real) {
+        else if (type === Types.Column.Virtual && name in storage.real) {
             throw new Error(`A real column named '${name}' already exists.`);
         }
         if (name in row) {
@@ -114,20 +115,20 @@ let Schema = class Schema extends Class.Null {
         }
     }
     /**
-     * Determines whether the specified model type is a valid entity.
-     * @param model Model type.
-     * @returns Returns true when the specified model is valid, false otherwise.
+     * Determines whether the specified value is a valid entity.
+     * @param value Model type.
+     * @returns Returns true when the specified value is a valid entity, false otherwise.
      */
-    static isEntity(model) {
-        return model && model.prototype && this.storages.has(model.prototype.constructor);
+    static isEntity(value) {
+        return value && value.prototype && this.storages.has(value.prototype.constructor);
     }
     /**
-     * Determines whether the specified column schema can be viewed based on the given fields.
+     * Determines whether the specified column schema is visible based on the given fields.
      * @param column Column schema.
-     * @param fields Fields to be selected.
+     * @param fields Viewed fields.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isViewed(column, ...fields) {
+    static isVisible(column, ...fields) {
         if (fields.length > 0) {
             return fields.includes(column.name);
         }
@@ -150,7 +151,7 @@ let Schema = class Schema extends Class.Null {
                 storage = this.storages.get(type);
                 for (const name in storage.real) {
                     const column = { ...storage.real[name] };
-                    if (this.isViewed(column, ...fields) && !(name in row)) {
+                    if (this.isVisible(column, ...fields) && !(name in row)) {
                         row[name] = Object.freeze(column);
                     }
                 }
@@ -178,7 +179,7 @@ let Schema = class Schema extends Class.Null {
                 storage = this.storages.get(type);
                 for (const name in storage.virtual) {
                     const column = storage.virtual[name];
-                    if (this.isViewed(column, ...fields) && !(name in row)) {
+                    if (this.isVisible(column, ...fields) && !(name in row)) {
                         row[name] = Object.freeze({ ...column });
                     }
                 }
@@ -246,13 +247,21 @@ let Schema = class Schema extends Class.Null {
      * @returns Returns the storage name.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getStorage(model) {
+    static getStorageName(model) {
         const type = model.prototype.constructor;
         const storage = this.storages.get(type);
         if (!storage) {
             throw Error(`Invalid model type '${type.name}', unable to get the storage name.`);
         }
         return storage.name;
+    }
+    /**
+     * Gets the column name from the specified column schema.
+     * @param column Column schema.
+     * @returns Returns the column name.
+     */
+    static getColumnName(column) {
+        return column.alias || column.name;
     }
     /**
      * Decorates the specified class to be an entity model.
@@ -271,17 +280,17 @@ let Schema = class Schema extends Class.Null {
      */
     static Alias(name) {
         return (scope, property) => {
-            this.assignColumn(scope.constructor, 'real', property, { alias: name });
+            this.assignColumn(scope.constructor, Types.Column.Real, property, { alias: name });
         };
     }
     /**
      * Decorates the specified property to convert its input and output value.
-     * @param callback Converter callback.
+     * @param callback Caster callback.
      * @returns Returns the decorator method.
      */
     static Convert(callback) {
         return (scope, property) => {
-            this.assignRealOrVirtualColumn(scope.constructor, property, { converter: callback });
+            this.assignRealOrVirtualColumn(scope.constructor, property, { caster: callback });
         };
     }
     /**
@@ -311,7 +320,7 @@ let Schema = class Schema extends Class.Null {
      */
     static ReadOnly() {
         return (scope, property) => {
-            const column = this.assignColumn(scope.constructor, 'real', property, { readOnly: true });
+            const column = this.assignColumn(scope.constructor, Types.Column.Real, property, { readOnly: true });
             if (column.writeOnly) {
                 throw new Error(`Column '${property}' is already write-only.`);
             }
@@ -324,7 +333,7 @@ let Schema = class Schema extends Class.Null {
      */
     static WriteOnly() {
         return (scope, property) => {
-            const column = this.assignColumn(scope.constructor, 'real', property, { writeOnly: true });
+            const column = this.assignColumn(scope.constructor, Types.Column.Real, property, { writeOnly: true });
             if (column.readOnly) {
                 throw new Error(`Column '${property}' is already read-only.`);
             }
@@ -335,7 +344,7 @@ let Schema = class Schema extends Class.Null {
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
-     * @param match Column match.
+     * @param match Column matching filter.
      * @returns Returns the decorator method.
      */
     static Join(foreign, model, local, match) {
@@ -343,16 +352,16 @@ let Schema = class Schema extends Class.Null {
             const localModel = scope.constructor;
             const localSchema = this.getRealColumn(localModel, local);
             const foreignSchema = this.getRealColumn(model, foreign);
-            const multiple = localSchema.formats.includes(Types.Format.ARRAY);
-            return this.addValidation(scope, this.assignColumn(localModel, 'virtual', property, {
+            const multiple = localSchema.formats.includes(Types.Format.Array);
+            return this.addValidation(scope, this.assignColumn(localModel, Types.Column.Virtual, property, {
                 local: localSchema.alias || localSchema.name,
                 foreign: foreignSchema.alias || foreignSchema.name,
                 multiple: multiple,
                 model: model,
-                filter: {
+                query: {
                     pre: match
                 }
-            }), new Validator.Common.InstanceOf(multiple ? Array : model), multiple ? Types.Format.ARRAY : Types.Format.OBJECT, descriptor);
+            }), new Validator.Common.InstanceOf(multiple ? Array : model), multiple ? Types.Format.Array : Types.Format.Object, descriptor);
         };
     }
     /**
@@ -360,22 +369,22 @@ let Schema = class Schema extends Class.Null {
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
-     * @param filter Column filter.
+     * @param query Column query filter.
      * @returns Returns the decorator method.
      */
-    static JoinAll(foreign, model, local, filter) {
+    static JoinAll(foreign, model, local, query) {
         return (scope, property, descriptor) => {
             const localModel = scope.constructor;
             const localSchema = this.getRealColumn(localModel, local);
             const foreignSchema = this.getRealColumn(model, foreign);
-            return this.addValidation(scope, this.assignColumn(localModel, 'virtual', property, {
+            return this.addValidation(scope, this.assignColumn(localModel, Types.Column.Virtual, property, {
                 local: localSchema.alias || localSchema.name,
                 foreign: foreignSchema.alias || foreignSchema.name,
-                multiple: localSchema.formats.includes(Types.Format.ARRAY),
-                filter: filter,
+                multiple: localSchema.formats.includes(Types.Format.Array),
+                query: query,
                 model: model,
                 all: true
-            }), new Validator.Common.InstanceOf(Array), Types.Format.ARRAY, descriptor);
+            }), new Validator.Common.InstanceOf(Array), Types.Format.Array, descriptor);
         };
     }
     /**
@@ -393,7 +402,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Id() {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property), new Validator.Common.Any(), Types.Format.ID, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property), new Validator.Common.Any(), Types.Format.Id, descriptor);
         };
     }
     /**
@@ -402,7 +411,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Null() {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property), new Validator.Common.Null(), Types.Format.NULL, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property), new Validator.Common.Null(), Types.Format.Null, descriptor);
         };
     }
     /**
@@ -411,7 +420,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Binary() {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property), new Validator.Common.Any(), Types.Format.BINARY, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property), new Validator.Common.Any(), Types.Format.Binary, descriptor);
         };
     }
     /**
@@ -420,7 +429,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Boolean() {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property), new Validator.Common.Boolean(), Types.Format.BOOLEAN, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property), new Validator.Common.Boolean(), Types.Format.Boolean, descriptor);
         };
     }
     /**
@@ -431,7 +440,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Integer(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { minimum: minimum, maximum: maximum }), new Validator.Common.Integer(minimum, maximum), Types.Format.INTEGER, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.Integer(minimum, maximum), Types.Format.Integer, descriptor);
         };
     }
     /**
@@ -442,7 +451,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Decimal(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { minimum: minimum, maximum: maximum }), new Validator.Common.Decimal(minimum, maximum), Types.Format.DECIMAL, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.Decimal(minimum, maximum), Types.Format.Decimal, descriptor);
         };
     }
     /**
@@ -453,7 +462,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Number(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { minimum: minimum, maximum: maximum }), new Validator.Common.Number(minimum, maximum), Types.Format.NUMBER, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.Number(minimum, maximum), Types.Format.Number, descriptor);
         };
     }
     /**
@@ -464,7 +473,7 @@ let Schema = class Schema extends Class.Null {
      */
     static String(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { minimum: minimum, maximum: maximum }), new Validator.Common.String(minimum, maximum), Types.Format.STRING, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.String(minimum, maximum), Types.Format.String, descriptor);
         };
     }
     /**
@@ -474,7 +483,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Enumeration(...values) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { values: values }), new Validator.Common.Enumeration(...values), Types.Format.ENUMERATION, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { values: values }), new Validator.Common.Enumeration(...values), Types.Format.Enumeration, descriptor);
         };
     }
     /**
@@ -485,7 +494,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Pattern(pattern, name) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { pattern: pattern }), new Validator.Common.Pattern(pattern, name), Types.Format.PATTERN, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { pattern: pattern }), new Validator.Common.Pattern(pattern, name), Types.Format.Pattern, descriptor);
         };
     }
     /**
@@ -496,7 +505,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Timestamp(min, max) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property), new Validator.Common.Timestamp(min, max), Types.Format.TIMESTAMP, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property), new Validator.Common.Timestamp(min, max), Types.Format.Timestamp, descriptor);
         };
     }
     /**
@@ -507,25 +516,27 @@ let Schema = class Schema extends Class.Null {
      */
     static Date(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property), new Validator.Common.Timestamp(minimum, maximum), Types.Format.DATE, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                caster: Castings.ISODate.Object.bind(Castings.ISODate)
+            }), new Validator.Common.Timestamp(minimum, maximum), Types.Format.Date, descriptor);
         };
     }
     /**
      * Decorates the specified property to be an array column.
      * @param model Model type.
-     * @param unique Determines whether the items of array must be unique or not.
+     * @param unique Determines whether the array items must be unique or not.
      * @param minimum Minimum items.
      * @param maximum Maximum items.
      * @returns Returns the decorator method.
      */
     static Array(model, unique, minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, {
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
                 model: model,
                 unique: unique,
                 minimum: minimum,
                 maximum: maximum
-            }), new Validator.Common.InstanceOf(Array), Types.Format.ARRAY, descriptor);
+            }), new Validator.Common.InstanceOf(Array), Types.Format.Array, descriptor);
         };
     }
     /**
@@ -535,7 +546,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Map(model) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { model: model }), new Validator.Common.InstanceOf(Object), Types.Format.MAP, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { model: model }), new Validator.Common.InstanceOf(Object), Types.Format.Map, descriptor);
         };
     }
     /**
@@ -545,7 +556,7 @@ let Schema = class Schema extends Class.Null {
      */
     static Object(model) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, 'real', property, { model: model }), new Validator.Common.InstanceOf(model), Types.Format.OBJECT, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { model: model }), new Validator.Common.InstanceOf(model), Types.Format.Object, descriptor);
         };
     }
 };
@@ -573,7 +584,7 @@ __decorate([
 ], Schema, "isEntity", null);
 __decorate([
     Class.Public()
-], Schema, "isViewed", null);
+], Schema, "isVisible", null);
 __decorate([
     Class.Public()
 ], Schema, "getRealRow", null);
@@ -588,7 +599,10 @@ __decorate([
 ], Schema, "getPrimaryColumn", null);
 __decorate([
     Class.Public()
-], Schema, "getStorage", null);
+], Schema, "getStorageName", null);
+__decorate([
+    Class.Public()
+], Schema, "getColumnName", null);
 __decorate([
     Class.Public()
 ], Schema, "Entity", null);

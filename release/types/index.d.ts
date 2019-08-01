@@ -7,8 +7,22 @@ export { Mapper } from './mapper';
 export { Schema } from './schema';
 export { Driver } from './driver';
 import * as Types from './types';
-export import Types = Types;
 import * as Columns from './columns';
+import * as Filters from './filters';
+import * as Castings from './castings';
+/**
+ * Types namespace.
+ */
+export import Types = Types;
+/**
+ * Columns namespace.
+ */
 export import Columns = Columns;
-import * as Statements from './statements';
-export import Statements = Statements;
+/**
+ * Filters namespace.
+ */
+export import Filters = Filters;
+/**
+ * Castings namespace.
+ */
+export import Castings = Castings;

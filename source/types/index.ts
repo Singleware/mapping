@@ -2,14 +2,18 @@
  * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
+export { Map } from './map';
+export { Cast } from './cast';
+export { Entity } from './entity';
+export { Column } from './column';
+export { Format } from './format';
+export { Storage } from './storage';
+
+// Imported aliases.
 import * as Class from '@singleware/class';
 
 import { Entity } from './entity';
-
-export { Map } from './map';
-export { Entity } from './entity';
-export { Format } from './format';
-export { Storage } from './storage';
+import { Cast } from './cast';
 
 /**
  * Type declaration for entity model constructors.
@@ -17,16 +21,16 @@ export { Storage } from './storage';
 export type Model<T extends Entity = Entity> = Class.Constructor<T>;
 
 /**
- * Type declaration for converters callback.
+ * Type declaration for caster callback.
  */
-export type Converter<T = any> = (input: T | undefined) => T;
+export type Caster<T = any> = (input: T | undefined, type: Cast) => T;
 
 /**
- * Type declaration for class decorators.
+ * Class decorator.
  */
-export type ClassDecorator = Class.ClassDecorator;
+export import ClassDecorator = Class.ClassDecorator;
 
 /**
- * Type declaration for decorators of classes properties.
+ * Property decorator.
  */
-export type PropertyDecorator = Class.MemberDecorator;
+export import PropertyDecorator = Class.MemberDecorator;

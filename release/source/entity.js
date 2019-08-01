@@ -18,6 +18,20 @@ const schema_1 = require("./schema");
  */
 let Entity = class Entity extends Class.Null {
     /**
+     * Determines whether the specified value is a filled result or not.
+     * @param value Value to check.
+     * @returns Returns true when the specified value is filled, false otherwise.
+     */
+    static isFilledResult(value) {
+        if (value instanceof Array) {
+            return value.length === 0;
+        }
+        else if (value instanceof Object) {
+            return !schema_1.Schema.isEntity(value) && Object.keys(value).length === 0;
+        }
+        return false;
+    }
+    /**
      * Converts the specified input value to an entity, if possible.
      * @param column Column schema.
      * @param value Value to be converted.
@@ -25,22 +39,20 @@ let Entity = class Entity extends Class.Null {
      * @returns Returns the original or the converted value.
      */
     static createInputValue(column, value, full) {
-        if (!column.model || !schema_1.Schema.isEntity(column.model)) {
+        if (!column.model || !schema_1.Schema.isEntity(column.model) || (value === null && column.formats.includes(Types.Format.Null))) {
             return value;
         }
-        else if (column.formats.includes(Types.Format.ARRAY)) {
+        else if (column.formats.includes(Types.Format.Array)) {
             if (!(value instanceof Array)) {
-                const name = column.alias || column.name;
-                throw new TypeError(`Column '${name}' in the model '${schema_1.Schema.getStorage(column.model)}' must be an array.`);
+                throw new TypeError(`Column '${schema_1.Schema.getColumnName(column)}' in '${schema_1.Schema.getStorageName(column.model)}' must be an array.`);
             }
             else {
                 return this.createInputArrayEntity(column.model, value, full, column.all);
             }
         }
-        else if (column.formats.includes(Types.Format.MAP)) {
+        else if (column.formats.includes(Types.Format.Map)) {
             if (!(value instanceof Object)) {
-                const name = column.alias || column.name;
-                throw new TypeError(`Column '${name}' in the model '${schema_1.Schema.getStorage(column.model)}' must be an map.`);
+                throw new TypeError(`Column '${schema_1.Schema.getColumnName(column)}' in '${schema_1.Schema.getStorageName(column.model)}' must be an map.`);
             }
             else {
                 return this.createInputMapEntity(column.model, value, full);
@@ -52,36 +64,34 @@ let Entity = class Entity extends Class.Null {
     }
     /**
      * Converts the specified output value to an entity, if possible.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param column Column schema.
      * @param value Value to be converted.
      * @param full Determines whether all required properties must be provided.
      * @returns Returns the original or the converted value.
      */
-    static createOutputValue(views, column, value, full) {
-        if (!column.model || !schema_1.Schema.isEntity(column.model)) {
+    static createOutputValue(fields, column, value, full) {
+        if (!column.model || !schema_1.Schema.isEntity(column.model) || (value === null && column.formats.includes(Types.Format.Null))) {
             return value;
         }
-        else if (column.formats.includes(Types.Format.ARRAY)) {
+        else if (column.formats.includes(Types.Format.Array)) {
             if (!(value instanceof Array)) {
-                const name = column.alias || column.name;
-                throw new TypeError(`Column '${name}' in the model '${schema_1.Schema.getStorage(column.model)}' must be an array.`);
+                throw new TypeError(`Column '${schema_1.Schema.getColumnName(column)}' in '${schema_1.Schema.getStorageName(column.model)}' must be an array.`);
             }
             else {
-                return this.createOutputArrayEntity(column.model, views, value, full, column.all);
+                return this.createOutputArrayEntity(column.model, fields, value, full, column.all);
             }
         }
-        else if (column.formats.includes(Types.Format.MAP)) {
+        else if (column.formats.includes(Types.Format.Map)) {
             if (!(value instanceof Object)) {
-                const name = column.alias || column.name;
-                throw new TypeError(`Column '${name}' in the model '${schema_1.Schema.getStorage(column.model)}' must be an map.`);
+                throw new TypeError(`Column '${schema_1.Schema.getColumnName(column)}' in '${schema_1.Schema.getStorageName(column.model)}' must be an map.`);
             }
             else {
-                return this.createOutputMapEntity(column.model, views, value, full);
+                return this.createOutputMapEntity(column.model, fields, value, full);
             }
         }
         else {
-            return this.createOutputEntity(column.model, views, value, full, column.required && column.type === 'real');
+            return this.createOutputEntity(column.model, fields, value, full, column.required && column.type === Types.Column.Real);
         }
     }
     /**
@@ -96,68 +106,68 @@ let Entity = class Entity extends Class.Null {
         const entity = new model();
         const row = schema_1.Schema.getRealRow(model);
         for (const name in row) {
-            const schema = row[name];
-            const source = schema.name;
-            const target = schema.alias || schema.name;
+            const column = row[name];
+            const source = column.name;
+            const target = schema_1.Schema.getColumnName(column);
             if (source in data && data[source] !== void 0) {
-                if (schema.readOnly) {
-                    throw new Error(`Column '${name}' in the entity '${schema_1.Schema.getStorage(model)}' is read-only.`);
+                if (column.readOnly) {
+                    throw new Error(`Column '${name}' in '${schema_1.Schema.getStorageName(model)}' is read-only.`);
                 }
                 else {
-                    const converted = schema.converter ? schema.converter(data[source]) : data[source];
-                    const value = this.createInputValue(schema, converted, full);
+                    const converted = column.caster ? column.caster(data[source], Types.Cast.Input) : data[source];
+                    const value = this.createInputValue(column, converted, full);
                     if (value !== void 0) {
                         entity[target] = value;
                     }
                 }
             }
-            else if (full && schema.required && !schema.readOnly) {
-                throw new Error(`Required column '${name}' in the entity '${schema_1.Schema.getStorage(model)}' was not given.`);
+            else if (full && column.required && !column.readOnly) {
+                throw new Error(`Column '${name}' required by '${schema_1.Schema.getStorageName(model)}' wasn't given.`);
             }
         }
         return entity;
     }
     /**
-     * Creates a new output entity based on the specified model type, view modes and the output data.
+     * Creates a new output entity based on the specified model type, viewed fields and the output data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param data Output data.
      * @param full Determines whether all required properties must be provided.
      * @param wanted Determines whether all properties are wanted by the parent entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
      * @throws Throws an error when some required column was not supplied or some write-only property was set.
      */
-    static createOutputEntity(model, views, data, full, wanted) {
+    static createOutputEntity(model, fields, data, full, wanted) {
         const required = [];
         const entity = new model();
-        const rows = { ...schema_1.Schema.getRealRow(model, ...views), ...schema_1.Schema.getVirtualRow(model, ...views) };
-        let empty = true;
+        const rows = { ...schema_1.Schema.getRealRow(model, ...fields), ...schema_1.Schema.getVirtualRow(model, ...fields) };
+        let filled = false;
         for (const name in rows) {
-            const schema = rows[name];
-            const source = schema.alias || schema.name;
-            const target = schema.name;
+            const column = rows[name];
+            const source = schema_1.Schema.getColumnName(column);
+            const target = column.name;
             if (source in data && data[source] !== void 0) {
-                if (schema.writeOnly) {
-                    throw new Error(`Column '${name}' in the entity '${schema_1.Schema.getStorage(model)}' is write-only.`);
+                if (column.writeOnly) {
+                    throw new Error(`Column '${name}' in '${schema_1.Schema.getStorageName(model)}' is write-only.`);
                 }
                 else {
-                    const converted = schema.converter ? schema.converter(data[source]) : data[source];
-                    const value = this.createOutputValue(views, schema, converted, full);
-                    if (value !== void 0 && value !== null && (wanted || !empty || !this.isEmpty(value))) {
+                    const converted = column.caster ? column.caster(data[source], Types.Cast.Output) : data[source];
+                    const value = this.createOutputValue(fields, column, converted, full);
+                    if (value !== void 0 && (wanted || filled || !this.isFilledResult(value))) {
                         entity[target] = value;
-                        empty = false;
+                        filled = true;
                     }
                 }
             }
-            else if (full && schema.required && !schema.writeOnly) {
+            else if (full && column.required && !column.writeOnly) {
                 required.push(name);
             }
         }
-        if (empty && !wanted) {
+        if (!filled && !wanted) {
             return void 0;
         }
         if (required.length) {
-            throw new Error(`Required column(s) '${required.join(', ')}' in the entity '${schema_1.Schema.getStorage(model)}' was not given.`);
+            throw new Error(`Column(s) '${required.join(', ')}' required by '${schema_1.Schema.getStorageName(model)}' wasn't given.`);
         }
         return entity;
     }
@@ -186,23 +196,23 @@ let Entity = class Entity extends Class.Null {
         return entities;
     }
     /**
-     * Creates a new output array of entities based on the specified model type, view modes and the list of data.
+     * Creates a new output array of entities based on the specified model type, viewed fields and the list of data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param list List of data.
      * @param full Determines whether all required properties must be provided.
      * @param multiple Determines whether each value from the specified list is another list or not.
      * @returns Returns the new generated list of entities.
      */
-    static createOutputArrayEntity(model, views, list, full, multiple) {
+    static createOutputArrayEntity(model, fields, list, full, multiple) {
         const entities = [];
         for (const data of list) {
             let entity;
             if (multiple && data instanceof Array) {
-                entity = this.createOutputArrayEntity(model, views, data, full, false);
+                entity = this.createOutputArrayEntity(model, fields, data, full, false);
             }
             else {
-                entity = this.createOutputEntity(model, views, data, full, false);
+                entity = this.createOutputEntity(model, fields, data, full, false);
             }
             if (entity !== void 0) {
                 entities.push(entity);
@@ -228,17 +238,17 @@ let Entity = class Entity extends Class.Null {
         return entities;
     }
     /**
-     * Create a new output map of entities based on the specified model type, view modes and the map of data.
+     * Create a new output map of entities based on the specified model type, viewed fields and the map of data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param map Map of data.
      * @param full Determines whether all required properties must be provided.
      * @returns Returns the generated map of entities.
      */
-    static createOutputMapEntity(model, views, map, full) {
+    static createOutputMapEntity(model, fields, map, full) {
         const entities = {};
         for (const name in map) {
-            const entity = this.createOutputEntity(model, views, map[name], full, false);
+            const entity = this.createOutputEntity(model, fields, map[name], full, false);
             if (entity !== void 0) {
                 entities[name] = entity;
             }
@@ -284,22 +294,20 @@ let Entity = class Entity extends Class.Null {
      * @returns Returns the new normalized value or the original value when it doesn't need to be normalized.
      */
     static normalizeValue(column, value) {
-        if (!column.model || !schema_1.Schema.isEntity(column.model)) {
+        if (!column.model || !schema_1.Schema.isEntity(column.model) || (value === null && column.formats.includes(Types.Format.Null))) {
             return value;
         }
-        else if (column.formats.includes(Types.Format.ARRAY)) {
+        else if (column.formats.includes(Types.Format.Array)) {
             if (!(value instanceof Array)) {
-                const name = column.alias || column.name;
-                throw new TypeError(`Column '${name}' in the entity '${schema_1.Schema.getStorage(column.model)}' must be an array.`);
+                throw new TypeError(`Column '${schema_1.Schema.getColumnName(column)}' in '${schema_1.Schema.getStorageName(column.model)}' must be an array.`);
             }
             else {
                 return this.normalizeArray(column.model, value, column.all);
             }
         }
-        else if (column.formats.includes(Types.Format.MAP)) {
+        else if (column.formats.includes(Types.Format.Map)) {
             if (!(value instanceof Object)) {
-                const name = column.alias || column.name;
-                throw new TypeError(`Column '${name}' in the entity '${schema_1.Schema.getStorage(column.model)}' must be a map.`);
+                throw new TypeError(`Column '${schema_1.Schema.getColumnName(column)}' in '${schema_1.Schema.getStorageName(column.model)}' must be a map.`);
             }
             else {
                 return this.normalizeMap(column.model, value);
@@ -330,26 +338,26 @@ let Entity = class Entity extends Class.Null {
         return this.createInputEntity(model, data, true);
     }
     /**
-     * Creates a new output entity based on the specified model type, view modes and the output data.
+     * Creates a new output entity based on the specified model type, viewed fields and the output data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param data Output data.
      * @returns Returns the generated entity or undefined when the entity has no data.
      * @throws Throws an error when some required column was not supplied or some write-only property was set.
      */
-    static createOutput(model, views, data) {
-        return this.createOutputEntity(model, views, data, false, true);
+    static createOutput(model, fields, data) {
+        return this.createOutputEntity(model, fields, data, false, true);
     }
     /**
-     * Creates a new full output entity based on the specified model type, view modes and the output data.
+     * Creates a new full output entity based on the specified model type, viewed fields and the output data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param data Output data.
      * @returns Returns the generated entity or undefined when the entity has no data.
      * @throws Throws an error when some required column was not supplied or some write-only property was set.
      */
-    static createFullOutput(model, views, data) {
-        return this.createOutputEntity(model, views, data, true, true);
+    static createFullOutput(model, fields, data) {
+        return this.createOutputEntity(model, fields, data, true, true);
     }
     /**
      * Creates a new input array of entities based on the specified model type and the list of data.
@@ -370,19 +378,19 @@ let Entity = class Entity extends Class.Null {
         return this.createInputArrayEntity(model, list, true, false);
     }
     /**
-     * Creates a new output array of entities based on the specified model type, view modes and the list of data.
+     * Creates a new output array of entities based on the specified model type, viewed fields and the list of data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param list List of data.
      * @returns Returns the new generated list of entities.
      */
-    static createOutputArray(model, views, list) {
-        return this.createOutputArrayEntity(model, views, list, false, false);
+    static createOutputArray(model, fields, list) {
+        return this.createOutputArrayEntity(model, fields, list, false, false);
     }
     /**
-     * Creates a new full output array of entities based on the specified model type, view modes and the list of data.
+     * Creates a new full output array of entities based on the specified model type, viewed fields and the list of data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param list List of data.
      * @returns Returns the new generated list of entities.
      */
@@ -408,24 +416,24 @@ let Entity = class Entity extends Class.Null {
         return this.createInputMapEntity(model, map, true);
     }
     /**
-     * Create a new output map of entities based on the specified model type, view modes and the map of data.
+     * Create a new output map of entities based on the specified model type, viewed fields and the map of data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param map Map of data.
      * @returns Returns the generated map of entities.
      */
-    static createOutputMap(model, views, map) {
-        return this.createOutputMapEntity(model, views, map, false);
+    static createOutputMap(model, fields, map) {
+        return this.createOutputMapEntity(model, fields, map, false);
     }
     /**
-     * Create a new full output map of entities based on the specified model type, view modes and the map of data.
+     * Create a new full output map of entities based on the specified model type, viewed fields and the map of data.
      * @param model Model type.
-     * @param views View modes.
+     * @param fields Viewed fields.
      * @param map Map of data.
      * @returns Returns the generated map of entities.
      */
-    static createFullOutputMap(model, views, map) {
-        return this.createOutputMapEntity(model, views, map, true);
+    static createFullOutputMap(model, fields, map) {
+        return this.createOutputMapEntity(model, fields, map, true);
     }
     /**
      * Generates a new normalized entity based on the specified model type and input data.
@@ -445,23 +453,10 @@ let Entity = class Entity extends Class.Null {
         }
         return entity;
     }
-    /**
-     * Determines whether the specified value is empty or not.
-     * @param value Value to be checked.
-     * @returns Returns true when the specified value is empty or false otherwise.
-     */
-    static isEmpty(value) {
-        if (value instanceof Array) {
-            return value.length === 0;
-        }
-        else if (value instanceof Object) {
-            return !schema_1.Schema.isEntity(value) && Object.keys(value).length === 0;
-        }
-        else {
-            return value === void 0 || value === null;
-        }
-    }
 };
+__decorate([
+    Class.Private()
+], Entity, "isFilledResult", null);
 __decorate([
     Class.Private()
 ], Entity, "createInputValue", null);
@@ -534,9 +529,6 @@ __decorate([
 __decorate([
     Class.Public()
 ], Entity, "normalize", null);
-__decorate([
-    Class.Public()
-], Entity, "isEmpty", null);
 Entity = __decorate([
     Class.Describe()
 ], Entity);

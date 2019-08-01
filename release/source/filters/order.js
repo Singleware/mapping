@@ -5,11 +5,11 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 /**
- * Statement orders.
+ * Order filter.
  */
 var Order;
 (function (Order) {
-    Order[Order["ASCENDING"] = 0] = "ASCENDING";
-    Order[Order["DESCENDING"] = 1] = "DESCENDING";
+    Order[Order["Ascending"] = 0] = "Ascending";
+    Order[Order["Descending"] = 1] = "Descending";
 })(Order = exports.Order || (exports.Order = {}));
 //# sourceMappingURL=order.js.map

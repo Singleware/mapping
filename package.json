@@ -5,9 +5,9 @@
     "url": "https://balmante.eti.br"
   },
   "name": "@singleware/mapping",
-  "description": "Singleware generic data mapping class package.",
+  "description": "Singleware generic data mapping package.",
   "license": "MIT",
-  "version": "1.3.2",
+  "version": "1.3.18",
   "main": "release/source/index.js",
   "types": "release/types/index.d.ts",
   "keywords": [
@@ -31,7 +31,7 @@
     "typescript": "^3.5.3"
   },
   "prettier": {
-    "printWidth": 240,
+    "printWidth": 140,
     "tabWidth": 2,
     "singleQuote": true,
     "semi": true
@@ -40,10 +40,10 @@
     "build": "npm run clean && npm run make && npm run update",
     "clean": "rm -rf ./release",
     "make": "npx tsc -p ./source",
-    "update": "npm run update-root && npm run update-types && npm run update-columns && npm run update-statements",
+    "update": "npm run update-root && npm run update-types && npm run update-columns && npm run update-filters",
     "update-root": "cp -Rf ./source/*.d.ts ./release/types",
     "update-types": "cp -Rf ./source/types/*.d.ts ./release/types/types",
     "update-columns": "cp -Rf ./source/columns/*.d.ts ./release/types/columns",
-    "update-statements": "cp -Rf ./source/statements/*.d.ts ./release/types/statements"
+    "update-filters": "cp -Rf ./source/filters/*.d.ts ./release/types/filters"
   }
 }

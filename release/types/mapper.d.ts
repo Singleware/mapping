@@ -4,7 +4,7 @@
  */
 import * as Class from '@singleware/class';
 import * as Types from './types';
-import * as Statements from './statements';
+import * as Filters from './filters';
 import { Driver } from './driver';
 /**
  * Generic data mapper class.
@@ -46,54 +46,68 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
     protected insert(entity: E): Promise<any>;
     /**
      * Find all corresponding entity in the storage.
-     * @param filter Field filter.
-     * @param fields Fields to be selected, when not provided all fields will be selected.
+     * @param query Query filter
+     * @param fields Viewed fields.
      * @returns Returns a promise to get the list of entities found.
      */
-    protected find(filter: Statements.Filter, fields?: string[]): Promise<E[]>;
+    protected find(query: Filters.Query, fields?: string[]): Promise<E[]>;
     /**
      * Find the entity that corresponds to the specified entity id.
      * @param id Entity id.
-     * @param fields Fields to be selected, when not provided all fields will be selected.
+     * @param fields Viewed fields.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
     protected findById(id: any, fields?: string[]): Promise<E | undefined>;
     /**
      * Update all entities that corresponds to the specified match using a custom model type.
      * @param model Model type.
-     * @param match Matching fields.
-     * @param entity Entity data to be updated.
+     * @param match Matching filter.
+     * @param entity Entity data.
      * @returns Returns a promise to get the number of updated entities.
      */
-    protected updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Statements.Match, entity: T): Promise<number>;
+    protected updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Filters.Match, entity: T): Promise<number>;
     /**
      * Update all entities that corresponds to the specified match.
-     * @param match Matching fields.
-     * @param entity Entity data to be updated.
+     * @param match Matching filter.
+     * @param entity Entity data.
      * @returns Returns a promise to get the number of updated entities.
      */
-    protected update(match: Statements.Match, entity: Types.Entity): Promise<number>;
+    protected update(match: Filters.Match, entity: Types.Entity): Promise<number>;
     /**
      * Update the entity that corresponds to the specified id using a custom model type.
      * @param model Model type.
      * @param id Entity id.
-     * @param entity Entity data to be updated.
+     * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     protected updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T): Promise<boolean>;
     /**
      * Update the entity that corresponds to the specified id.
      * @param id Entity id.
-     * @param entity Entity data to be updated.
+     * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     protected updateById(id: any, entity: Types.Entity): Promise<boolean>;
     /**
+     * Replace the entity that corresponds to the specified id using a custom model type.
+     * @param id Entity id.
+     * @param entity Entity data.
+     * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+     */
+    protected replaceByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: Types.Entity): Promise<boolean>;
+    /**
+     * Replace the entity that corresponds to the specified id.
+     * @param id Entity id.
+     * @param entity Entity data.
+     * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+     */
+    protected replaceById(id: any, entity: Types.Entity): Promise<boolean>;
+    /**
      * Delete all entities that corresponds to the specified match.
-     * @param match Matching fields.
+     * @param match Matching filter.
      * @return Returns a promise to get the number of deleted entities.
      */
-    protected delete(match: Statements.Match): Promise<number>;
+    protected delete(match: Filters.Match): Promise<number>;
     /**
      * Delete the entity that corresponds to the specified entity id.
      * @param id Entity id.
@@ -102,10 +116,10 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
     protected deleteById(id: any): Promise<boolean>;
     /**
      * Count all corresponding entities from the storage.
-     * @param filter Field filter.
+     * @param query Query filter.
      * @returns Returns a promise to get the total amount of found entities.
      */
-    protected count(filter: Statements.Filter): Promise<number>;
+    protected count(query: Filters.Query): Promise<number>;
     /**
      * Generate a new normalized entity based on the specified input data.
      * @param input Input data.

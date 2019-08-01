@@ -3,7 +3,7 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Types from '../types';
-import * as Statements from '../statements';
+import * as Filters from '../filters';
 
 import { Base } from './base';
 
@@ -24,9 +24,9 @@ export interface Virtual<T extends Types.Entity = Types.Entity> extends Base<T> 
    */
   model: Types.Model<T>;
   /**
-   * Column filter.
+   * Column query.
    */
-  filter?: Statements.Filter;
+  query?: Filters.Query;
   /**
    * Determines whether the local column contains multiples IDs.
    */

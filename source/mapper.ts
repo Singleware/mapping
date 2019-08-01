@@ -5,7 +5,7 @@
 import * as Class from '@singleware/class';
 
 import * as Types from './types';
-import * as Statements from './statements';
+import * as Filters from './filters';
 
 import { Entity } from './entity';
 import { Schema } from './schema';
@@ -72,19 +72,19 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
 
   /**
    * Find all corresponding entity in the storage.
-   * @param filter Field filter.
-   * @param fields Fields to be selected, when not provided all fields will be selected.
+   * @param query Query filter
+   * @param fields Viewed fields.
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Protected()
-  protected async find(filter: Statements.Filter, fields: string[] = []): Promise<E[]> {
-    return <E[]>Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, filter, fields));
+  protected async find(query: Filters.Query, fields: string[] = []): Promise<E[]> {
+    return <E[]>Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, query, fields));
   }
 
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param id Entity id.
-   * @param fields Fields to be selected, when not provided all fields will be selected.
+   * @param fields Viewed fields.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
   @Class.Protected()
@@ -99,23 +99,23 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   /**
    * Update all entities that corresponds to the specified match using a custom model type.
    * @param model Model type.
-   * @param match Matching fields.
-   * @param entity Entity data to be updated.
+   * @param match Matching filter.
+   * @param entity Entity data.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Protected()
-  protected async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Statements.Match, entity: T): Promise<number> {
+  protected async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Filters.Match, entity: T): Promise<number> {
     return await this.driver.update(model, match, Entity.createFullInput(model, entity));
   }
 
   /**
    * Update all entities that corresponds to the specified match.
-   * @param match Matching fields.
-   * @param entity Entity data to be updated.
+   * @param match Matching filter.
+   * @param entity Entity data.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Protected()
-  protected async update(match: Statements.Match, entity: Types.Entity): Promise<number> {
+  protected async update(match: Filters.Match, entity: Types.Entity): Promise<number> {
     return await this.driver.update(this.model, match, Entity.createInput(this.model, entity));
   }
 
@@ -123,7 +123,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    * Update the entity that corresponds to the specified id using a custom model type.
    * @param model Model type.
    * @param id Entity id.
-   * @param entity Entity data to be updated.
+   * @param entity Entity data.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Protected()
@@ -134,7 +134,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   /**
    * Update the entity that corresponds to the specified id.
    * @param id Entity id.
-   * @param entity Entity data to be updated.
+   * @param entity Entity data.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Protected()
@@ -143,12 +143,34 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
+   * Replace the entity that corresponds to the specified id using a custom model type.
+   * @param id Entity id.
+   * @param entity Entity data.
+   * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+   */
+  @Class.Protected()
+  protected async replaceByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: Types.Entity): Promise<boolean> {
+    return await this.driver.replaceById(model, id, Entity.createInput(model, entity));
+  }
+
+  /**
+   * Replace the entity that corresponds to the specified id.
+   * @param id Entity id.
+   * @param entity Entity data.
+   * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+   */
+  @Class.Protected()
+  protected async replaceById(id: any, entity: Types.Entity): Promise<boolean> {
+    return await this.driver.replaceById(this.model, id, Entity.createInput(this.model, entity));
+  }
+
+  /**
    * Delete all entities that corresponds to the specified match.
-   * @param match Matching fields.
+   * @param match Matching filter.
    * @return Returns a promise to get the number of deleted entities.
    */
   @Class.Protected()
-  protected async delete(match: Statements.Match): Promise<number> {
+  protected async delete(match: Filters.Match): Promise<number> {
     return await this.driver.delete(this.model, match);
   }
 
@@ -164,12 +186,12 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
 
   /**
    * Count all corresponding entities from the storage.
-   * @param filter Field filter.
+   * @param query Query filter.
    * @returns Returns a promise to get the total amount of found entities.
    */
   @Class.Protected()
-  protected async count(filter: Statements.Filter): Promise<number> {
-    return await this.driver.count(this.model, filter);
+  protected async count(query: Filters.Query): Promise<number> {
+    return await this.driver.count(this.model, query);
   }
 
   /**

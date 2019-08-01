@@ -5,7 +5,7 @@
 import { Operator } from './operator';
 
 /**
- * Operation statement interface.
+ * Operation filter interface.
  */
 export interface Operation {
   /**

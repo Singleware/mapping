@@ -2,10 +2,9 @@
  * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
-import * as Validator from '@singleware/types';
+import * as Validators from '@singleware/types';
 
 import * as Types from '../types';
-import { Columns } from '..';
 
 /**
  * Base column interface.
@@ -14,7 +13,7 @@ export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column type.
    */
-  type: 'real' | 'virtual';
+  type: Types.Column;
   /**
    * Column name.
    */
@@ -26,11 +25,11 @@ export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column data format validation.
    */
-  validations: Validator.Format[];
+  validations: Validators.Format[];
   /**
-   * Column converter callback.
+   * Column caster callback.
    */
-  converter?: Types.Converter;
+  caster?: Types.Caster;
   /**
    * Determines whether the column is required or not.
    */

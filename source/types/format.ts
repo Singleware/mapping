@@ -7,19 +7,19 @@
  * Data formats.
  */
 export enum Format {
-  ID,
-  NULL,
-  BINARY,
-  BOOLEAN,
-  INTEGER,
-  DECIMAL,
-  NUMBER,
-  STRING,
-  ENUMERATION,
-  PATTERN,
-  TIMESTAMP,
-  DATE,
-  ARRAY,
-  MAP,
-  OBJECT
+  Id,
+  Null,
+  Binary,
+  Boolean,
+  Integer,
+  Decimal,
+  Number,
+  String,
+  Enumeration,
+  Pattern,
+  Timestamp,
+  Date,
+  Array,
+  Map,
+  Object
 }

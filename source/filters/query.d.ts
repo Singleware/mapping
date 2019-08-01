@@ -7,9 +7,9 @@ import { Limit } from './limit';
 import { Sort } from './sort';
 
 /**
- * Filter statement interface.
+ * Query filter interface.
  */
-export interface Filter {
+export interface Query {
   /**
    * Pre matching fields. (Performed before any join operation)
    */

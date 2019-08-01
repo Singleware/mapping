@@ -5,7 +5,7 @@
 import * as Class from '@singleware/class';
 import * as Types from './types';
 import * as Columns from './columns';
-import { Statements } from '.';
+import * as Filters from './filters';
 /**
  * Schema helper class.
  */
@@ -51,18 +51,18 @@ export declare class Schema extends Class.Null {
      */
     private static assignRealOrVirtualColumn;
     /**
-     * Determines whether the specified model type is a valid entity.
-     * @param model Model type.
-     * @returns Returns true when the specified model is valid, false otherwise.
+     * Determines whether the specified value is a valid entity.
+     * @param value Model type.
+     * @returns Returns true when the specified value is a valid entity, false otherwise.
      */
-    static isEntity<E extends Types.Entity>(model: Types.Model<E>): boolean;
+    static isEntity<E extends Types.Entity>(value: Types.Model<E>): boolean;
     /**
-     * Determines whether the specified column schema can be viewed based on the given fields.
+     * Determines whether the specified column schema is visible based on the given fields.
      * @param column Column schema.
-     * @param fields Fields to be selected.
+     * @param fields Viewed fields.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isViewed<E extends Types.Entity>(column: Columns.Base<E>, ...fields: string[]): boolean;
+    static isVisible<E extends Types.Entity>(column: Columns.Base<E>, ...fields: string[]): boolean;
     /**
      * Gets the real row schema from the specified model type and fields.
      * @param model Model type.
@@ -100,7 +100,13 @@ export declare class Schema extends Class.Null {
      * @returns Returns the storage name.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getStorage(model: Types.Model): string;
+    static getStorageName(model: Types.Model): string;
+    /**
+     * Gets the column name from the specified column schema.
+     * @param column Column schema.
+     * @returns Returns the column name.
+     */
+    static getColumnName<I extends Types.Entity>(column: Columns.Base<I>): string;
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -112,152 +118,152 @@ export declare class Schema extends Class.Null {
      * @param name Alias name.
      * @returns Returns the decorator method.
      */
-    static Alias(name: string): PropertyDecorator;
+    static Alias(name: string): Types.PropertyDecorator;
     /**
      * Decorates the specified property to convert its input and output value.
-     * @param callback Converter callback.
+     * @param callback Caster callback.
      * @returns Returns the decorator method.
      */
-    static Convert(callback: Types.Converter): PropertyDecorator;
+    static Convert(callback: Types.Caster): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a required column.
      * @returns Returns the decorator method.
      */
-    static Required(): PropertyDecorator;
+    static Required(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a hidden column.
      * @returns Returns the decorator method.
      */
-    static Hidden(): PropertyDecorator;
+    static Hidden(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a read-only column.
      * @returns Returns the decorator method.
      * @throws Throws an error when the column is already write-only.
      */
-    static ReadOnly(): PropertyDecorator;
+    static ReadOnly(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a write-only column.
      * @returns Returns the decorator method.
      * @throws Throws an error when the column is already read-only.
      */
-    static WriteOnly(): PropertyDecorator;
+    static WriteOnly(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a virtual column of a foreign entity.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
-     * @param match Column match.
+     * @param match Column matching filter.
      * @returns Returns the decorator method.
      */
-    static Join<E extends Types.Entity>(foreign: string, model: Types.Model<E>, local: string, match?: Statements.Match): PropertyDecorator;
+    static Join<E extends Types.Entity>(foreign: string, model: Types.Model<E>, local: string, match?: Filters.Match): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a virtual column of a foreign entity list.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
-     * @param filter Column filter.
+     * @param query Column query filter.
      * @returns Returns the decorator method.
      */
-    static JoinAll<E extends Types.Entity>(foreign: string, model: Types.Model<E>, local: string, filter?: Statements.Filter): PropertyDecorator;
+    static JoinAll<E extends Types.Entity>(foreign: string, model: Types.Model<E>, local: string, query?: Filters.Query): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.
      */
-    static Primary(): PropertyDecorator;
+    static Primary(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be an Id column.
      * @returns Returns the decorator method.
      */
-    static Id(): PropertyDecorator;
+    static Id(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a column that accepts null values.
      * @returns Returns the decorator method.
      */
-    static Null(): PropertyDecorator;
+    static Null(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a binary column.
      * @returns Returns the decorator method.
      */
-    static Binary(): PropertyDecorator;
+    static Binary(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a boolean column.
      * @returns Returns the decorator method.
      */
-    static Boolean(): PropertyDecorator;
+    static Boolean(): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be an integer column.
      * @param minimum Minimum value.
      * @param maximum Maximum value.
      * @returns Returns the decorator method.
      */
-    static Integer(minimum?: number, maximum?: number): PropertyDecorator;
+    static Integer(minimum?: number, maximum?: number): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a decimal column.
      * @param minimum Minimum value.
      * @param maximum Maximum value.
      * @returns Returns the decorator method.
      */
-    static Decimal(minimum?: number, maximum?: number): PropertyDecorator;
+    static Decimal(minimum?: number, maximum?: number): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a number column.
      * @param minimum Minimum value.
      * @param maximum Maximum value.
      * @returns Returns the decorator method.
      */
-    static Number(minimum?: number, maximum?: number): PropertyDecorator;
+    static Number(minimum?: number, maximum?: number): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a string column.
      * @param minimum Minimum length.
      * @param maximum Maximum length.
      * @returns Returns the decorator method.
      */
-    static String(minimum?: number, maximum?: number): PropertyDecorator;
+    static String(minimum?: number, maximum?: number): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be an enumeration column.
      * @param values Enumeration values.
      * @returns Returns the decorator method.
      */
-    static Enumeration(...values: string[]): PropertyDecorator;
+    static Enumeration(...values: string[]): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a string pattern column.
      * @param pattern Pattern expression.
      * @param name Pattern name.
      * @returns Returns the decorator method.
      */
-    static Pattern(pattern: RegExp, name?: string): PropertyDecorator;
+    static Pattern(pattern: RegExp, name?: string): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a timestamp column.
      * @param min Minimum date.
      * @param max Maximum date.
      * @returns Returns the decorator method.
      */
-    static Timestamp(min?: Date, max?: Date): PropertyDecorator;
+    static Timestamp(min?: Date, max?: Date): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a date column.
      * @param minimum Minimum date.
      * @param maximum Maximum date.
      * @returns Returns the decorator method.
      */
-    static Date(minimum?: Date, maximum?: Date): PropertyDecorator;
+    static Date(minimum?: Date, maximum?: Date): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be an array column.
      * @param model Model type.
-     * @param unique Determines whether the items of array must be unique or not.
+     * @param unique Determines whether the array items must be unique or not.
      * @param minimum Minimum items.
      * @param maximum Maximum items.
      * @returns Returns the decorator method.
      */
-    static Array(model: Types.Model, unique?: boolean, minimum?: number, maximum?: number): PropertyDecorator;
+    static Array(model: Types.Model, unique?: boolean, minimum?: number, maximum?: number): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a map column.
      * @param model Model type.
      * @returns Returns the decorator method.
      */
-    static Map(model: Types.Model): PropertyDecorator;
+    static Map(model: Types.Model): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be an object column.
      * @param model Model type.
      * @returns Returns the decorator method.
      */
-    static Object(model: Types.Model): PropertyDecorator;
+    static Object(model: Types.Model): Types.PropertyDecorator;
 }
