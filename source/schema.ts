@@ -98,7 +98,8 @@ export class Schema extends Class.Null {
         type: type,
         name: name,
         formats: [],
-        validations: []
+        validations: [],
+        caster: (value: any) => value
       };
     }
     return row[name];

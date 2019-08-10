@@ -4,6 +4,7 @@
  */
 import * as Class from '@singleware/class';
 import * as Types from '../types';
+import { Value } from './value';
 /**
  * Date helper class.
  */
@@ -14,12 +15,12 @@ export declare class ISODate extends Class.Null {
      * @param type Casting type.
      * @returns Returns the ISO date object when the conversion was successful, otherwise returns the same value.
      */
-    static Object<T>(value: T | (T | T[])[], type: Types.Cast): (T | Date) | ((T | Date) | (T | Date[]))[];
+    static Object<T>(value: Value<T>, type: Types.Cast): Value<T | Date>;
     /**
      * Try to converts the specified value to a new ISO date string.
      * @param value Casting value.
      * @param type Casting type.
      * @returns Returns the ISO date string when the conversion was successful, otherwise returns the same value.
      */
-    static String<T>(value: T | (T | T[])[], type: Types.Cast): (T | string) | ((T | string) | (T | string)[])[];
+    static String<T>(value: Value<T>, type: Types.Cast): Value<T | string>;
 }

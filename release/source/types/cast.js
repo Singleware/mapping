@@ -9,7 +9,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 var Cast;
 (function (Cast) {
-    Cast[Cast["Input"] = 0] = "Input";
-    Cast[Cast["Output"] = 1] = "Output";
+    Cast["Input"] = "input";
+    Cast["Output"] = "output";
+    Cast["Normalize"] = "normalize";
 })(Cast = exports.Cast || (exports.Cast = {}));
 //# sourceMappingURL=cast.js.map

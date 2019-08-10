@@ -6,8 +6,8 @@ import * as Class from '@singleware/class';
 
 import * as Types from './types';
 import * as Filters from './filters';
+import * as Entities from './entities';
 
-import { Entity } from './entity';
 import { Schema } from './schema';
 import { Driver } from './driver';
 
@@ -36,7 +36,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async insertManyEx<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]> {
-    return await this.driver.insert(model, Entity.createFullInputArray(model, entities));
+    return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities));
   }
 
   /**
@@ -78,7 +78,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async find(query: Filters.Query, fields: string[] = []): Promise<E[]> {
-    return <E[]>Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, query, fields));
+    return <E[]>Entities.Outputer.createFullArray(this.model, fields, await this.driver.find(this.model, query, fields));
   }
 
   /**
@@ -91,7 +91,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   protected async findById(id: any, fields: string[] = []): Promise<E | undefined> {
     const data = await this.driver.findById(this.model, id, fields);
     if (data !== void 0) {
-      return Entity.createFullOutput(this.model, fields, data);
+      return Entities.Outputer.createFull(this.model, fields, data);
     }
     return void 0;
   }
@@ -105,7 +105,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Filters.Match, entity: T): Promise<number> {
-    return await this.driver.update(model, match, Entity.createFullInput(model, entity));
+    return await this.driver.update(model, match, Entities.Inputer.createFull(model, entity));
   }
 
   /**
@@ -116,7 +116,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async update(match: Filters.Match, entity: Types.Entity): Promise<number> {
-    return await this.driver.update(this.model, match, Entity.createInput(this.model, entity));
+    return await this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity));
   }
 
   /**
@@ -128,7 +128,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T): Promise<boolean> {
-    return await this.driver.updateById(model, id, Entity.createFullInput(model, entity));
+    return await this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity));
   }
 
   /**
@@ -139,7 +139,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async updateById(id: any, entity: Types.Entity): Promise<boolean> {
-    return await this.driver.updateById(this.model, id, Entity.createInput(this.model, entity));
+    return await this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity));
   }
 
   /**
@@ -150,7 +150,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async replaceByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: Types.Entity): Promise<boolean> {
-    return await this.driver.replaceById(model, id, Entity.createInput(model, entity));
+    return await this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity));
   }
 
   /**
@@ -161,7 +161,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async replaceById(id: any, entity: Types.Entity): Promise<boolean> {
-    return await this.driver.replaceById(this.model, id, Entity.createInput(this.model, entity));
+    return await this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity));
   }
 
   /**
@@ -195,40 +195,43 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   }
 
   /**
-   * Generate a new normalized entity based on the specified input data.
-   * @param input Input data.
-   * @returns Returns the new normalized entity data.
+   * Generate a new normalized entity based on the specified entity data.
+   * @param entity Entity data.
+   * @param aliased Determines whether the entity should be aliased or not.
+   * @returns Returns the normalized entity.
    */
   @Class.Protected()
-  protected normalize(input: E): E {
-    return Entity.normalize(this.model, input);
+  protected normalize(entity: E, aliased?: boolean): E {
+    return Entities.Normalizer.create(this.model, entity, aliased || false, false);
   }
 
   /**
-   * Normalize all entities in the specified input list.
-   * @param list Input list.
+   * Normalize all entities in the specified entity list.
+   * @param entities Entity list.
+   * @param aliased Determines whether the entity should be aliased or not.
    * @returns Returns the list of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAll(...list: E[]): E[] {
-    return list.map((entity: E) => this.normalize(entity));
+  protected normalizeAll(entities: E[], aliased?: boolean): E[] {
+    return entities.map((entity: E) => this.normalize(entity, aliased));
   }
 
   /**
-   * Normalize all entities in the specified input list to a new map of entities.
-   * @param list Input list.
+   * Normalize all entities in the specified entity list to a new map of entities.
+   * @param entities Entity list.
+   * @param aliased Determines whether the entity should be aliased or not.
    * @returns Returns the map of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAsMap(...list: E[]): E {
+  protected normalizeAsMap(entities: E[], aliased?: boolean): E {
     const column = Schema.getPrimaryColumn(this.model);
-    const primary = column.alias || column.name;
-    const map = <E>{};
-    for (const input of list) {
-      const normalized = this.normalize(input);
-      (<any>map)[normalized[primary]] = normalized;
+    const primary = Schema.getColumnName(column);
+    const data = <E>{};
+    for (const input of entities) {
+      const entity = this.normalize(input, aliased);
+      data[<keyof E>entity[primary]] = <E[keyof E]>entity;
     }
-    return map;
+    return data;
   }
 
   /**
@@ -240,7 +243,7 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   public constructor(driver: Driver, model: Types.Model<E>) {
     super();
     if (!Schema.isEntity(model)) {
-      throw new Error(`The specified model isn't a valid entity model.`);
+      throw new Error(`Invalid entity model.`);
     }
     this.driver = driver;
     this.model = model;

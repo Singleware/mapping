@@ -121,23 +121,26 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
      */
     protected count(query: Filters.Query): Promise<number>;
     /**
-     * Generate a new normalized entity based on the specified input data.
-     * @param input Input data.
-     * @returns Returns the new normalized entity data.
+     * Generate a new normalized entity based on the specified entity data.
+     * @param entity Entity data.
+     * @param aliased Determines whether the entity should be aliased or not.
+     * @returns Returns the normalized entity.
      */
-    protected normalize(input: E): E;
+    protected normalize(entity: E, aliased?: boolean): E;
     /**
-     * Normalize all entities in the specified input list.
-     * @param list Input list.
+     * Normalize all entities in the specified entity list.
+     * @param entities Entity list.
+     * @param aliased Determines whether the entity should be aliased or not.
      * @returns Returns the list of normalized entities.
      */
-    protected normalizeAll(...list: E[]): E[];
+    protected normalizeAll(entities: E[], aliased?: boolean): E[];
     /**
-     * Normalize all entities in the specified input list to a new map of entities.
-     * @param list Input list.
+     * Normalize all entities in the specified entity list to a new map of entities.
+     * @param entities Entity list.
+     * @param aliased Determines whether the entity should be aliased or not.
      * @returns Returns the map of normalized entities.
      */
-    protected normalizeAsMap(...list: E[]): E;
+    protected normalizeAsMap(entities: E[], aliased?: boolean): E;
     /**
      * Default constructor.
      * @param driver Data driver.

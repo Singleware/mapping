@@ -6,6 +6,7 @@
  * Cast types.
  */
 export declare enum Cast {
-    Input = 0,
-    Output = 1
+    Input = "input",
+    Output = "output",
+    Normalize = "normalize"
 }

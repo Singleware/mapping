@@ -11,7 +11,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 const Class = require("@singleware/class");
-const entity_1 = require("./entity");
+const Entities = require("./entities");
 const schema_1 = require("./schema");
 /**
  * Generic data mapper class.
@@ -26,7 +26,7 @@ let Mapper = class Mapper extends Class.Null {
     constructor(driver, model) {
         super();
         if (!schema_1.Schema.isEntity(model)) {
-            throw new Error(`The specified model isn't a valid entity model.`);
+            throw new Error(`Invalid entity model.`);
         }
         this.driver = driver;
         this.model = model;
@@ -38,7 +38,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the id list of all inserted entities.
      */
     async insertManyEx(model, entities) {
-        return await this.driver.insert(model, entity_1.Entity.createFullInputArray(model, entities));
+        return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities));
     }
     /**
      * Insert the specified entity list into the storage.
@@ -72,7 +72,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the list of entities found.
      */
     async find(query, fields = []) {
-        return entity_1.Entity.createFullOutputArray(this.model, fields, await this.driver.find(this.model, query, fields));
+        return Entities.Outputer.createFullArray(this.model, fields, await this.driver.find(this.model, query, fields));
     }
     /**
      * Find the entity that corresponds to the specified entity id.
@@ -83,7 +83,7 @@ let Mapper = class Mapper extends Class.Null {
     async findById(id, fields = []) {
         const data = await this.driver.findById(this.model, id, fields);
         if (data !== void 0) {
-            return entity_1.Entity.createFullOutput(this.model, fields, data);
+            return Entities.Outputer.createFull(this.model, fields, data);
         }
         return void 0;
     }
@@ -95,7 +95,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the number of updated entities.
      */
     async updateEx(model, match, entity) {
-        return await this.driver.update(model, match, entity_1.Entity.createFullInput(model, entity));
+        return await this.driver.update(model, match, Entities.Inputer.createFull(model, entity));
     }
     /**
      * Update all entities that corresponds to the specified match.
@@ -104,7 +104,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the number of updated entities.
      */
     async update(match, entity) {
-        return await this.driver.update(this.model, match, entity_1.Entity.createInput(this.model, entity));
+        return await this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity));
     }
     /**
      * Update the entity that corresponds to the specified id using a custom model type.
@@ -114,7 +114,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateByIdEx(model, id, entity) {
-        return await this.driver.updateById(model, id, entity_1.Entity.createFullInput(model, entity));
+        return await this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity));
     }
     /**
      * Update the entity that corresponds to the specified id.
@@ -123,7 +123,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
     async updateById(id, entity) {
-        return await this.driver.updateById(this.model, id, entity_1.Entity.createInput(this.model, entity));
+        return await this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity));
     }
     /**
      * Replace the entity that corresponds to the specified id using a custom model type.
@@ -132,7 +132,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
     async replaceByIdEx(model, id, entity) {
-        return await this.driver.replaceById(model, id, entity_1.Entity.createInput(model, entity));
+        return await this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity));
     }
     /**
      * Replace the entity that corresponds to the specified id.
@@ -141,7 +141,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
     async replaceById(id, entity) {
-        return await this.driver.replaceById(this.model, id, entity_1.Entity.createInput(this.model, entity));
+        return await this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity));
     }
     /**
      * Delete all entities that corresponds to the specified match.
@@ -168,35 +168,38 @@ let Mapper = class Mapper extends Class.Null {
         return await this.driver.count(this.model, query);
     }
     /**
-     * Generate a new normalized entity based on the specified input data.
-     * @param input Input data.
-     * @returns Returns the new normalized entity data.
+     * Generate a new normalized entity based on the specified entity data.
+     * @param entity Entity data.
+     * @param aliased Determines whether the entity should be aliased or not.
+     * @returns Returns the normalized entity.
      */
-    normalize(input) {
-        return entity_1.Entity.normalize(this.model, input);
+    normalize(entity, aliased) {
+        return Entities.Normalizer.create(this.model, entity, aliased || false, false);
     }
     /**
-     * Normalize all entities in the specified input list.
-     * @param list Input list.
+     * Normalize all entities in the specified entity list.
+     * @param entities Entity list.
+     * @param aliased Determines whether the entity should be aliased or not.
      * @returns Returns the list of normalized entities.
      */
-    normalizeAll(...list) {
-        return list.map((entity) => this.normalize(entity));
+    normalizeAll(entities, aliased) {
+        return entities.map((entity) => this.normalize(entity, aliased));
     }
     /**
-     * Normalize all entities in the specified input list to a new map of entities.
-     * @param list Input list.
+     * Normalize all entities in the specified entity list to a new map of entities.
+     * @param entities Entity list.
+     * @param aliased Determines whether the entity should be aliased or not.
      * @returns Returns the map of normalized entities.
      */
-    normalizeAsMap(...list) {
+    normalizeAsMap(entities, aliased) {
         const column = schema_1.Schema.getPrimaryColumn(this.model);
-        const primary = column.alias || column.name;
-        const map = {};
-        for (const input of list) {
-            const normalized = this.normalize(input);
-            map[normalized[primary]] = normalized;
+        const primary = schema_1.Schema.getColumnName(column);
+        const data = {};
+        for (const input of entities) {
+            const entity = this.normalize(input, aliased);
+            data[entity[primary]] = entity;
         }
-        return map;
+        return data;
     }
 };
 __decorate([

@@ -87,7 +87,8 @@ let Schema = class Schema extends Class.Null {
                 type: type,
                 name: name,
                 formats: [],
-                validations: []
+                validations: [],
+                caster: (value) => value
             };
         }
         return row[name];

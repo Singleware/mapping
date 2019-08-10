@@ -29,7 +29,7 @@ export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column caster callback.
    */
-  caster?: Types.Caster;
+  caster: Types.Caster;
   /**
    * Determines whether the column is required or not.
    */

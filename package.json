@@ -7,7 +7,7 @@
   "name": "@singleware/mapping",
   "description": "Singleware generic data mapping package.",
   "license": "MIT",
-  "version": "1.3.18",
+  "version": "1.3.22",
   "main": "release/source/index.js",
   "types": "release/types/index.d.ts",
   "keywords": [
@@ -27,7 +27,7 @@
     "@singleware/types": "^1.1.3"
   },
   "devDependencies": {
-    "prettier": "^1.17.0",
+    "prettier": "^1.18.2",
     "typescript": "^3.5.3"
   },
   "prettier": {
@@ -40,10 +40,11 @@
     "build": "npm run clean && npm run make && npm run update",
     "clean": "rm -rf ./release",
     "make": "npx tsc -p ./source",
-    "update": "npm run update-root && npm run update-types && npm run update-columns && npm run update-filters",
+    "update": "npm run update-root && npm run update-types && npm run update-columns && npm run update-filters && npm run update-castings",
     "update-root": "cp -Rf ./source/*.d.ts ./release/types",
     "update-types": "cp -Rf ./source/types/*.d.ts ./release/types/types",
     "update-columns": "cp -Rf ./source/columns/*.d.ts ./release/types/columns",
-    "update-filters": "cp -Rf ./source/filters/*.d.ts ./release/types/filters"
+    "update-filters": "cp -Rf ./source/filters/*.d.ts ./release/types/filters",
+    "update-castings": "cp -Rf ./source/castings/*.d.ts ./release/types/castings"
   }
 }
