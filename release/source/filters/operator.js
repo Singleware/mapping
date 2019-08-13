@@ -9,15 +9,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 var Operator;
 (function (Operator) {
-    Operator[Operator["Less"] = 0] = "Less";
-    Operator[Operator["LessOrEqual"] = 1] = "LessOrEqual";
-    Operator[Operator["Equal"] = 2] = "Equal";
-    Operator[Operator["NotEqual"] = 3] = "NotEqual";
-    Operator[Operator["GreaterOrEqual"] = 4] = "GreaterOrEqual";
-    Operator[Operator["Greater"] = 5] = "Greater";
-    Operator[Operator["Contain"] = 6] = "Contain";
-    Operator[Operator["Between"] = 7] = "Between";
-    Operator[Operator["NotContain"] = 8] = "NotContain";
-    Operator[Operator["RegEx"] = 9] = "RegEx";
+    Operator["LessThan"] = "lt";
+    Operator["LessThanOrEqual"] = "le";
+    Operator["Equal"] = "eq";
+    Operator["NotEqual"] = "ne";
+    Operator["GreaterThan"] = "gt";
+    Operator["GreaterThanOrEqual"] = "ge";
+    Operator["Contain"] = "in";
+    Operator["Between"] = "bt";
+    Operator["NotContain"] = "ni";
+    Operator["RegExp"] = "re";
 })(Operator = exports.Operator || (exports.Operator = {}));
 //# sourceMappingURL=operator.js.map

@@ -5,37 +5,33 @@
 import * as Class from '@singleware/class';
 import * as Types from '../types';
 /**
- * Array values alias.
- */
-declare type Arrays<T> = (T | T[])[];
-/**
  * Inputer helper class.
  */
 export declare class Inputer extends Class.Null {
     /**
-     * Creates a new entity array based on the specified model type and entry list.
+     * Creates a new list based on the specified model type and entry list.
      * @param model Model type.
      * @param entries Entry list.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @param required Determines whether all required columns must be provided.
-     * @param multiple Determines whether each value from the specified list is another list.
-     * @returns Returns the generated entity array.
+     * @returns Returns the generated list.
      */
     private static createArrayEntity;
     /**
-     * Create a new entity map based on the specified model type and entry map.
+     * Create a new map based on the specified model type and entry map.
      * @param model Model type.
      * @param entry Entry map.
      * @param required Determines whether all required columns must be provided.
-     * @returns Returns the generated map of entities.
+     * @returns Returns the generated map.
      */
     private static createMapEntity;
     /**
-     * Converts if possible the specified entry to an entity.
+     * Creates a new entity value from the specified column schema and entry value.
      * @param model Model type.
      * @param schema Column schema.
      * @param entry Entry value.
      * @param required Determines whether all required columns must be provided.
-     * @returns Returns the original or the converted value.
+     * @returns Returns the entity value.
      * @throws Throws an error when the expected value should be an array or map but the given value is not.
      */
     private static createValue;
@@ -61,7 +57,7 @@ export declare class Inputer extends Class.Null {
      * @param entries Entry list.
      * @returns Returns the generated entity array.
      */
-    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: Arrays<I>): Arrays<O>;
+    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[]): O[];
     /**
      * Create a new entity map based on the specified model type and entry map.
      * @param model Model type.
@@ -82,7 +78,7 @@ export declare class Inputer extends Class.Null {
      * @param entries Entry list.
      * @returns Returns the generated entity array.
      */
-    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: Arrays<I>): Arrays<O>;
+    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[]): O[];
     /**
      * Create a new full entity map based on the specified model type and entry map.
      * @param model Model type.
@@ -91,4 +87,3 @@ export declare class Inputer extends Class.Null {
      */
     static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>): Types.Map<O>;
 }
-export {};

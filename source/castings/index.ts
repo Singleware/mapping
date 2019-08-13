@@ -3,8 +3,5 @@
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 
-// Casters
+// Casters.
 export { ISODate } from './isodate';
-
-// Types
-export { Value } from './value';

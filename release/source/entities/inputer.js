@@ -18,72 +18,71 @@ const schema_1 = require("../schema");
  */
 let Inputer = class Inputer extends Class.Null {
     /**
-     * Creates a new entity array based on the specified model type and entry list.
+     * Creates a new list based on the specified model type and entry list.
      * @param model Model type.
      * @param entries Entry list.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @param required Determines whether all required columns must be provided.
-     * @param multiple Determines whether each value from the specified list is another list.
-     * @returns Returns the generated entity array.
+     * @returns Returns the generated list.
      */
-    static createArrayEntity(model, entries, required, multiple) {
-        const entities = [];
+    static createArrayEntity(model, entries, multiple, required) {
+        const list = [];
         for (const entry of entries) {
-            let entity;
             if (multiple && entry instanceof Array) {
-                entity = this.createArrayEntity(model, entry, required, false);
+                list.push(this.createArrayEntity(model, entry, false, required));
             }
             else {
-                entity = this.createEntity(model, entry, required);
-            }
-            if (entity !== void 0) {
-                entities.push(entity);
+                list.push(this.createEntity(model, entry, required));
             }
         }
-        return entities;
+        return list;
     }
     /**
-     * Create a new entity map based on the specified model type and entry map.
+     * Create a new map based on the specified model type and entry map.
      * @param model Model type.
      * @param entry Entry map.
      * @param required Determines whether all required columns must be provided.
-     * @returns Returns the generated map of entities.
+     * @returns Returns the generated map.
      */
     static createMapEntity(model, entry, required) {
-        const entities = {};
+        const map = {};
         for (const property in entry) {
-            const entity = this.createEntity(model, entry[property], required);
-            if (entity !== void 0) {
-                entities[property] = entity;
-            }
+            map[property] = this.createEntity(model, entry[property], required);
         }
-        return entities;
+        return map;
     }
     /**
-     * Converts if possible the specified entry to an entity.
+     * Creates a new entity value from the specified column schema and entry value.
      * @param model Model type.
      * @param schema Column schema.
      * @param entry Entry value.
      * @param required Determines whether all required columns must be provided.
-     * @returns Returns the original or the converted value.
+     * @returns Returns the entity value.
      * @throws Throws an error when the expected value should be an array or map but the given value is not.
      */
     static createValue(model, schema, entry, required) {
-        if (!schema.model || !schema_1.Schema.isEntity(schema.model) || (entry === null && schema.formats.includes(Types.Format.Null))) {
-            return entry;
-        }
-        if (schema.formats.includes(Types.Format.Array)) {
-            if (!(entry instanceof Array)) {
-                throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' must be an array.`);
+        if (schema.model && schema_1.Schema.isEntity(schema.model)) {
+            if (entry instanceof Array) {
+                if (schema.formats.includes(Types.Format.Array)) {
+                    return this.createArrayEntity(schema.model, entry, schema.all || false, required);
+                }
+                else {
+                    throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
+                }
             }
-            return this.createArrayEntity(schema.model, entry, required, schema.all);
-        }
-        if (schema.formats.includes(Types.Format.Map)) {
-            if (!(entry instanceof Object)) {
-                throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' must be a map.`);
+            else if (entry instanceof Object) {
+                if (schema.formats.includes(Types.Format.Object)) {
+                    return this.createEntity(schema.model, entry, required);
+                }
+                else if (schema.formats.includes(Types.Format.Map)) {
+                    return this.createMapEntity(schema.model, entry, required);
+                }
+                else {
+                    throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
+                }
             }
-            return this.createMapEntity(schema.model, entry, required);
         }
-        return this.createEntity(schema.model, entry, required);
+        return schema.caster(entry, Types.Cast.Input);
     }
     /**
      * Creates a new entity based on the specified model type and entry.
@@ -108,9 +107,9 @@ let Inputer = class Inputer extends Class.Null {
                 if (schema.readOnly) {
                     throw new Error(`Input column '${name}@${schema_1.Schema.getStorageName(model)}' is read-only.`);
                 }
-                const input = this.createValue(model, schema, schema.caster(value, Types.Cast.Input), required);
-                if (input !== void 0) {
-                    entity[name] = input;
+                const result = this.createValue(model, schema, value, required);
+                if (result !== void 0) {
+                    entity[name] = result;
                 }
             }
         }
@@ -159,7 +158,7 @@ let Inputer = class Inputer extends Class.Null {
      * @returns Returns the generated entity array.
      */
     static createFullArray(model, entries) {
-        return this.createArrayEntity(model, entries, true, false);
+        return this.createArrayEntity(model, entries, false, true);
     }
     /**
      * Create a new full entity map based on the specified model type and entry map.

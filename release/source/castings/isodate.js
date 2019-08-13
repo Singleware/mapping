@@ -19,7 +19,7 @@ let ISODate = class ISODate extends Class.Null {
      * Try to converts the specified value to a new ISO date object.
      * @param value Casting value.
      * @param type Casting type.
-     * @returns Returns the ISO date object when the conversion was successful, otherwise returns the same value.
+     * @returns Returns the ISO date object when the conversion was successful, otherwise returns the given value.
      */
     static Object(value, type) {
         if (value instanceof Array) {
@@ -36,17 +36,17 @@ let ISODate = class ISODate extends Class.Null {
      * Try to converts the specified value to a new ISO date string.
      * @param value Casting value.
      * @param type Casting type.
-     * @returns Returns the ISO date string when the conversion was successful, otherwise returns the same value.
+     * @returns Returns the ISO date string when the conversion was successful, otherwise returns the given value.
      */
     static String(value, type) {
         if (value instanceof Array) {
             return value.map(value => this.String(value, type));
         }
         else if (value instanceof Date) {
-            const date = value.toISOString().substr(0, 19);
-            const offset = Math.trunc(Math.abs(value.getTimezoneOffset() / 60)).toString();
-            const timezone = (value.getTimezoneOffset() < 0 ? '-' : '+') + offset.padStart(2, '0') + ':00';
-            return date + timezone;
+            const offset = value.getTimezoneOffset();
+            const hour = Math.trunc(Math.abs(offset / 60)).toString();
+            const min = Math.trunc(Math.abs(offset % 60)).toString();
+            return value.toISOString().substr(0, 19) + (offset < 0 ? '+' : '-') + hour.padStart(2, '0') + ':' + min.padStart(2, '0');
         }
         else {
             return value;

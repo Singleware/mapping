@@ -18,103 +18,141 @@ const schema_1 = require("../schema");
  */
 let Normalizer = class Normalizer extends Class.Null {
     /**
-     * Creates a new normalized entry array based on the specified model type and entity list.
+     * Creates a new normalized list based on the specified model type and entity list.
      * @param model Model type.
      * @param entities Entity list.
-     * @param multiple Determines whether each value in the specified list is a sub list.
-     * @param aliased Determines whether all column names should be aliased.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
+     * @param alias Determines whether all column names should be aliased.
      * @param unsafe Determines whether all hidden columns should be visible.
-     * @returns Returns the generated entry array.
+     * @returns Returns the generated list.
      */
-    static createArray(model, entities, multiple, aliased, unsafe) {
-        const data = [];
+    static createList(model, entities, multiple, alias, unsafe) {
+        const list = [];
         for (const entity of entities) {
             if (multiple && entity instanceof Array) {
-                data.push(this.createArray(model, entity, false, aliased, unsafe));
+                list.push(this.createList(model, entity, false, alias, unsafe));
             }
             else {
-                data.push(this.create(model, entity, aliased, unsafe));
+                list.push(this.createEntry(model, entity, alias, unsafe, false));
             }
         }
-        return data;
+        return list;
     }
     /**
-     * Creates a new normalized entry map based on the specified model type and entity map.
+     * Create a new normalized map based on the specified model type, viewed fields and entity map.
      * @param model Model type.
      * @param entity Entity map.
-     * @param aliased Determines whether all column names should be aliased.
+     * @param alias Determines whether all column names should be aliased.
      * @param unsafe Determines whether all hidden columns should be visible.
-     * @returns Returns the generated entry map.
+     * @param unroll Determines whether all columns should be unrolled.
+     * @param path Current path for unrolled values.
+     * @param data Current data for unrolled values.
+     * @returns Returns the generated map.
      */
-    static createMap(model, entity, aliased, unsafe) {
-        const data = {};
+    static createMap(model, entity, alias, unsafe) {
+        const map = {};
         for (const property in entity) {
-            data[property] = this.create(model, entity[property], aliased, unsafe);
+            map[property] = this.createEntry(model, entity[property], alias, unsafe, false);
         }
-        return data;
+        return map;
     }
     /**
-     * Creates a new normalized entry from the specified column schema and entity value.
+     * Creates a new normalized value from the specified column schema and entity value.
      * @param model Model type.
      * @param schema Column schema.
      * @param entity Entity value.
-     * @param aliased Determines whether all column names should be aliased.
+     * @param alias Determines whether all column names should be aliased.
      * @param unsafe Determines whether all hidden columns should be visible.
-     * @returns Returns the normalized entry or the provided entity value.
+     * @param unroll Determines whether all columns should be unrolled.
+     * @param path Current path for unrolled values.
+     * @param data Current data for unrolled values.
+     * @returns Returns the normalized value.
+     * @throws Throws an error when the value isn't supported.
      */
-    static createValue(model, schema, entity, aliased, unsafe) {
-        if (!schema.model || !schema_1.Schema.isEntity(schema.model) || (entity === null && schema.formats.includes(Types.Format.Null))) {
-            return entity;
-        }
-        if (schema.formats.includes(Types.Format.Array)) {
-            if (!(entity instanceof Array)) {
-                throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' must be an array.`);
+    static createValue(model, schema, entity, alias, unsafe, unroll, path, data) {
+        if (schema.model && schema_1.Schema.isEntity(schema.model)) {
+            if (entity instanceof Array) {
+                if (schema.formats.includes(Types.Format.Array)) {
+                    return this.createList(schema.model, entity, schema.all || false, alias, unsafe);
+                }
+                else {
+                    throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
+                }
             }
-            return this.createArray(schema.model, entity, schema.all, aliased, unsafe);
-        }
-        if (schema.formats.includes(Types.Format.Map)) {
-            if (!(entity instanceof Object)) {
-                throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' must be a map.`);
+            else if (entity instanceof Object) {
+                if (schema.formats.includes(Types.Format.Object)) {
+                    if (unroll) {
+                        return this.createEntry(schema.model, entity, alias, unsafe, true, path, data), void 0;
+                    }
+                    else {
+                        return this.createEntry(schema.model, entity, alias, unsafe, false);
+                    }
+                }
+                else if (schema.formats.includes(Types.Format.Map)) {
+                    return this.createMap(schema.model, entity, alias, unsafe);
+                }
+                else {
+                    throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
+                }
             }
-            return this.createMap(schema.model, entity, aliased, unsafe);
         }
-        return this.create(schema.model, entity, aliased, unsafe);
+        return schema.caster(entity, Types.Cast.Normalize);
     }
     /**
      * Creates a new normalized entry based on the specified model type and entity value.
      * @param model Model type.
      * @param entity Entity value.
-     * @param aliased Determines whether all column names should be aliased.
+     * @param alias Determines whether all column names should be aliased.
      * @param unsafe Determines whether all hidden columns should be visible.
+     * @param unroll Determines whether all columns should be unrolled.
+     * @param path Current path for unrolled values.
+     * @param data Current data for unrolled values.
      * @returns Returns the generated entry.
      */
-    static create(model, entity, aliased, unsafe) {
+    static createEntry(model, entity, alias, unsafe, unroll, path, data) {
         const columns = { ...schema_1.Schema.getRealRow(model), ...schema_1.Schema.getVirtualRow(model) };
-        const data = {};
+        const entry = (data || {});
         for (const name in columns) {
             const schema = columns[name];
-            if (unsafe || !schema.hidden) {
-                const value = entity[name];
-                if (value !== void 0) {
-                    const input = this.createValue(model, schema, schema.caster(value, Types.Cast.Normalize), aliased, unsafe);
-                    if (input !== void 0) {
-                        data[(aliased ? schema_1.Schema.getColumnName(schema) : schema.name)] = input;
-                    }
+            const value = entity[name];
+            if (value !== void 0 && (unsafe || !schema.hidden)) {
+                let property = alias ? schema_1.Schema.getColumnName(schema) : schema.name;
+                if (unroll) {
+                    property = path ? `${path}.${property}` : property;
+                }
+                const result = this.createValue(model, schema, value, alias, unsafe, unroll, property, entry);
+                if (result !== void 0) {
+                    entry[property] = result;
                 }
             }
         }
-        return data;
+        return entry;
+    }
+    /**
+     * Creates a new normalized object based on the specified model type and entity.
+     * @param model Model type.
+     * @param entity Entity object.
+     * @param alias Determines whether all column names should be aliased.
+     * @param unsafe Determines whether all hidden columns should be visible.
+     * @param unroll Determines whether all columns should be unrolled.
+     * @returns Returns the generated object.
+     */
+    static create(model, entity, alias, unsafe, unroll) {
+        return this.createEntry(model, entity, alias || false, unsafe || false, unroll || false);
     }
 };
 __decorate([
     Class.Private()
-], Normalizer, "createArray", null);
+], Normalizer, "createList", null);
 __decorate([
     Class.Private()
 ], Normalizer, "createMap", null);
 __decorate([
     Class.Private()
 ], Normalizer, "createValue", null);
+__decorate([
+    Class.Private()
+], Normalizer, "createEntry", null);
 __decorate([
     Class.Public()
 ], Normalizer, "create", null);

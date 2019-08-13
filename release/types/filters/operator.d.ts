@@ -6,14 +6,14 @@
  * Operator filter.
  */
 export declare enum Operator {
-    Less = 0,
-    LessOrEqual = 1,
-    Equal = 2,
-    NotEqual = 3,
-    GreaterOrEqual = 4,
-    Greater = 5,
-    Contain = 6,
-    Between = 7,
-    NotContain = 8,
-    RegEx = 9
+    LessThan = "lt",
+    LessThanOrEqual = "le",
+    Equal = "eq",
+    NotEqual = "ne",
+    GreaterThan = "gt",
+    GreaterThanOrEqual = "ge",
+    Contain = "in",
+    Between = "bt",
+    NotContain = "ni",
+    RegExp = "re"
 }

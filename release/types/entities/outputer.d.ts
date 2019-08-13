@@ -5,10 +5,6 @@
 import * as Class from '@singleware/class';
 import * as Types from '../types';
 /**
- * Array values alias.
- */
-declare type Arrays<T> = (T | T[])[];
-/**
  * Outputer helper class.
  */
 export declare class Outputer extends Class.Null {
@@ -19,40 +15,40 @@ export declare class Outputer extends Class.Null {
      */
     private static isEmptyResult;
     /**
-     * Creates a new entity array based on the specified model type, viewed fields and entry list.
+     * Creates a new list based on the specified model type, entry list and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entries Entry list.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @param required Determines whether all required columns must be provided.
-     * @param multiple Determines whether each value from the specified list is another list.
-     * @returns Returns the generated entity array.
+     * @param fields Viewed fields.
+     * @returns Returns the generated list.
      */
     private static createArrayEntity;
     /**
-     * Create a new entity map based on the specified model type, viewed fields and entry map.
+     * Create a new entity map based on the specified model type, entry map and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entry Entry map.
+     * @param fields Viewed fields.
      * @param required Determines whether all required columns must be provided.
      * @returns Returns the generated entity map.
      */
     private static createMapEntity;
     /**
-     * Converts if possible the specified entry to an entity.
+     * Creates a new entry value from the specified column schema, entity value and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param schema Column schema.
      * @param entry Entry value.
+     * @param fields Viewed fields.
      * @param required Determines whether all required columns must be provided.
      * @returns Returns the original or the converted value.
      * @throws Throws an error when the expected value should be an array or map but the given value is not.
      */
     private static createValue;
     /**
-     * Creates a new entity based on the specified model type, viewed fields and entry.
+     * Creates a new entity based on the specified model type, entry value and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entry Entry value.
+     * @param fields Viewed fields.
      * @param required Determines whether all required columns must be provided.
      * @param wanted Determines whether all columns are wanted by the parent entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
@@ -60,52 +56,51 @@ export declare class Outputer extends Class.Null {
      */
     private static createEntity;
     /**
-     * Creates a new entity based on the specified model type, viewed fields and entry value.
+     * Creates a new entity based on the specified model type, entry value and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entry Entry value.
+     * @param fields Viewed fields.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
-    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, fields: string[], entry: I): O | undefined;
+    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, fields: string[]): O | undefined;
     /**
-     * Creates a new entity array based on the specified model type, viewed fields and entry list.
+     * Creates a new entity array based on the specified model type, entry list and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entries Entry list.
+     * @param fields Viewed fields.
      * @returns Returns the generated entity array.
      */
-    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, fields: string[], entries: Arrays<I>): Arrays<O>;
+    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[], fields: string[]): O[];
     /**
-     * Create a new entity map based on the specified model type, viewed fields and entry map.
+     * Create a new entity map based on the specified model type, entry map and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entry Entry map.
+     * @param fields Viewed fields.
      * @returns Returns the generated entity map.
      */
-    static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, fields: string[], entry: Types.Map<I>): Types.Map<O>;
+    static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
     /**
-     * Creates a new full entity based on the specified model type, viewed fields and entry value.
+     * Creates a new full entity based on the specified model type, entry value and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entry Entry value.
+     * @param fields Viewed fields.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
-    static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, fields: string[], entry: I): O | undefined;
+    static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, fields: string[]): O | undefined;
     /**
-     * Creates a new full entity array based on the specified model type, viewed fields and entry list.
+     * Creates a new full entity array based on the specified model type, entry list and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entries Entry list.
+     * @param fields Viewed fields.
      * @returns Returns the generated entity array.
      */
-    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, views: string[], entries: Arrays<I>): Arrays<O>;
+    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[], fields: string[]): O[];
     /**
-     * Create a new full entity map based on the specified model type, viewed fields and entry map.
+     * Create a new full entity map based on the specified model type, entry map and viewed fields.
      * @param model Model type.
-     * @param fields Viewed fields.
      * @param entry Entry map.
+     * @param fields Viewed fields.
      * @returns Returns the generated entity map.
      */
-    static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, fields: string[], map: Types.Map<I>): Types.Map<O>;
+    static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
 }
-export {};

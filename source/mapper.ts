@@ -78,7 +78,8 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async find(query: Filters.Query, fields: string[] = []): Promise<E[]> {
-    return <E[]>Entities.Outputer.createFullArray(this.model, fields, await this.driver.find(this.model, query, fields));
+    const entities = await this.driver.find(this.model, query, fields);
+    return <E[]>Entities.Outputer.createFullArray(this.model, entities, fields);
   }
 
   /**
@@ -89,9 +90,9 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
    */
   @Class.Protected()
   protected async findById(id: any, fields: string[] = []): Promise<E | undefined> {
-    const data = await this.driver.findById(this.model, id, fields);
-    if (data !== void 0) {
-      return Entities.Outputer.createFull(this.model, fields, data);
+    const entity = await this.driver.findById(this.model, id, fields);
+    if (entity !== void 0) {
+      return Entities.Outputer.createFull(this.model, entity, fields);
     }
     return void 0;
   }
@@ -197,38 +198,44 @@ export class Mapper<E extends Types.Entity> extends Class.Null {
   /**
    * Generate a new normalized entity based on the specified entity data.
    * @param entity Entity data.
-   * @param aliased Determines whether the entity should be aliased or not.
+   * @param alias Determines whether all column names should be aliased.
+   * @param unsafe Determines whether all hidden columns should be visible.
+   * @param unroll Determines whether all columns should be unrolled.
    * @returns Returns the normalized entity.
    */
   @Class.Protected()
-  protected normalize(entity: E, aliased?: boolean): E {
-    return Entities.Normalizer.create(this.model, entity, aliased || false, false);
+  protected normalize(entity: E, alias?: boolean, unsafe?: boolean, unroll?: boolean): E {
+    return Entities.Normalizer.create(this.model, entity, alias, unsafe, unroll);
   }
 
   /**
    * Normalize all entities in the specified entity list.
    * @param entities Entity list.
-   * @param aliased Determines whether the entity should be aliased or not.
+   * @param alias Determines whether all column names should be aliased.
+   * @param unsafe Determines whether all hidden columns should be visible.
+   * @param unroll Determines whether all columns should be unrolled.
    * @returns Returns the list of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAll(entities: E[], aliased?: boolean): E[] {
-    return entities.map((entity: E) => this.normalize(entity, aliased));
+  protected normalizeAll(entities: E[], alias?: boolean, unsafe?: boolean, unroll?: boolean): E[] {
+    return entities.map((entity: E) => this.normalize(entity, alias, unsafe, unroll));
   }
 
   /**
    * Normalize all entities in the specified entity list to a new map of entities.
    * @param entities Entity list.
-   * @param aliased Determines whether the entity should be aliased or not.
+   * @param alias Determines whether all column names should be aliased.
+   * @param unsafe Determines whether all hidden columns should be visible.
+   * @param unroll Determines whether all columns should be unrolled.
    * @returns Returns the map of normalized entities.
    */
   @Class.Protected()
-  protected normalizeAsMap(entities: E[], aliased?: boolean): E {
+  protected normalizeAsMap(entities: E[], alias?: boolean, unsafe?: boolean, unroll?: boolean): E {
     const column = Schema.getPrimaryColumn(this.model);
     const primary = Schema.getColumnName(column);
     const data = <E>{};
     for (const input of entities) {
-      const entity = this.normalize(input, aliased);
+      const entity = this.normalize(input, alias, unsafe, unroll);
       data[<keyof E>entity[primary]] = <E[keyof E]>entity;
     }
     return data;

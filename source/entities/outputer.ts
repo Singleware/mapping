@@ -10,16 +10,6 @@ import * as Columns from '../columns';
 import { Schema } from '../schema';
 
 /**
- * Array values alias.
- */
-type Arrays<T> = (T | T[])[];
-
-/**
- * Generic values alias.
- */
-type Values<G, T> = G | T | Arrays<T> | Types.Map<T>;
-
-/**
  * Outputer helper class.
  */
 @Class.Describe()
@@ -40,103 +30,105 @@ export class Outputer extends Class.Null {
   }
 
   /**
-   * Creates a new entity array based on the specified model type, viewed fields and entry list.
+   * Creates a new list based on the specified model type, entry list and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entries Entry list.
+   * @param multiple Determines whether each value in the specified list can be a sub list.
    * @param required Determines whether all required columns must be provided.
-   * @param multiple Determines whether each value from the specified list is another list.
-   * @returns Returns the generated entity array.
+   * @param fields Viewed fields.
+   * @returns Returns the generated list.
    */
   @Class.Private()
   private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
-    entries: Arrays<I>,
+    entries: (I | I[])[],
+    multiple: boolean,
     required: boolean,
-    multiple: boolean
-  ): Arrays<O> {
-    const entities = [];
+    fields: string[]
+  ): (O | O[])[] {
+    const list = [];
     for (const entry of entries) {
       let entity;
       if (multiple && entry instanceof Array) {
-        entity = <O[]>this.createArrayEntity(model, fields, entry, required, false);
+        entity = this.createArrayEntity(model, entry, false, required, fields);
       } else {
-        entity = this.createEntity(model, fields, entry, required, false);
+        entity = this.createEntity(model, entry, fields, required, false);
       }
       if (entity !== void 0) {
-        entities.push(entity);
+        list.push(entity);
       }
     }
-    return entities;
+    return <(O | O[])[]>list;
   }
 
   /**
-   * Create a new entity map based on the specified model type, viewed fields and entry map.
+   * Create a new entity map based on the specified model type, entry map and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entry Entry map.
+   * @param fields Viewed fields.
    * @param required Determines whether all required columns must be provided.
    * @returns Returns the generated entity map.
    */
   @Class.Private()
   private static createMapEntity<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
     entry: Types.Map<I>,
+    fields: string[],
     required: boolean
   ): Types.Map<O> {
-    const entities = <Types.Map<O>>{};
+    const map = <Types.Map<O>>{};
     for (const property in entry) {
-      const entity = this.createEntity(model, fields, entry[property], required, false);
+      const entity = <O>this.createEntity(model, entry[property], fields, required, false);
       if (entity !== void 0) {
-        entities[property] = entity;
+        map[property] = entity;
       }
     }
-    return entities;
+    return map;
   }
 
   /**
-   * Converts if possible the specified entry to an entity.
+   * Creates a new entry value from the specified column schema, entity value and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param schema Column schema.
    * @param entry Entry value.
+   * @param fields Viewed fields.
    * @param required Determines whether all required columns must be provided.
    * @returns Returns the original or the converted value.
    * @throws Throws an error when the expected value should be an array or map but the given value is not.
    */
   @Class.Private()
-  private static createValue<I extends Types.Entity, O extends Types.Entity, G>(
+  private static createValue<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
     schema: Columns.Base<O>,
-    entry: Values<G, I>,
+    entry: I | Types.Map<I> | (I | I[])[],
+    fields: string[],
     required: boolean
-  ): Values<G, O> | undefined {
-    if (!schema.model || !Schema.isEntity(schema.model) || (entry === null && schema.formats.includes(Types.Format.Null))) {
-      return <G>entry;
-    }
-    if (schema.formats.includes(Types.Format.Array)) {
-      if (!(entry instanceof Array)) {
-        throw new TypeError(`Output column '${Schema.getColumnName(schema)}@${Schema.getStorageName(model)}' must be an array.`);
+  ): O | I | Types.Map<O | I> | ((O | I) | (O | I)[])[] | undefined {
+    if (schema.model && Schema.isEntity(schema.model)) {
+      if (entry instanceof Array) {
+        if (schema.formats.includes(Types.Format.Array)) {
+          return this.createArrayEntity(schema.model, entry, (<Columns.Virtual<O>>schema).all || false, required, fields);
+        } else {
+          throw new TypeError(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
+        }
+      } else if (entry instanceof Object) {
+        if (schema.formats.includes(Types.Format.Object)) {
+          return this.createEntity(schema.model, entry, fields, required, (schema.required || false) && schema.type === Types.Column.Real);
+        } else if (schema.formats.includes(Types.Format.Map)) {
+          return this.createMapEntity(schema.model, entry, fields, required);
+        } else {
+          throw new TypeError(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
+        }
       }
-      return this.createArrayEntity(schema.model, fields, entry, required, (<Columns.Virtual<O>>schema).all || false);
     }
-    if (schema.formats.includes(Types.Format.Map)) {
-      if (!(entry instanceof Object)) {
-        throw new TypeError(`Output column '${Schema.getColumnName(schema)}@${Schema.getStorageName(model)}' must be a map.`);
-      }
-      return this.createMapEntity(schema.model, fields, entry, required);
-    }
-    return this.createEntity(schema.model, fields, entry, required, (schema.required || false) && schema.type === Types.Column.Real);
+    return schema.caster(entry, Types.Cast.Output);
   }
 
   /**
-   * Creates a new entity based on the specified model type, viewed fields and entry.
+   * Creates a new entity based on the specified model type, entry value and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entry Entry value.
+   * @param fields Viewed fields.
    * @param required Determines whether all required columns must be provided.
    * @param wanted Determines whether all columns are wanted by the parent entity.
    * @returns Returns the generated entity or undefined when the entity has no data.
@@ -145,8 +137,8 @@ export class Outputer extends Class.Null {
   @Class.Private()
   private static createEntity<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
     entry: I,
+    fields: string[],
     required: boolean,
     wanted: boolean
   ): O | undefined {
@@ -165,9 +157,9 @@ export class Outputer extends Class.Null {
         if (schema.writeOnly) {
           throw new Error(`Output column '${name}@${Schema.getStorageName(model)}' is write-only.`);
         }
-        const output = this.createValue(model, fields, schema, schema.caster(value, Types.Cast.Output), required);
-        if (output !== void 0 && (wanted || filled || !this.isEmptyResult(output))) {
-          entity[<keyof O>name] = output;
+        const result = this.createValue(model, schema, value, fields, required);
+        if (result !== void 0 && (wanted || filled || !this.isEmptyResult(result))) {
+          entity[<keyof O>name] = result;
           filled = true;
         }
       }
@@ -182,94 +174,90 @@ export class Outputer extends Class.Null {
   }
 
   /**
-   * Creates a new entity based on the specified model type, viewed fields and entry value.
+   * Creates a new entity based on the specified model type, entry value and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entry Entry value.
+   * @param fields Viewed fields.
    * @returns Returns the generated entity or undefined when the entity has no data.
    */
   @Class.Public()
-  public static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, fields: string[], entry: I): O | undefined {
-    return this.createEntity(model, fields, entry, false, true);
+  public static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, fields: string[]): O | undefined {
+    return this.createEntity(model, entry, fields, false, true);
   }
 
   /**
-   * Creates a new entity array based on the specified model type, viewed fields and entry list.
+   * Creates a new entity array based on the specified model type, entry list and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entries Entry list.
+   * @param fields Viewed fields.
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createArray<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
-    fields: string[],
-    entries: Arrays<I>
-  ): Arrays<O> {
-    return this.createArrayEntity(model, fields, entries, false, false);
+  public static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[], fields: string[]): O[] {
+    return <O[]>this.createArrayEntity(model, entries, false, false, fields);
   }
 
   /**
-   * Create a new entity map based on the specified model type, viewed fields and entry map.
+   * Create a new entity map based on the specified model type, entry map and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entry Entry map.
+   * @param fields Viewed fields.
    * @returns Returns the generated entity map.
    */
   @Class.Public()
   public static createMap<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
-    entry: Types.Map<I>
+    entry: Types.Map<I>,
+    fields: string[]
   ): Types.Map<O> {
-    return this.createMapEntity(model, fields, entry, false);
+    return this.createMapEntity(model, entry, fields, false);
   }
 
   /**
-   * Creates a new full entity based on the specified model type, viewed fields and entry value.
+   * Creates a new full entity based on the specified model type, entry value and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entry Entry value.
+   * @param fields Viewed fields.
    * @returns Returns the generated entity or undefined when the entity has no data.
    */
   @Class.Public()
   public static createFull<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
-    entry: I
+    entry: I,
+    fields: string[]
   ): O | undefined {
-    return this.createEntity(model, fields, entry, true, true);
+    return this.createEntity(model, entry, fields, true, true);
   }
 
   /**
-   * Creates a new full entity array based on the specified model type, viewed fields and entry list.
+   * Creates a new full entity array based on the specified model type, entry list and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entries Entry list.
+   * @param fields Viewed fields.
    * @returns Returns the generated entity array.
    */
   @Class.Public()
   public static createFullArray<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    views: string[],
-    entries: Arrays<I>
-  ): Arrays<O> {
-    return this.createArrayEntity(model, views, entries, true, false);
+    entries: I[],
+    fields: string[]
+  ): O[] {
+    return <O[]>this.createArrayEntity(model, entries, false, true, fields);
   }
 
   /**
-   * Create a new full entity map based on the specified model type, viewed fields and entry map.
+   * Create a new full entity map based on the specified model type, entry map and viewed fields.
    * @param model Model type.
-   * @param fields Viewed fields.
    * @param entry Entry map.
+   * @param fields Viewed fields.
    * @returns Returns the generated entity map.
    */
   @Class.Public()
   public static createFullMap<I extends Types.Entity, O extends Types.Entity>(
     model: Types.Model<O>,
-    fields: string[],
-    map: Types.Map<I>
+    entry: Types.Map<I>,
+    fields: string[]
   ): Types.Map<O> {
-    return this.createMapEntity(model, fields, map, true);
+    return this.createMapEntity(model, entry, fields, true);
   }
 }

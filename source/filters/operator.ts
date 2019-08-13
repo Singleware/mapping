@@ -7,14 +7,14 @@
  * Operator filter.
  */
 export enum Operator {
-  Less,
-  LessOrEqual,
-  Equal,
-  NotEqual,
-  GreaterOrEqual,
-  Greater,
-  Contain,
-  Between,
-  NotContain,
-  RegEx
+  LessThan = 'lt',
+  LessThanOrEqual = 'le',
+  Equal = 'eq',
+  NotEqual = 'ne',
+  GreaterThan = 'gt',
+  GreaterThanOrEqual = 'ge',
+  Contain = 'in',
+  Between = 'bt',
+  NotContain = 'ni',
+  RegExp = 're'
 }

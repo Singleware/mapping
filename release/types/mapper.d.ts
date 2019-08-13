@@ -123,24 +123,30 @@ export declare class Mapper<E extends Types.Entity> extends Class.Null {
     /**
      * Generate a new normalized entity based on the specified entity data.
      * @param entity Entity data.
-     * @param aliased Determines whether the entity should be aliased or not.
+     * @param alias Determines whether all column names should be aliased.
+     * @param unsafe Determines whether all hidden columns should be visible.
+     * @param unroll Determines whether all columns should be unrolled.
      * @returns Returns the normalized entity.
      */
-    protected normalize(entity: E, aliased?: boolean): E;
+    protected normalize(entity: E, alias?: boolean, unsafe?: boolean, unroll?: boolean): E;
     /**
      * Normalize all entities in the specified entity list.
      * @param entities Entity list.
-     * @param aliased Determines whether the entity should be aliased or not.
+     * @param alias Determines whether all column names should be aliased.
+     * @param unsafe Determines whether all hidden columns should be visible.
+     * @param unroll Determines whether all columns should be unrolled.
      * @returns Returns the list of normalized entities.
      */
-    protected normalizeAll(entities: E[], aliased?: boolean): E[];
+    protected normalizeAll(entities: E[], alias?: boolean, unsafe?: boolean, unroll?: boolean): E[];
     /**
      * Normalize all entities in the specified entity list to a new map of entities.
      * @param entities Entity list.
-     * @param aliased Determines whether the entity should be aliased or not.
+     * @param alias Determines whether all column names should be aliased.
+     * @param unsafe Determines whether all hidden columns should be visible.
+     * @param unroll Determines whether all columns should be unrolled.
      * @returns Returns the map of normalized entities.
      */
-    protected normalizeAsMap(entities: E[], aliased?: boolean): E;
+    protected normalizeAsMap(entities: E[], alias?: boolean, unsafe?: boolean, unroll?: boolean): E;
     /**
      * Default constructor.
      * @param driver Data driver.
