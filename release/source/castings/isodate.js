@@ -33,6 +33,26 @@ let ISODate = class ISODate extends Class.Null {
         }
     }
     /**
+     * Try to converts the specified value to a new ISO date integer.
+     * @param value Casting value.
+     * @param type Casting type.
+     * @returns Returns the ISO date integer when the conversion was successful, otherwise returns the given value.
+     */
+    static Integer(value, type) {
+        if (value instanceof Array) {
+            return value.map(value => this.Integer(value, type));
+        }
+        else if (value instanceof Date) {
+            return Math.trunc(value.getTime() / 1000);
+        }
+        else if (Date.parse(value)) {
+            return Math.trunc(new Date(value).getTime() / 1000);
+        }
+        else {
+            return value;
+        }
+    }
+    /**
      * Try to converts the specified value to a new ISO date string.
      * @param value Casting value.
      * @param type Casting type.
@@ -43,10 +63,11 @@ let ISODate = class ISODate extends Class.Null {
             return value.map(value => this.String(value, type));
         }
         else if (value instanceof Date) {
+            const date = value.toISOString().substr(0, 19);
             const offset = value.getTimezoneOffset();
-            const hour = Math.trunc(Math.abs(offset / 60)).toString();
-            const min = Math.trunc(Math.abs(offset % 60)).toString();
-            return value.toISOString().substr(0, 19) + (offset < 0 ? '+' : '-') + hour.padStart(2, '0') + ':' + min.padStart(2, '0');
+            const hours = Math.trunc(Math.abs(offset / 60)).toString();
+            const mins = Math.trunc(Math.abs(offset % 60)).toString();
+            return date + (offset < 0 ? '+' : '-') + hours.padStart(2, '0') + ':' + mins.padStart(2, '0');
         }
         else {
             return value;
@@ -56,6 +77,9 @@ let ISODate = class ISODate extends Class.Null {
 __decorate([
     Class.Public()
 ], ISODate, "Object", null);
+__decorate([
+    Class.Public()
+], ISODate, "Integer", null);
 __decorate([
     Class.Public()
 ], ISODate, "String", null);

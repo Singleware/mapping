@@ -29,6 +29,25 @@ export class ISODate extends Class.Null {
   }
 
   /**
+   * Try to converts the specified value to a new ISO date integer.
+   * @param value Casting value.
+   * @param type Casting type.
+   * @returns Returns the ISO date integer when the conversion was successful, otherwise returns the given value.
+   */
+  @Class.Public()
+  public static Integer<T>(value: T | T[], type: Types.Cast): (T | number) | (T | number)[] {
+    if (value instanceof Array) {
+      return value.map(value => <T | number>this.Integer(value, type));
+    } else if (value instanceof Date) {
+      return Math.trunc(value.getTime() / 1000);
+    } else if (Date.parse(<any>value)) {
+      return Math.trunc(new Date(<any>value).getTime() / 1000);
+    } else {
+      return value;
+    }
+  }
+
+  /**
    * Try to converts the specified value to a new ISO date string.
    * @param value Casting value.
    * @param type Casting type.
@@ -39,10 +58,11 @@ export class ISODate extends Class.Null {
     if (value instanceof Array) {
       return value.map(value => <T | string>this.String(value, type));
     } else if (value instanceof Date) {
+      const date = value.toISOString().substr(0, 19);
       const offset = value.getTimezoneOffset();
-      const hour = Math.trunc(Math.abs(offset / 60)).toString();
-      const min = Math.trunc(Math.abs(offset % 60)).toString();
-      return value.toISOString().substr(0, 19) + (offset < 0 ? '+' : '-') + hour.padStart(2, '0') + ':' + min.padStart(2, '0');
+      const hours = Math.trunc(Math.abs(offset / 60)).toString();
+      const mins = Math.trunc(Math.abs(offset % 60)).toString();
+      return date + (offset < 0 ? '+' : '-') + hours.padStart(2, '0') + ':' + mins.padStart(2, '0');
     } else {
       return value;
     }

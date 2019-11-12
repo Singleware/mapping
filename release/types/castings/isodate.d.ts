@@ -16,6 +16,13 @@ export declare class ISODate extends Class.Null {
      */
     static Object<T>(value: T | T[], type: Types.Cast): (T | Date) | (T | Date)[];
     /**
+     * Try to converts the specified value to a new ISO date integer.
+     * @param value Casting value.
+     * @param type Casting type.
+     * @returns Returns the ISO date integer when the conversion was successful, otherwise returns the given value.
+     */
+    static Integer<T>(value: T | T[], type: Types.Cast): (T | number) | (T | number)[];
+    /**
      * Try to converts the specified value to a new ISO date string.
      * @param value Casting value.
      * @param type Casting type.

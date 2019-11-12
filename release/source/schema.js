@@ -83,12 +83,12 @@ let Schema = class Schema extends Class.Null {
         }
         else {
             row[name] = {
+                caster: (value) => value,
                 ...properties,
                 type: type,
                 name: name,
                 formats: [],
-                validations: [],
-                caster: (value) => value
+                validations: []
             };
         }
         return row[name];
@@ -321,7 +321,9 @@ let Schema = class Schema extends Class.Null {
      */
     static ReadOnly() {
         return (scope, property) => {
-            const column = this.assignColumn(scope.constructor, Types.Column.Real, property, { readOnly: true });
+            const column = this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                readOnly: true
+            });
             if (column.writeOnly) {
                 throw new Error(`Column '${property}' is already write-only.`);
             }
@@ -334,7 +336,9 @@ let Schema = class Schema extends Class.Null {
      */
     static WriteOnly() {
         return (scope, property) => {
-            const column = this.assignColumn(scope.constructor, Types.Column.Real, property, { writeOnly: true });
+            const column = this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                writeOnly: true
+            });
             if (column.readOnly) {
                 throw new Error(`Column '${property}' is already read-only.`);
             }
@@ -441,7 +445,10 @@ let Schema = class Schema extends Class.Null {
      */
     static Integer(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.Integer(minimum, maximum), Types.Format.Integer, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                minimum: minimum,
+                maximum: maximum
+            }), new Validator.Common.Integer(minimum, maximum), Types.Format.Integer, descriptor);
         };
     }
     /**
@@ -452,7 +459,10 @@ let Schema = class Schema extends Class.Null {
      */
     static Decimal(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.Decimal(minimum, maximum), Types.Format.Decimal, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                minimum: minimum,
+                maximum: maximum
+            }), new Validator.Common.Decimal(minimum, maximum), Types.Format.Decimal, descriptor);
         };
     }
     /**
@@ -463,7 +473,10 @@ let Schema = class Schema extends Class.Null {
      */
     static Number(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.Number(minimum, maximum), Types.Format.Number, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                minimum: minimum,
+                maximum: maximum
+            }), new Validator.Common.Number(minimum, maximum), Types.Format.Number, descriptor);
         };
     }
     /**
@@ -474,7 +487,10 @@ let Schema = class Schema extends Class.Null {
      */
     static String(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, { minimum: minimum, maximum: maximum }), new Validator.Common.String(minimum, maximum), Types.Format.String, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                minimum: minimum,
+                maximum: maximum
+            }), new Validator.Common.String(minimum, maximum), Types.Format.String, descriptor);
         };
     }
     /**
@@ -500,13 +516,15 @@ let Schema = class Schema extends Class.Null {
     }
     /**
      * Decorates the specified property to be a timestamp column.
-     * @param min Minimum date.
-     * @param max Maximum date.
+     * @param minimum Minimum date.
+     * @param maximum Maximum date.
      * @returns Returns the decorator method.
      */
-    static Timestamp(min, max) {
+    static Timestamp(minimum, maximum) {
         return (scope, property, descriptor) => {
-            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property), new Validator.Common.Timestamp(min, max), Types.Format.Timestamp, descriptor);
+            return this.addValidation(scope, this.assignColumn(scope.constructor, Types.Column.Real, property, {
+                caster: Castings.ISODate.Integer.bind(Castings.ISODate)
+            }), new Validator.Common.Integer(minimum ? minimum.getTime() : 0, maximum ? maximum.getTime() : Infinity), Types.Format.Timestamp, descriptor);
         };
     }
     /**

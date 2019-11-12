@@ -105,7 +105,11 @@ export class Inputer extends Class.Null {
    * @throws Throws an error when required columns aren't supplied or read-only columns were set.
    */
   @Class.Private()
-  private static createEntity<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, required: boolean): O {
+  private static createEntity<I extends Types.Entity, O extends Types.Entity>(
+    model: Types.Model<O>,
+    entry: I,
+    required: boolean
+  ): O {
     const entity = <O>new model();
     const columns = Schema.getRealRow(model);
     for (const name in columns) {
@@ -157,7 +161,10 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Public()
-  public static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>): Types.Map<O> {
+  public static createMap<I extends Types.Entity, O extends Types.Entity>(
+    model: Types.Model<O>,
+    entry: Types.Map<I>
+  ): Types.Map<O> {
     return this.createMapEntity(model, entry, false);
   }
 
@@ -190,7 +197,10 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Public()
-  public static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>): Types.Map<O> {
+  public static createFullMap<I extends Types.Entity, O extends Types.Entity>(
+    model: Types.Model<O>,
+    entry: Types.Map<I>
+  ): Types.Map<O> {
     return this.createMapEntity(model, entry, true);
   }
 }

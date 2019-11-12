@@ -233,11 +233,11 @@ export declare class Schema extends Class.Null {
     static Pattern(pattern: RegExp, name?: string): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a timestamp column.
-     * @param min Minimum date.
-     * @param max Maximum date.
+     * @param minimum Minimum date.
+     * @param maximum Maximum date.
      * @returns Returns the decorator method.
      */
-    static Timestamp(min?: Date, max?: Date): Types.PropertyDecorator;
+    static Timestamp(minimum?: Date, maximum?: Date): Types.PropertyDecorator;
     /**
      * Decorates the specified property to be a date column.
      * @param minimum Minimum date.
