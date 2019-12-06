@@ -43,7 +43,7 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
-     * @returns Returns a promise to get the id list of all inserted entities.
+     * @returns Returns a promise to get the Id list of all inserted entities.
      */
     async insertMany(entities) {
         return await this.insertManyEx(this.model, entities);
@@ -68,25 +68,39 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Find all corresponding entity in the storage.
      * @param query Query filter
-     * @param fields Viewed fields.
+     * @param select Selected fields.
      * @returns Returns a promise to get the list of entities found.
      */
-    async find(query, fields = []) {
-        const entities = await this.driver.find(this.model, query, fields);
-        return Entities.Outputer.createFullArray(this.model, entities, fields);
+    async find(query, select = []) {
+        const entities = await this.driver.find(this.model, query, select);
+        return Entities.Outputer.createFullArray(this.model, entities, select);
     }
     /**
-     * Find the entity that corresponds to the specified entity id.
-     * @param id Entity id.
-     * @param fields Viewed fields.
+     * Find the entity that corresponds to the specified entity Id.
+     * @param id Entity Id.
+     * @param select Selected fields.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
-    async findById(id, fields = []) {
-        const entity = await this.driver.findById(this.model, id, fields);
+    async findById(id, select = []) {
+        const entity = await this.driver.findById(this.model, id, select);
         if (entity !== void 0) {
-            return Entities.Outputer.createFull(this.model, entity, fields);
+            return Entities.Outputer.createFull(this.model, entity, select);
         }
         return void 0;
+    }
+    /**
+     * Gets the entity that corresponds to the specified entity Id.
+     * @param id Entity Id.
+     * @param select Selected fields.
+     * @returns Returns a promise to get the entity.
+     * @throws Throws an error when the entity wasn't found.
+     */
+    async getById(id, select = []) {
+        const entity = await this.findById(id, select);
+        if (!entity) {
+            throw new Error(`Failed to find entity by Id.`);
+        }
+        return entity;
     }
     /**
      * Update all entities that corresponds to the specified match using a custom model type.
@@ -110,7 +124,7 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Update the entity that corresponds to the specified id using a custom model type.
      * @param model Model type.
-     * @param id Entity id.
+     * @param id Entity Id.
      * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
@@ -118,8 +132,8 @@ let Mapper = class Mapper extends Class.Null {
         return await this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity));
     }
     /**
-     * Update the entity that corresponds to the specified id.
-     * @param id Entity id.
+     * Update the entity that corresponds to the specified entity Id.
+     * @param id Entity Id.
      * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
@@ -127,8 +141,8 @@ let Mapper = class Mapper extends Class.Null {
         return await this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity));
     }
     /**
-     * Replace the entity that corresponds to the specified id using a custom model type.
-     * @param id Entity id.
+     * Replace the entity that corresponds to the specified entity Id using a custom model type.
+     * @param id Entity Id.
      * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
@@ -136,8 +150,8 @@ let Mapper = class Mapper extends Class.Null {
         return await this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity));
     }
     /**
-     * Replace the entity that corresponds to the specified id.
-     * @param id Entity id.
+     * Replace the entity that corresponds to the specified entity Id.
+     * @param id Entity Id.
      * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
@@ -153,8 +167,8 @@ let Mapper = class Mapper extends Class.Null {
         return await this.driver.delete(this.model, match);
     }
     /**
-     * Delete the entity that corresponds to the specified entity id.
-     * @param id Entity id.
+     * Delete the entity that corresponds to the specified entity Id.
+     * @param id Entity Id.
      * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
      */
     async deleteById(id) {
@@ -171,9 +185,9 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Generate a new normalized entity based on the specified entity data.
      * @param entity Entity data.
-     * @param alias Determines whether all column names should be aliased.
-     * @param unsafe Determines whether all hidden columns should be visible.
-     * @param unroll Determines whether all columns should be unrolled.
+     * @param alias Determines whether or not all column names should be aliased.
+     * @param unsafe Determines whether or not all hidden columns should be visible.
+     * @param unroll Determines whether or not all columns should be unrolled.
      * @returns Returns the normalized entity.
      */
     normalize(entity, alias, unsafe, unroll) {
@@ -182,20 +196,20 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Normalize all entities in the specified entity list.
      * @param entities Entity list.
-     * @param alias Determines whether all column names should be aliased.
-     * @param unsafe Determines whether all hidden columns should be visible.
-     * @param unroll Determines whether all columns should be unrolled.
+     * @param alias Determines whether or not all column names should be aliased.
+     * @param unsafe Determines whether or not all hidden columns should be visible.
+     * @param unroll Determines whether or not all columns should be unrolled.
      * @returns Returns the list of normalized entities.
      */
     normalizeAll(entities, alias, unsafe, unroll) {
-        return entities.map((entity) => this.normalize(entity, alias, unsafe, unroll));
+        return entities.map(entity => this.normalize(entity, alias, unsafe, unroll));
     }
     /**
      * Normalize all entities in the specified entity list to a new map of entities.
      * @param entities Entity list.
-     * @param alias Determines whether all column names should be aliased.
-     * @param unsafe Determines whether all hidden columns should be visible.
-     * @param unroll Determines whether all columns should be unrolled.
+     * @param alias Determines whether or not all column names should be aliased.
+     * @param unsafe Determines whether or not all hidden columns should be visible.
+     * @param unroll Determines whether or not all columns should be unrolled.
      * @returns Returns the map of normalized entities.
      */
     normalizeAsMap(entities, alias, unsafe, unroll) {
@@ -216,58 +230,61 @@ __decorate([
     Class.Private()
 ], Mapper.prototype, "driver", void 0);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "insertManyEx", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "insertMany", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "insertEx", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "insert", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "find", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "findById", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
+], Mapper.prototype, "getById", null);
+__decorate([
+    Class.Public()
 ], Mapper.prototype, "updateEx", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "update", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "updateByIdEx", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "updateById", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "replaceByIdEx", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "replaceById", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "delete", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "deleteById", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "count", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "normalize", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "normalizeAll", null);
 __decorate([
-    Class.Protected()
+    Class.Public()
 ], Mapper.prototype, "normalizeAsMap", null);
 Mapper = __decorate([
     Class.Describe()
