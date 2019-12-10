@@ -23,8 +23,9 @@ export class Outputer extends Class.Null {
   private static isEmptyResult<E extends Types.Entity, T>(value: T[] | Types.Model<E>): boolean {
     if (value instanceof Array) {
       return value.length === 0;
-    } else if (value instanceof Object) {
-      return !Schema.isEntity(<Types.Model<E>>value) && Object.keys(value).length === 0;
+    }
+    if (value instanceof Object) {
+      return Object.getPrototypeOf(value) === Object.getPrototypeOf({}) && Object.keys(value).length === 0;
     }
     return false;
   }
@@ -113,11 +114,19 @@ export class Outputer extends Class.Null {
         }
       } else if (entry instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
-          return this.createEntity(schema.model, entry, fields, required, (schema.required || false) && schema.type === Types.Column.Real);
+          return this.createEntity(
+            schema.model,
+            entry,
+            fields,
+            required,
+            (schema.required || false) && schema.type === Types.Column.Real
+          );
         } else if (schema.formats.includes(Types.Format.Map)) {
           return this.createMapEntity(schema.model, entry, fields, required);
         } else {
-          throw new TypeError(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
+          throw new TypeError(
+            `Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`
+          );
         }
       }
     }
@@ -181,7 +190,11 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity or undefined when the entity has no data.
    */
   @Class.Public()
-  public static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, fields: string[]): O | undefined {
+  public static create<I extends Types.Entity, O extends Types.Entity>(
+    model: Types.Model<O>,
+    entry: I,
+    fields: string[]
+  ): O | undefined {
     return this.createEntity(model, entry, fields, false, true);
   }
 
@@ -193,7 +206,11 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[], fields: string[]): O[] {
+  public static createArray<I extends Types.Entity, O extends Types.Entity>(
+    model: Types.Model<O>,
+    entries: I[],
+    fields: string[]
+  ): O[] {
     return <O[]>this.createArrayEntity(model, entries, false, false, fields);
   }
 

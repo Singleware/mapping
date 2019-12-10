@@ -26,8 +26,8 @@ let Outputer = class Outputer extends Class.Null {
         if (value instanceof Array) {
             return value.length === 0;
         }
-        else if (value instanceof Object) {
-            return !schema_1.Schema.isEntity(value) && Object.keys(value).length === 0;
+        if (value instanceof Object) {
+            return Object.getPrototypeOf(value) === Object.getPrototypeOf({}) && Object.keys(value).length === 0;
         }
         return false;
     }
