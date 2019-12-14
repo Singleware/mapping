@@ -5,7 +5,7 @@
 /**
  * Cast types.
  */
-export declare enum Cast {
+export declare const enum Cast {
     Input = "input",
     Output = "output",
     Normalize = "normalize"

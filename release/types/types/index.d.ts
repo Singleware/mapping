@@ -14,7 +14,15 @@ import { Cast } from './cast';
 /**
  * Type declaration for entity model constructors.
  */
-export declare type Model<T extends Entity = Entity> = Class.Constructor<T>;
+export declare type ModelClass<T extends Entity = Entity> = Class.Constructor<T>;
+/**
+ * Type declaration for entity model constructor callback.
+ */
+export declare type ModelCallback<T extends Entity = Entity> = () => ModelClass<T>;
+/**
+ * Type declaration for model decorators.
+ */
+export declare type ModelDecorator = (target: Object, property: string | symbol, descriptor?: PropertyDescriptor) => any;
 /**
  * Type declaration for caster callback.
  */

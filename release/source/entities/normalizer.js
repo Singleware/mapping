@@ -72,31 +72,31 @@ let Normalizer = class Normalizer extends Class.Null {
     static createValue(model, schema, entity, alias, unsafe, unroll, path, data) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
             if (entity instanceof Array) {
-                if (schema.formats.includes(Types.Format.Array)) {
-                    return this.createList(schema.model, entity, schema.all || false, alias, unsafe);
+                if (schema.formats.includes(12 /* Array */)) {
+                    return this.createList(schema_1.Schema.getEntityModel(schema.model), entity, schema.all || false, alias, unsafe);
                 }
                 else {
                     throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
                 }
             }
             else if (entity instanceof Object) {
-                if (schema.formats.includes(Types.Format.Object)) {
+                if (schema.formats.includes(14 /* Object */)) {
                     if (unroll) {
-                        return this.createEntry(schema.model, entity, alias, unsafe, true, path, data), void 0;
+                        return this.createEntry(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
                     }
                     else {
-                        return this.createEntry(schema.model, entity, alias, unsafe, false);
+                        return this.createEntry(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe, false);
                     }
                 }
-                else if (schema.formats.includes(Types.Format.Map)) {
-                    return this.createMap(schema.model, entity, alias, unsafe);
+                else if (schema.formats.includes(13 /* Map */)) {
+                    return this.createMap(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe);
                 }
                 else {
                     throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
                 }
             }
         }
-        return schema.caster(entity, Types.Cast.Normalize);
+        return schema.caster(entity, "normalize" /* Normalize */);
     }
     /**
      * Creates a new normalized entry based on the specified model type and entity value.

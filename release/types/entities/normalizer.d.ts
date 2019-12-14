@@ -65,5 +65,5 @@ export declare class Normalizer extends Class.Null {
      * @param unroll Determines whether all columns should be unrolled.
      * @returns Returns the generated object.
      */
-    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<I>, entity: I, alias?: boolean, unsafe?: boolean, unroll?: boolean): O;
+    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<I>, entity: I, alias?: boolean, unsafe?: boolean, unroll?: boolean): O;
 }

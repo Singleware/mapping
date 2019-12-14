@@ -5,7 +5,7 @@
 /**
  * Column types.
  */
-export declare enum Column {
+export declare const enum Column {
     Real = "real",
     Virtual = "virtual"
 }

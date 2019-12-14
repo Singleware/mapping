@@ -68,7 +68,7 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Find all corresponding entity in the storage.
      * @param query Query filter
-     * @param select Selected fields.
+     * @param select Fields to select.
      * @returns Returns a promise to get the list of entities found.
      */
     async find(query, select = []) {
@@ -78,7 +78,7 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Find the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
-     * @param select Selected fields.
+     * @param select Fields to select.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
     async findById(id, select = []) {
@@ -91,7 +91,7 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Gets the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
-     * @param select Selected fields.
+     * @param select Fields to select.
      * @returns Returns a promise to get the entity.
      * @throws Throws an error when the entity wasn't found.
      */

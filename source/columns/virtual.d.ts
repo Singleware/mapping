@@ -22,7 +22,7 @@ export interface Virtual<T extends Types.Entity = Types.Entity> extends Base<T> 
   /**
    * Column entity model.
    */
-  model: Types.Model<T>;
+  model: Types.ModelClass<T> | Types.ModelCallback<T>;
   /**
    * Column query.
    */

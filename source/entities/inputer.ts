@@ -24,7 +24,7 @@ export class Inputer extends Class.Null {
    */
   @Class.Private()
   private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entries: (I | I[])[],
     multiple: boolean,
     required: boolean
@@ -49,7 +49,7 @@ export class Inputer extends Class.Null {
    */
   @Class.Private()
   private static createMapEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: Types.Map<I>,
     required: boolean
   ): Types.Map<O> {
@@ -71,7 +71,7 @@ export class Inputer extends Class.Null {
    */
   @Class.Private()
   private static createValue<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     schema: Columns.Base<O>,
     entry: I | Types.Map<I> | (I | I[])[],
     required: boolean
@@ -79,15 +79,20 @@ export class Inputer extends Class.Null {
     if (schema.model && Schema.isEntity(schema.model)) {
       if (entry instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
-          return this.createArrayEntity(schema.model, entry, (<Columns.Virtual<O>>schema).all || false, required);
+          return this.createArrayEntity(
+            Schema.getEntityModel(schema.model),
+            entry,
+            (<Columns.Virtual<O>>schema).all || false,
+            required
+          );
         } else {
           throw new TypeError(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entry instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
-          return this.createEntity(schema.model, entry, required);
+          return this.createEntity(Schema.getEntityModel(schema.model), entry, required);
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMapEntity(schema.model, entry, required);
+          return this.createMapEntity(Schema.getEntityModel(schema.model), entry, required);
         } else {
           throw new TypeError(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
@@ -106,7 +111,7 @@ export class Inputer extends Class.Null {
    */
   @Class.Private()
   private static createEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: I,
     required: boolean
   ): O {
@@ -139,7 +144,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity.
    */
   @Class.Public()
-  public static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I): O {
+  public static create<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I): O {
     return this.createEntity(model, entry, false);
   }
 
@@ -150,7 +155,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[]): O[] {
+  public static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[]): O[] {
     return <O[]>this.createArrayEntity(model, entries, false, false);
   }
 
@@ -162,7 +167,7 @@ export class Inputer extends Class.Null {
    */
   @Class.Public()
   public static createMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: Types.Map<I>
   ): Types.Map<O> {
     return this.createMapEntity(model, entry, false);
@@ -175,7 +180,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity.
    */
   @Class.Public()
-  public static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, data: I): O {
+  public static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, data: I): O {
     return this.createEntity(model, data, true);
   }
 
@@ -186,7 +191,10 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[]): O[] {
+  public static createFullArray<I extends Types.Entity, O extends Types.Entity>(
+    model: Types.ModelClass<O>,
+    entries: I[]
+  ): O[] {
     return <O[]>this.createArrayEntity(model, entries, false, true);
   }
 
@@ -198,7 +206,7 @@ export class Inputer extends Class.Null {
    */
   @Class.Public()
   public static createFullMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: Types.Map<I>
   ): Types.Map<O> {
     return this.createMapEntity(model, entry, true);

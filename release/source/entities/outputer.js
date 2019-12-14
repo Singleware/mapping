@@ -18,20 +18,6 @@ const schema_1 = require("../schema");
  */
 let Outputer = class Outputer extends Class.Null {
     /**
-     * Determines whether the specified value is an empty result or not.
-     * @param value Value to check.
-     * @returns Returns true when the specified value is empty, false otherwise.
-     */
-    static isEmptyResult(value) {
-        if (value instanceof Array) {
-            return value.length === 0;
-        }
-        if (value instanceof Object) {
-            return Object.getPrototypeOf(value) === Object.getPrototypeOf({}) && Object.keys(value).length === 0;
-        }
-        return false;
-    }
-    /**
      * Creates a new list based on the specified model type, entry list and viewed fields.
      * @param model Model type.
      * @param entries Entry list.
@@ -87,26 +73,26 @@ let Outputer = class Outputer extends Class.Null {
     static createValue(model, schema, entry, fields, required) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
             if (entry instanceof Array) {
-                if (schema.formats.includes(Types.Format.Array)) {
-                    return this.createArrayEntity(schema.model, entry, schema.all || false, required, fields);
+                if (schema.formats.includes(12 /* Array */)) {
+                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, schema.all || false, required, fields);
                 }
                 else {
                     throw new TypeError(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
                 }
             }
             else if (entry instanceof Object) {
-                if (schema.formats.includes(Types.Format.Object)) {
-                    return this.createEntity(schema.model, entry, fields, required, (schema.required || false) && schema.type === Types.Column.Real);
+                if (schema.formats.includes(14 /* Object */)) {
+                    return this.createEntity(schema_1.Schema.getEntityModel(schema.model), entry, fields, required, (schema.required || false) && schema.type === "real" /* Real */);
                 }
-                else if (schema.formats.includes(Types.Format.Map)) {
-                    return this.createMapEntity(schema.model, entry, fields, required);
+                else if (schema.formats.includes(13 /* Map */)) {
+                    return this.createMapEntity(schema_1.Schema.getEntityModel(schema.model), entry, fields, required);
                 }
                 else {
                     throw new TypeError(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
                 }
             }
         }
-        return schema.caster(entry, Types.Cast.Output);
+        return schema.caster(entry, "output" /* Output */);
     }
     /**
      * Creates a new entity based on the specified model type, entry value and viewed fields.
@@ -122,7 +108,6 @@ let Outputer = class Outputer extends Class.Null {
         const columns = { ...schema_1.Schema.getRealRow(model, ...fields), ...schema_1.Schema.getVirtualRow(model, ...fields) };
         const entity = new model();
         const missing = [];
-        let filled = false;
         for (const name in columns) {
             const schema = columns[name];
             const value = entry[schema_1.Schema.getColumnName(schema)];
@@ -136,13 +121,12 @@ let Outputer = class Outputer extends Class.Null {
                     throw new Error(`Output column '${name}@${schema_1.Schema.getStorageName(model)}' is write-only.`);
                 }
                 const result = this.createValue(model, schema, value, fields, required);
-                if (result !== void 0 && (wanted || filled || !this.isEmptyResult(result))) {
+                if (result !== void 0) {
                     entity[name] = result;
-                    filled = true;
                 }
             }
         }
-        if (!filled && !wanted) {
+        if (!wanted && schema_1.Schema.isEmpty(model, entity, 0)) {
             return void 0;
         }
         if (missing.length) {
@@ -211,9 +195,6 @@ let Outputer = class Outputer extends Class.Null {
         return this.createMapEntity(model, entry, fields, true);
     }
 };
-__decorate([
-    Class.Private()
-], Outputer, "isEmptyResult", null);
 __decorate([
     Class.Private()
 ], Outputer, "createArrayEntity", null);

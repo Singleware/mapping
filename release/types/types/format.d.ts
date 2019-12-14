@@ -5,7 +5,7 @@
 /**
  * Data formats.
  */
-export declare enum Format {
+export declare const enum Format {
     Id = 0,
     Null = 1,
     Binary = 2,

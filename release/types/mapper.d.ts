@@ -24,14 +24,14 @@ export declare class Mapper<Entity extends Types.Entity> extends Class.Null {
      * @param model Entity model.
      * @throws Throws an error when the model isn't a valid entity.
      */
-    constructor(driver: Driver, model: Types.Model<Entity>);
+    constructor(driver: Driver, model: Types.ModelClass<Entity>);
     /**
      * Insert the specified entity list into the storage using a custom model type.
      * @param model Model type.
      * @param entities Entity list.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
-    insertManyEx<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]>;
+    insertManyEx<T extends Types.Entity>(model: Types.ModelClass<T>, entities: T[]): Promise<any[]>;
     /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
@@ -44,7 +44,7 @@ export declare class Mapper<Entity extends Types.Entity> extends Class.Null {
      * @param entity Entity data.
      * @returns Returns a promise to get the id of the inserted entry.
      */
-    insertEx<T extends Types.Entity>(model: Types.Model<T>, entity: T): Promise<any>;
+    insertEx<T extends Types.Entity>(model: Types.ModelClass<T>, entity: T): Promise<any>;
     /**
      * Insert the specified entity into the storage.
      * @param entity Entity data.
@@ -54,21 +54,21 @@ export declare class Mapper<Entity extends Types.Entity> extends Class.Null {
     /**
      * Find all corresponding entity in the storage.
      * @param query Query filter
-     * @param select Selected fields.
+     * @param select Fields to select.
      * @returns Returns a promise to get the list of entities found.
      */
     find(query: Filters.Query, select?: string[]): Promise<Entity[]>;
     /**
      * Find the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
-     * @param select Selected fields.
+     * @param select Fields to select.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
     findById(id: any, select?: string[]): Promise<Entity | undefined>;
     /**
      * Gets the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
-     * @param select Selected fields.
+     * @param select Fields to select.
      * @returns Returns a promise to get the entity.
      * @throws Throws an error when the entity wasn't found.
      */
@@ -80,7 +80,7 @@ export declare class Mapper<Entity extends Types.Entity> extends Class.Null {
      * @param entity Entity data.
      * @returns Returns a promise to get the number of updated entities.
      */
-    updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Filters.Match, entity: T): Promise<number>;
+    updateEx<T extends Types.Entity>(model: Types.ModelClass<T>, match: Filters.Match, entity: T): Promise<number>;
     /**
      * Update all entities that corresponds to the specified match.
      * @param match Matching filter.
@@ -95,7 +95,7 @@ export declare class Mapper<Entity extends Types.Entity> extends Class.Null {
      * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
-    updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T): Promise<boolean>;
+    updateByIdEx<T extends Types.Entity>(model: Types.ModelClass<T>, id: any, entity: T): Promise<boolean>;
     /**
      * Update the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
@@ -109,7 +109,7 @@ export declare class Mapper<Entity extends Types.Entity> extends Class.Null {
      * @param entity Entity data.
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
-    replaceByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: Types.Entity): Promise<boolean>;
+    replaceByIdEx<T extends Types.Entity>(model: Types.ModelClass<T>, id: any, entity: Types.Entity): Promise<boolean>;
     /**
      * Replace the entity that corresponds to the specified entity Id.
      * @param id Entity Id.

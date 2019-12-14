@@ -15,22 +15,6 @@ import { Schema } from '../schema';
 @Class.Describe()
 export class Outputer extends Class.Null {
   /**
-   * Determines whether the specified value is an empty result or not.
-   * @param value Value to check.
-   * @returns Returns true when the specified value is empty, false otherwise.
-   */
-  @Class.Private()
-  private static isEmptyResult<E extends Types.Entity, T>(value: T[] | Types.Model<E>): boolean {
-    if (value instanceof Array) {
-      return value.length === 0;
-    }
-    if (value instanceof Object) {
-      return Object.getPrototypeOf(value) === Object.getPrototypeOf({}) && Object.keys(value).length === 0;
-    }
-    return false;
-  }
-
-  /**
    * Creates a new list based on the specified model type, entry list and viewed fields.
    * @param model Model type.
    * @param entries Entry list.
@@ -41,7 +25,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Private()
   private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entries: (I | I[])[],
     multiple: boolean,
     required: boolean,
@@ -72,7 +56,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Private()
   private static createMapEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: Types.Map<I>,
     fields: string[],
     required: boolean
@@ -99,7 +83,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Private()
   private static createValue<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     schema: Columns.Base<O>,
     entry: I | Types.Map<I> | (I | I[])[],
     fields: string[],
@@ -108,21 +92,27 @@ export class Outputer extends Class.Null {
     if (schema.model && Schema.isEntity(schema.model)) {
       if (entry instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
-          return this.createArrayEntity(schema.model, entry, (<Columns.Virtual<O>>schema).all || false, required, fields);
+          return this.createArrayEntity(
+            Schema.getEntityModel(schema.model),
+            entry,
+            (<Columns.Virtual<O>>schema).all || false,
+            required,
+            fields
+          );
         } else {
           throw new TypeError(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entry instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
           return this.createEntity(
-            schema.model,
+            Schema.getEntityModel(schema.model),
             entry,
             fields,
             required,
             (schema.required || false) && schema.type === Types.Column.Real
           );
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMapEntity(schema.model, entry, fields, required);
+          return this.createMapEntity(Schema.getEntityModel(schema.model), entry, fields, required);
         } else {
           throw new TypeError(
             `Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`
@@ -145,7 +135,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Private()
   private static createEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: I,
     fields: string[],
     required: boolean,
@@ -154,7 +144,6 @@ export class Outputer extends Class.Null {
     const columns = { ...Schema.getRealRow(model, ...fields), ...Schema.getVirtualRow(model, ...fields) };
     const entity = <O>new model();
     const missing = [];
-    let filled = false;
     for (const name in columns) {
       const schema = columns[name];
       const value = entry[Schema.getColumnName(schema)];
@@ -167,13 +156,12 @@ export class Outputer extends Class.Null {
           throw new Error(`Output column '${name}@${Schema.getStorageName(model)}' is write-only.`);
         }
         const result = this.createValue(model, schema, value, fields, required);
-        if (result !== void 0 && (wanted || filled || !this.isEmptyResult(result))) {
+        if (result !== void 0) {
           entity[<keyof O>name] = result;
-          filled = true;
         }
       }
     }
-    if (!filled && !wanted) {
+    if (!wanted && Schema.isEmpty(model, entity, 0)) {
       return void 0;
     }
     if (missing.length) {
@@ -191,7 +179,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Public()
   public static create<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: I,
     fields: string[]
   ): O | undefined {
@@ -207,7 +195,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Public()
   public static createArray<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entries: I[],
     fields: string[]
   ): O[] {
@@ -223,7 +211,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Public()
   public static createMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: Types.Map<I>,
     fields: string[]
   ): Types.Map<O> {
@@ -239,7 +227,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Public()
   public static createFull<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: I,
     fields: string[]
   ): O | undefined {
@@ -255,7 +243,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Public()
   public static createFullArray<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entries: I[],
     fields: string[]
   ): O[] {
@@ -271,7 +259,7 @@ export class Outputer extends Class.Null {
    */
   @Class.Public()
   public static createFullMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<O>,
+    model: Types.ModelClass<O>,
     entry: Types.Map<I>,
     fields: string[]
   ): Types.Map<O> {

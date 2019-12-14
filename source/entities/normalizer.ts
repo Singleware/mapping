@@ -25,7 +25,7 @@ export class Normalizer extends Class.Null {
    */
   @Class.Private()
   private static createList<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<I>,
+    model: Types.ModelClass<I>,
     entities: (I | I[])[],
     multiple: boolean,
     alias: boolean,
@@ -55,7 +55,7 @@ export class Normalizer extends Class.Null {
    */
   @Class.Private()
   private static createMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<I>,
+    model: Types.ModelClass<I>,
     entity: Types.Map<I>,
     alias: boolean,
     unsafe: boolean
@@ -82,7 +82,7 @@ export class Normalizer extends Class.Null {
    */
   @Class.Private()
   private static createValue<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<I>,
+    model: Types.ModelClass<I>,
     schema: Columns.Base<I>,
     entity: I | Types.Map<I> | (I | I[])[],
     alias: boolean,
@@ -94,19 +94,25 @@ export class Normalizer extends Class.Null {
     if (schema.model && Schema.isEntity(schema.model)) {
       if (entity instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
-          return this.createList(schema.model, entity, (<Columns.Virtual<I>>schema).all || false, alias, unsafe);
+          return this.createList(
+            Schema.getEntityModel(schema.model),
+            entity,
+            (<Columns.Virtual<I>>schema).all || false,
+            alias,
+            unsafe
+          );
         } else {
           throw new TypeError(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entity instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
           if (unroll) {
-            return this.createEntry(schema.model, entity, alias, unsafe, true, path, data), void 0;
+            return this.createEntry(Schema.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
           } else {
-            return this.createEntry(schema.model, entity, alias, unsafe, false);
+            return this.createEntry(Schema.getEntityModel(schema.model), entity, alias, unsafe, false);
           }
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMap(schema.model, entity, alias, unsafe);
+          return this.createMap(Schema.getEntityModel(schema.model), entity, alias, unsafe);
         } else {
           throw new TypeError(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
@@ -128,7 +134,7 @@ export class Normalizer extends Class.Null {
    */
   @Class.Private()
   private static createEntry<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<I>,
+    model: Types.ModelClass<I>,
     entity: I,
     alias: boolean,
     unsafe: boolean,
@@ -166,7 +172,7 @@ export class Normalizer extends Class.Null {
    */
   @Class.Public()
   public static create<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.Model<I>,
+    model: Types.ModelClass<I>,
     entity: I,
     alias?: boolean,
     unsafe?: boolean,

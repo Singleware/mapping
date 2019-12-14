@@ -15,25 +15,25 @@ export interface Driver {
    * @param entities Entity list.
    * @returns Returns a promise to get the id list of inserted entities.
    */
-  insert<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]>;
+  insert<T extends Types.Entity>(model: Types.ModelClass<T>, entities: T[]): Promise<any[]>;
 
   /**
    * Find all corresponding entities from the storage.
    * @param model Model type.
    * @param query Query filter.
-   * @param fields Viewed fields.
+   * @param select Fields to select.
    * @returns Returns a promise to get the list of entities found.
    */
-  find<T extends Types.Entity>(model: Types.Model<T>, query: Filters.Query, fields: string[]): Promise<T[]>;
+  find<T extends Types.Entity>(model: Types.ModelClass<T>, query: Filters.Query, select: string[]): Promise<T[]>;
 
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param model Model type.
    * @param id Entity id.
-   * @param fields Viewed fields.
+   * @param select Fields to select.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
-  findById<T extends Types.Entity>(model: Types.Model<T>, id: any, fields: string[]): Promise<T | undefined>;
+  findById<T extends Types.Entity>(model: Types.ModelClass<T>, id: any, select: string[]): Promise<T | undefined>;
 
   /**
    * Update all entities that corresponds to the specified match.
@@ -42,7 +42,7 @@ export interface Driver {
    * @param entity Entity data.
    * @returns Returns a promise to get the number of updated entities.
    */
-  update(model: Types.Model, match: Filters.Match, entity: Types.Entity): Promise<number>;
+  update(model: Types.ModelClass, match: Filters.Match, entity: Types.Entity): Promise<number>;
 
   /**
    * Update a entity that corresponds to the specified entity id.
@@ -51,7 +51,7 @@ export interface Driver {
    * @param entity Entity data.
    * @returns Returns a promise to get true when the entity has been updated or false otherwise.
    */
-  updateById(model: Types.Model, id: any, entity: Types.Entity): Promise<boolean>;
+  updateById(model: Types.ModelClass, id: any, entity: Types.Entity): Promise<boolean>;
 
   /**
    * Replace a entity that corresponds to the specified entity id.
@@ -60,7 +60,7 @@ export interface Driver {
    * @param entity Entity data.
    * @returns Returns a promise to get true when the entity has been replaced or false otherwise.
    */
-  replaceById(model: Types.Model, id: any, entity: Types.Entity): Promise<boolean>;
+  replaceById(model: Types.ModelClass, id: any, entity: Types.Entity): Promise<boolean>;
 
   /**
    * Delete all entities that corresponds to the specified match.
@@ -68,7 +68,7 @@ export interface Driver {
    * @param match Matching filter.
    * @return Returns a promise to get the number of deleted entities.
    */
-  delete(model: Types.Model, match: Filters.Match): Promise<number>;
+  delete(model: Types.ModelClass, match: Filters.Match): Promise<number>;
 
   /**
    * Delete the entity that corresponds to the specified entity id.
@@ -76,7 +76,7 @@ export interface Driver {
    * @param id Entity id.
    * @return Returns a promise to get true when the entity has been deleted or false otherwise.
    */
-  deleteById(model: Types.Model, id: any): Promise<boolean>;
+  deleteById(model: Types.ModelClass, id: any): Promise<boolean>;
 
   /**
    * Count all corresponding entities from the storage.
@@ -84,5 +84,5 @@ export interface Driver {
    * @param query Query filter.
    * @returns Returns a promise to get the total amount of found entities.
    */
-  count(model: Types.Model, query: Filters.Query): Promise<number>;
+  count(model: Types.ModelClass, query: Filters.Query): Promise<number>;
 }

@@ -63,26 +63,26 @@ let Inputer = class Inputer extends Class.Null {
     static createValue(model, schema, entry, required) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
             if (entry instanceof Array) {
-                if (schema.formats.includes(Types.Format.Array)) {
-                    return this.createArrayEntity(schema.model, entry, schema.all || false, required);
+                if (schema.formats.includes(12 /* Array */)) {
+                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, schema.all || false, required);
                 }
                 else {
                     throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
                 }
             }
             else if (entry instanceof Object) {
-                if (schema.formats.includes(Types.Format.Object)) {
-                    return this.createEntity(schema.model, entry, required);
+                if (schema.formats.includes(14 /* Object */)) {
+                    return this.createEntity(schema_1.Schema.getEntityModel(schema.model), entry, required);
                 }
-                else if (schema.formats.includes(Types.Format.Map)) {
-                    return this.createMapEntity(schema.model, entry, required);
+                else if (schema.formats.includes(13 /* Map */)) {
+                    return this.createMapEntity(schema_1.Schema.getEntityModel(schema.model), entry, required);
                 }
                 else {
                     throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
                 }
             }
         }
-        return schema.caster(entry, Types.Cast.Input);
+        return schema.caster(entry, "input" /* Input */);
     }
     /**
      * Creates a new entity based on the specified model type and entry.

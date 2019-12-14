@@ -49,5 +49,5 @@ export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column entity model.
    */
-  model?: Types.Model<T>;
+  model?: Types.ModelClass<T> | Types.ModelCallback<T>;
 }

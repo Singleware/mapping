@@ -6,7 +6,7 @@
 /**
  * Cast types.
  */
-export enum Cast {
+export const enum Cast {
   Input = 'input',
   Output = 'output',
   Normalize = 'normalize'

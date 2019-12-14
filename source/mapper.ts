@@ -20,7 +20,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * Entity model.
    */
   @Class.Private()
-  private model: Types.Model<Entity>;
+  private model: Types.ModelClass<Entity>;
 
   /**
    * Data driver.
@@ -34,7 +34,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @param model Entity model.
    * @throws Throws an error when the model isn't a valid entity.
    */
-  public constructor(driver: Driver, model: Types.Model<Entity>) {
+  public constructor(driver: Driver, model: Types.ModelClass<Entity>) {
     super();
     if (!Schema.isEntity(model)) {
       throw new Error(`Invalid entity model.`);
@@ -50,7 +50,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @returns Returns a promise to get the id list of all inserted entities.
    */
   @Class.Public()
-  public async insertManyEx<T extends Types.Entity>(model: Types.Model<T>, entities: T[]): Promise<any[]> {
+  public async insertManyEx<T extends Types.Entity>(model: Types.ModelClass<T>, entities: T[]): Promise<any[]> {
     return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities));
   }
 
@@ -71,7 +71,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @returns Returns a promise to get the id of the inserted entry.
    */
   @Class.Public()
-  public async insertEx<T extends Types.Entity>(model: Types.Model<T>, entity: T): Promise<any> {
+  public async insertEx<T extends Types.Entity>(model: Types.ModelClass<T>, entity: T): Promise<any> {
     return (await this.insertManyEx(model, [entity]))[0];
   }
 
@@ -88,7 +88,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
   /**
    * Find all corresponding entity in the storage.
    * @param query Query filter
-   * @param select Selected fields.
+   * @param select Fields to select.
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Public()
@@ -100,7 +100,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
   /**
    * Find the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
-   * @param select Selected fields.
+   * @param select Fields to select.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
   @Class.Public()
@@ -115,7 +115,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
   /**
    * Gets the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
-   * @param select Selected fields.
+   * @param select Fields to select.
    * @returns Returns a promise to get the entity.
    * @throws Throws an error when the entity wasn't found.
    */
@@ -136,7 +136,11 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Public()
-  public async updateEx<T extends Types.Entity>(model: Types.Model<T>, match: Filters.Match, entity: T): Promise<number> {
+  public async updateEx<T extends Types.Entity>(
+    model: Types.ModelClass<T>,
+    match: Filters.Match,
+    entity: T
+  ): Promise<number> {
     return await this.driver.update(model, match, Entities.Inputer.createFull(model, entity));
   }
 
@@ -159,7 +163,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Public()
-  public async updateByIdEx<T extends Types.Entity>(model: Types.Model<T>, id: any, entity: T): Promise<boolean> {
+  public async updateByIdEx<T extends Types.Entity>(model: Types.ModelClass<T>, id: any, entity: T): Promise<boolean> {
     return await this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity));
   }
 
@@ -182,7 +186,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    */
   @Class.Public()
   public async replaceByIdEx<T extends Types.Entity>(
-    model: Types.Model<T>,
+    model: Types.ModelClass<T>,
     id: any,
     entity: Types.Entity
   ): Promise<boolean> {

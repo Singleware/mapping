@@ -9,12 +9,6 @@ import * as Types from '../types';
  */
 export declare class Outputer extends Class.Null {
     /**
-     * Determines whether the specified value is an empty result or not.
-     * @param value Value to check.
-     * @returns Returns true when the specified value is empty, false otherwise.
-     */
-    private static isEmptyResult;
-    /**
      * Creates a new list based on the specified model type, entry list and viewed fields.
      * @param model Model type.
      * @param entries Entry list.
@@ -62,7 +56,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Viewed fields.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
-    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, fields: string[]): O | undefined;
+    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined;
     /**
      * Creates a new entity array based on the specified model type, entry list and viewed fields.
      * @param model Model type.
@@ -70,7 +64,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Viewed fields.
      * @returns Returns the generated entity array.
      */
-    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[], fields: string[]): O[];
+    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[];
     /**
      * Create a new entity map based on the specified model type, entry map and viewed fields.
      * @param model Model type.
@@ -78,7 +72,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Viewed fields.
      * @returns Returns the generated entity map.
      */
-    static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
+    static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
     /**
      * Creates a new full entity based on the specified model type, entry value and viewed fields.
      * @param model Model type.
@@ -86,7 +80,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Viewed fields.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
-    static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: I, fields: string[]): O | undefined;
+    static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined;
     /**
      * Creates a new full entity array based on the specified model type, entry list and viewed fields.
      * @param model Model type.
@@ -94,7 +88,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Viewed fields.
      * @returns Returns the generated entity array.
      */
-    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entries: I[], fields: string[]): O[];
+    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[];
     /**
      * Create a new full entity map based on the specified model type, entry map and viewed fields.
      * @param model Model type.
@@ -102,5 +96,5 @@ export declare class Outputer extends Class.Null {
      * @param fields Viewed fields.
      * @returns Returns the generated entity map.
      */
-    static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.Model<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
+    static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
 }
