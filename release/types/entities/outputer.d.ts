@@ -12,9 +12,9 @@ export declare class Outputer extends Class.Null {
      * Creates a new list based on the specified model type, entry list and viewed fields.
      * @param model Model type.
      * @param entries Entry list.
-     * @param multiple Determines whether each value in the specified list can be a sub list.
-     * @param required Determines whether all required columns must be provided.
      * @param fields Viewed fields.
+     * @param required Determines whether all required columns must be provided.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @returns Returns the generated list.
      */
     private static createArrayEntity;

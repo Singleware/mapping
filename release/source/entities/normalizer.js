@@ -39,7 +39,7 @@ let Normalizer = class Normalizer extends Class.Null {
         return list;
     }
     /**
-     * Create a new normalized map based on the specified model type, viewed fields and entity map.
+     * Create a new normalized map based on the specified model type and entity map.
      * @param model Model type.
      * @param entity Entity map.
      * @param alias Determines whether all column names should be aliased.
@@ -76,7 +76,7 @@ let Normalizer = class Normalizer extends Class.Null {
                     return this.createList(schema_1.Schema.getEntityModel(schema.model), entity, schema.all || false, alias, unsafe);
                 }
                 else {
-                    throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
+                    throw new Error(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
                 }
             }
             else if (entity instanceof Object) {
@@ -92,7 +92,7 @@ let Normalizer = class Normalizer extends Class.Null {
                     return this.createMap(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe);
                 }
                 else {
-                    throw new TypeError(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
+                    throw new Error(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
                 }
             }
         }

@@ -18,8 +18,8 @@ export class Inputer extends Class.Null {
    * Creates a new list based on the specified model type and entry list.
    * @param model Model type.
    * @param entries Entry list.
-   * @param multiple Determines whether each value in the specified list can be a sub list.
    * @param required Determines whether all required columns must be provided.
+   * @param multiple Determines whether each value in the specified list can be a sub list.
    * @returns Returns the generated list.
    */
   @Class.Private()
@@ -32,7 +32,7 @@ export class Inputer extends Class.Null {
     const list = [];
     for (const entry of entries) {
       if (multiple && entry instanceof Array) {
-        list.push(<O[]>this.createArrayEntity(model, entry, false, required));
+        list.push(<O[]>this.createArrayEntity(model, entry, required, false));
       } else {
         list.push(this.createEntity(model, entry, required));
       }
@@ -82,11 +82,11 @@ export class Inputer extends Class.Null {
           return this.createArrayEntity(
             Schema.getEntityModel(schema.model),
             entry,
-            (<Columns.Virtual<O>>schema).all || false,
-            required
+            required,
+            (<Columns.Virtual<O>>schema).all || false
           );
         } else {
-          throw new TypeError(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
+          throw new Error(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entry instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
@@ -94,7 +94,7 @@ export class Inputer extends Class.Null {
         } else if (schema.formats.includes(Types.Format.Map)) {
           return this.createMapEntity(Schema.getEntityModel(schema.model), entry, required);
         } else {
-          throw new TypeError(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
+          throw new Error(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
       }
     }
@@ -195,7 +195,7 @@ export class Inputer extends Class.Null {
     model: Types.ModelClass<O>,
     entries: I[]
   ): O[] {
-    return <O[]>this.createArrayEntity(model, entries, false, true);
+    return <O[]>this.createArrayEntity(model, entries, true, false);
   }
 
   /**

@@ -17,7 +17,7 @@ export declare class Schema extends Class.Null {
     /**
      * Adds the specified format validation into the provided column schema and property descriptor.
      * @param target Model target.
-     * @param column Column schema.
+     * @param schema Column schema.
      * @param validator Data validator.
      * @param format Data format.
      * @param descriptor Property descriptor.
@@ -65,12 +65,12 @@ export declare class Schema extends Class.Null {
      */
     static isEmpty<E extends Types.Entity>(model: Types.ModelClass<E>, entity: E, deep?: number): boolean;
     /**
-     * Determines whether the specified column schema is visible based on the given fields.
-     * @param column Column schema.
-     * @param fields Viewed fields.
+     * Determines whether or not the specified column schema is visible based on the given fields.
+     * @param schema Column schema.
+     * @param fields Visible fields.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isVisible<E extends Types.Entity>(column: Columns.Base<E>, ...fields: string[]): boolean;
+    static isVisible<E extends Types.Entity>(schema: Columns.Base<E>, ...fields: string[]): boolean;
     /**
      * Try to resolve the specified model input to a model class.
      * @param input Model input.
@@ -124,10 +124,17 @@ export declare class Schema extends Class.Null {
     static getStorageName(model: Types.ModelClass): string;
     /**
      * Gets the column name from the specified column schema.
-     * @param column Column schema.
+     * @param schema Column schema.
      * @returns Returns the column name.
      */
-    static getColumnName<I extends Types.Entity>(column: Columns.Base<I>): string;
+    static getColumnName<I extends Types.Entity>(schema: Columns.Base<I>): string;
+    /**
+     * Get all nested fields from the given column schema and field list.
+     * @param schema Column schema.
+     * @param fields Field list.
+     * @returns Returns a new field list containing all nested fields.
+     */
+    static getNestedFields<I extends Types.Entity>(schema: Columns.Base<I>, fields: string[]): string[];
     /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
@@ -174,18 +181,20 @@ export declare class Schema extends Class.Null {
      * @param model Foreign entity model.
      * @param local Local id column name.
      * @param match Column matching filter.
+     * @param fields Fields to be selected.
      * @returns Returns the decorator method.
      */
-    static Join<E extends Types.Entity>(foreign: string, model: Types.ModelClass<E>, local: string, match?: Filters.Match): Types.ModelDecorator;
+    static Join<E extends Types.Entity>(foreign: string, model: Types.ModelClass<E>, local: string, match?: Filters.Match, fields?: string[]): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a virtual column of a foreign entity list.
      * @param foreign Foreign column name.
      * @param model Foreign entity model.
      * @param local Local id column name.
      * @param query Column query filter.
+     * @param fields Fields to be selected.
      * @returns Returns the decorator method.
      */
-    static JoinAll<E extends Types.Entity>(foreign: string, model: Types.ModelClass<E>, local: string, query?: Filters.Query): Types.ModelDecorator;
+    static JoinAll<E extends Types.Entity>(foreign: string, model: Types.ModelClass<E>, local: string, query?: Filters.Query, fields?: string[]): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.

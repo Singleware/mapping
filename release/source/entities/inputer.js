@@ -21,15 +21,15 @@ let Inputer = class Inputer extends Class.Null {
      * Creates a new list based on the specified model type and entry list.
      * @param model Model type.
      * @param entries Entry list.
-     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @param required Determines whether all required columns must be provided.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @returns Returns the generated list.
      */
     static createArrayEntity(model, entries, multiple, required) {
         const list = [];
         for (const entry of entries) {
             if (multiple && entry instanceof Array) {
-                list.push(this.createArrayEntity(model, entry, false, required));
+                list.push(this.createArrayEntity(model, entry, required, false));
             }
             else {
                 list.push(this.createEntity(model, entry, required));
@@ -64,10 +64,10 @@ let Inputer = class Inputer extends Class.Null {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
             if (entry instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
-                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, schema.all || false, required);
+                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, required, schema.all || false);
                 }
                 else {
-                    throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
+                    throw new Error(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
                 }
             }
             else if (entry instanceof Object) {
@@ -78,7 +78,7 @@ let Inputer = class Inputer extends Class.Null {
                     return this.createMapEntity(schema_1.Schema.getEntityModel(schema.model), entry, required);
                 }
                 else {
-                    throw new TypeError(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
+                    throw new Error(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
                 }
             }
         }
@@ -158,7 +158,7 @@ let Inputer = class Inputer extends Class.Null {
      * @returns Returns the generated entity array.
      */
     static createFullArray(model, entries) {
-        return this.createArrayEntity(model, entries, false, true);
+        return this.createArrayEntity(model, entries, true, false);
     }
     /**
      * Create a new full entity map based on the specified model type and entry map.

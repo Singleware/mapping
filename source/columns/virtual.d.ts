@@ -20,6 +20,14 @@ export interface Virtual<T extends Types.Entity = Types.Entity> extends Base<T> 
    */
   foreign: string;
   /**
+   * Determines whether the local column contains multiples IDs.
+   */
+  multiple?: boolean;
+  /**
+   * Fields to be selected in the virtual column.
+   */
+  fields?: string[];
+  /**
    * Column entity model.
    */
   model: Types.ModelClass<T> | Types.ModelCallback<T>;
@@ -27,10 +35,6 @@ export interface Virtual<T extends Types.Entity = Types.Entity> extends Base<T> 
    * Column query.
    */
   query?: Filters.Query;
-  /**
-   * Determines whether the local column contains multiples IDs.
-   */
-  multiple?: boolean;
   /**
    * Determines whether all values from the foreign column must be loaded.
    */

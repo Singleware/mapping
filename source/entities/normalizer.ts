@@ -43,7 +43,7 @@ export class Normalizer extends Class.Null {
   }
 
   /**
-   * Create a new normalized map based on the specified model type, viewed fields and entity map.
+   * Create a new normalized map based on the specified model type and entity map.
    * @param model Model type.
    * @param entity Entity map.
    * @param alias Determines whether all column names should be aliased.
@@ -102,7 +102,7 @@ export class Normalizer extends Class.Null {
             unsafe
           );
         } else {
-          throw new TypeError(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
+          throw new Error(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entity instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
@@ -114,7 +114,7 @@ export class Normalizer extends Class.Null {
         } else if (schema.formats.includes(Types.Format.Map)) {
           return this.createMap(Schema.getEntityModel(schema.model), entity, alias, unsafe);
         } else {
-          throw new TypeError(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
+          throw new Error(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
       }
     }

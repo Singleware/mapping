@@ -18,24 +18,24 @@ export class Outputer extends Class.Null {
    * Creates a new list based on the specified model type, entry list and viewed fields.
    * @param model Model type.
    * @param entries Entry list.
-   * @param multiple Determines whether each value in the specified list can be a sub list.
-   * @param required Determines whether all required columns must be provided.
    * @param fields Viewed fields.
+   * @param required Determines whether all required columns must be provided.
+   * @param multiple Determines whether each value in the specified list can be a sub list.
    * @returns Returns the generated list.
    */
   @Class.Private()
   private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
     model: Types.ModelClass<O>,
     entries: (I | I[])[],
-    multiple: boolean,
+    fields: string[],
     required: boolean,
-    fields: string[]
+    multiple: boolean
   ): (O | O[])[] {
     const list = [];
     for (const entry of entries) {
       let entity;
       if (multiple && entry instanceof Array) {
-        entity = this.createArrayEntity(model, entry, false, required, fields);
+        entity = this.createArrayEntity(model, entry, fields, required, false);
       } else {
         entity = this.createEntity(model, entry, fields, required, false);
       }
@@ -90,33 +90,35 @@ export class Outputer extends Class.Null {
     required: boolean
   ): O | I | Types.Map<O | I> | ((O | I) | (O | I)[])[] | undefined {
     if (schema.model && Schema.isEntity(schema.model)) {
+      const nestedFields =
+        fields.length > 0 ? Schema.getNestedFields(schema, fields) : (<Columns.Virtual<O>>schema).fields || [];
+      const nestedRequired = required && nestedFields.length === 0;
+      const nestedModel = Schema.getEntityModel(schema.model);
       if (entry instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
           return this.createArrayEntity(
-            Schema.getEntityModel(schema.model),
+            nestedModel,
             entry,
-            (<Columns.Virtual<O>>schema).all || false,
-            required,
-            fields
+            nestedFields,
+            nestedRequired,
+            (<Columns.Virtual<O>>schema).all || false
           );
         } else {
-          throw new TypeError(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
+          throw new Error(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entry instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
           return this.createEntity(
-            Schema.getEntityModel(schema.model),
+            nestedModel,
             entry,
-            fields,
-            required,
+            nestedFields,
+            nestedRequired,
             (schema.required || false) && schema.type === Types.Column.Real
           );
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMapEntity(Schema.getEntityModel(schema.model), entry, fields, required);
+          return this.createMapEntity(nestedModel, entry, nestedFields, nestedRequired);
         } else {
-          throw new TypeError(
-            `Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`
-          );
+          throw new Error(`Output column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
       }
     }
@@ -199,7 +201,7 @@ export class Outputer extends Class.Null {
     entries: I[],
     fields: string[]
   ): O[] {
-    return <O[]>this.createArrayEntity(model, entries, false, false, fields);
+    return <O[]>this.createArrayEntity(model, entries, fields, false, false);
   }
 
   /**
@@ -231,7 +233,7 @@ export class Outputer extends Class.Null {
     entry: I,
     fields: string[]
   ): O | undefined {
-    return this.createEntity(model, entry, fields, true, true);
+    return this.createEntity(model, entry, fields, fields.length === 0, true);
   }
 
   /**
@@ -247,7 +249,7 @@ export class Outputer extends Class.Null {
     entries: I[],
     fields: string[]
   ): O[] {
-    return <O[]>this.createArrayEntity(model, entries, false, true, fields);
+    return <O[]>this.createArrayEntity(model, entries, fields, fields.length === 0, false);
   }
 
   /**
@@ -263,6 +265,6 @@ export class Outputer extends Class.Null {
     entry: Types.Map<I>,
     fields: string[]
   ): Types.Map<O> {
-    return this.createMapEntity(model, entry, fields, true);
+    return this.createMapEntity(model, entry, fields, fields.length === 0);
   }
 }

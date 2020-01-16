@@ -22,21 +22,21 @@ let Schema = Schema_1 = class Schema extends Class.Null {
     /**
      * Adds the specified format validation into the provided column schema and property descriptor.
      * @param target Model target.
-     * @param column Column schema.
+     * @param schema Column schema.
      * @param validator Data validator.
      * @param format Data format.
      * @param descriptor Property descriptor.
      * @returns Returns the wrapped property descriptor.
      */
-    static addValidation(target, column, validator, format, descriptor) {
-        if (column.validations.length === 0) {
-            const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validations);
-            descriptor = Validator.Validate(validation)(target, column.name, descriptor);
+    static addValidation(target, schema, validator, format, descriptor) {
+        if (schema.validations.length === 0) {
+            const validation = new Validator.Common.Group(Validator.Common.Group.OR, schema.validations);
+            descriptor = Validator.Validate(validation)(target, schema.name, descriptor);
             descriptor.enumerable = true;
-            column.validations.push(new Validator.Common.Undefined());
+            schema.validations.push(new Validator.Common.Undefined());
         }
-        column.formats.push(format);
-        column.validations.push(validator);
+        schema.formats.push(format);
+        schema.validations.push(validator);
         return descriptor;
     }
     /**
@@ -138,7 +138,7 @@ let Schema = Schema_1 = class Schema extends Class.Null {
      * @returns Returns true when the specified entity is empty, false otherwise.
      */
     static isEmpty(model, entity, deep = 8) {
-        const columns = Schema_1.getRealRow(model);
+        const columns = { ...Schema_1.getRealRow(model), ...Schema_1.getVirtualRow(model) };
         for (const name in columns) {
             const value = entity[name];
             const schema = columns[name];
@@ -177,14 +177,20 @@ let Schema = Schema_1 = class Schema extends Class.Null {
         return true;
     }
     /**
-     * Determines whether the specified column schema is visible based on the given fields.
-     * @param column Column schema.
-     * @param fields Viewed fields.
+     * Determines whether or not the specified column schema is visible based on the given fields.
+     * @param schema Column schema.
+     * @param fields Visible fields.
      * @returns Returns true when the view is valid or false otherwise.
      */
-    static isVisible(column, ...fields) {
+    static isVisible(schema, ...fields) {
         if (fields.length > 0) {
-            return fields.includes(column.name);
+            const column = schema.name;
+            for (const field of fields) {
+                if (column === field || field.startsWith(`${column}.`)) {
+                    return true;
+                }
+            }
+            return false;
         }
         return true;
     }
@@ -338,11 +344,30 @@ let Schema = Schema_1 = class Schema extends Class.Null {
     }
     /**
      * Gets the column name from the specified column schema.
-     * @param column Column schema.
+     * @param schema Column schema.
      * @returns Returns the column name.
      */
-    static getColumnName(column) {
-        return column.alias || column.name;
+    static getColumnName(schema) {
+        return schema.alias || schema.name;
+    }
+    /**
+     * Get all nested fields from the given column schema and field list.
+     * @param schema Column schema.
+     * @param fields Field list.
+     * @returns Returns a new field list containing all nested fields.
+     */
+    static getNestedFields(schema, fields) {
+        const list = [];
+        const prefix = `${this.getColumnName(schema)}.`;
+        for (const field of fields) {
+            if (field.startsWith(prefix)) {
+                const suffix = field.substr(prefix.length);
+                if (suffix.length > 0 && suffix !== '*') {
+                    list.push(suffix);
+                }
+            }
+        }
+        return list;
     }
     /**
      * Decorates the specified class to be an entity model.
@@ -432,9 +457,10 @@ let Schema = Schema_1 = class Schema extends Class.Null {
      * @param model Foreign entity model.
      * @param local Local id column name.
      * @param match Column matching filter.
+     * @param fields Fields to be selected.
      * @returns Returns the decorator method.
      */
-    static Join(foreign, model, local, match) {
+    static Join(foreign, model, local, match, fields) {
         return (target, property, descriptor) => {
             const localModel = target.constructor;
             const localSchema = this.getRealColumn(localModel, local);
@@ -444,6 +470,7 @@ let Schema = Schema_1 = class Schema extends Class.Null {
                 local: localSchema.alias || localSchema.name,
                 foreign: foreignSchema.alias || foreignSchema.name,
                 multiple: multiple,
+                fields: fields,
                 model: model,
                 query: {
                     pre: match
@@ -457,9 +484,10 @@ let Schema = Schema_1 = class Schema extends Class.Null {
      * @param model Foreign entity model.
      * @param local Local id column name.
      * @param query Column query filter.
+     * @param fields Fields to be selected.
      * @returns Returns the decorator method.
      */
-    static JoinAll(foreign, model, local, query) {
+    static JoinAll(foreign, model, local, query, fields) {
         return (target, property, descriptor) => {
             const localModel = target.constructor;
             const localSchema = this.getRealColumn(localModel, local);
@@ -468,8 +496,9 @@ let Schema = Schema_1 = class Schema extends Class.Null {
                 local: localSchema.alias || localSchema.name,
                 foreign: foreignSchema.alias || foreignSchema.name,
                 multiple: localSchema.formats.includes(12 /* Array */),
-                query: query,
+                fields: fields,
                 model: model,
+                query: query,
                 all: true
             }), new Validator.Common.InstanceOf(Array), 12 /* Array */, descriptor);
         };
@@ -713,6 +742,9 @@ __decorate([
 __decorate([
     Class.Public()
 ], Schema, "getColumnName", null);
+__decorate([
+    Class.Public()
+], Schema, "getNestedFields", null);
 __decorate([
     Class.Public()
 ], Schema, "Entity", null);

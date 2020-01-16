@@ -19,7 +19,7 @@ export declare class Normalizer extends Class.Null {
      */
     private static createList;
     /**
-     * Create a new normalized map based on the specified model type, viewed fields and entity map.
+     * Create a new normalized map based on the specified model type and entity map.
      * @param model Model type.
      * @param entity Entity map.
      * @param alias Determines whether all column names should be aliased.

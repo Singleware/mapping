@@ -24,7 +24,7 @@ export class Schema extends Class.Null {
   /**
    * Adds the specified format validation into the provided column schema and property descriptor.
    * @param target Model target.
-   * @param column Column schema.
+   * @param schema Column schema.
    * @param validator Data validator.
    * @param format Data format.
    * @param descriptor Property descriptor.
@@ -33,19 +33,19 @@ export class Schema extends Class.Null {
   @Class.Private()
   private static addValidation<E extends Types.Entity>(
     target: Object,
-    column: Columns.Real<E>,
+    schema: Columns.Real<E>,
     validator: Validator.Format,
     format: Types.Format,
     descriptor?: PropertyDescriptor
   ): PropertyDescriptor {
-    if (column.validations.length === 0) {
-      const validation = new Validator.Common.Group(Validator.Common.Group.OR, column.validations);
-      descriptor = <PropertyDescriptor>Validator.Validate(validation)(target, column.name, descriptor);
+    if (schema.validations.length === 0) {
+      const validation = new Validator.Common.Group(Validator.Common.Group.OR, schema.validations);
+      descriptor = <PropertyDescriptor>Validator.Validate(validation)(target, schema.name, descriptor);
       descriptor.enumerable = true;
-      column.validations.push(new Validator.Common.Undefined());
+      schema.validations.push(new Validator.Common.Undefined());
     }
-    column.formats.push(format);
-    column.validations.push(validator);
+    schema.formats.push(format);
+    schema.validations.push(validator);
     return <PropertyDescriptor>descriptor;
   }
 
@@ -161,7 +161,7 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static isEmpty<E extends Types.Entity>(model: Types.ModelClass<E>, entity: E, deep: number = 8): boolean {
-    const columns = Schema.getRealRow(model);
+    const columns = { ...Schema.getRealRow(model), ...Schema.getVirtualRow(model) };
     for (const name in columns) {
       const value = entity[name];
       const schema = columns[name];
@@ -196,15 +196,21 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Determines whether the specified column schema is visible based on the given fields.
-   * @param column Column schema.
-   * @param fields Viewed fields.
+   * Determines whether or not the specified column schema is visible based on the given fields.
+   * @param schema Column schema.
+   * @param fields Visible fields.
    * @returns Returns true when the view is valid or false otherwise.
    */
   @Class.Public()
-  public static isVisible<E extends Types.Entity>(column: Columns.Base<E>, ...fields: string[]): boolean {
+  public static isVisible<E extends Types.Entity>(schema: Columns.Base<E>, ...fields: string[]): boolean {
     if (fields.length > 0) {
-      return fields.includes(column.name);
+      const column = schema.name;
+      for (const field of fields) {
+        if (column === field || field.startsWith(`${column}.`)) {
+          return true;
+        }
+      }
+      return false;
     }
     return true;
   }
@@ -375,12 +381,33 @@ export class Schema extends Class.Null {
 
   /**
    * Gets the column name from the specified column schema.
-   * @param column Column schema.
+   * @param schema Column schema.
    * @returns Returns the column name.
    */
   @Class.Public()
-  public static getColumnName<I extends Types.Entity>(column: Columns.Base<I>): string {
-    return (column as Columns.Real<I>).alias || column.name;
+  public static getColumnName<I extends Types.Entity>(schema: Columns.Base<I>): string {
+    return (schema as Columns.Real<I>).alias || schema.name;
+  }
+
+  /**
+   * Get all nested fields from the given column schema and field list.
+   * @param schema Column schema.
+   * @param fields Field list.
+   * @returns Returns a new field list containing all nested fields.
+   */
+  @Class.Public()
+  public static getNestedFields<I extends Types.Entity>(schema: Columns.Base<I>, fields: string[]): string[] {
+    const list = [];
+    const prefix = `${this.getColumnName(schema)}.`;
+    for (const field of fields) {
+      if (field.startsWith(prefix)) {
+        const suffix = field.substr(prefix.length);
+        if (suffix.length > 0 && suffix !== '*') {
+          list.push(suffix);
+        }
+      }
+    }
+    return list;
   }
 
   /**
@@ -487,6 +514,7 @@ export class Schema extends Class.Null {
    * @param model Foreign entity model.
    * @param local Local id column name.
    * @param match Column matching filter.
+   * @param fields Fields to be selected.
    * @returns Returns the decorator method.
    */
   @Class.Public()
@@ -494,7 +522,8 @@ export class Schema extends Class.Null {
     foreign: string,
     model: Types.ModelClass<E>,
     local: string,
-    match?: Filters.Match
+    match?: Filters.Match,
+    fields?: string[]
   ): Types.ModelDecorator {
     return (target: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       const localModel = <Types.ModelClass>target.constructor;
@@ -507,6 +536,7 @@ export class Schema extends Class.Null {
           local: localSchema.alias || localSchema.name,
           foreign: foreignSchema.alias || foreignSchema.name,
           multiple: multiple,
+          fields: fields,
           model: model,
           query: {
             pre: match
@@ -525,6 +555,7 @@ export class Schema extends Class.Null {
    * @param model Foreign entity model.
    * @param local Local id column name.
    * @param query Column query filter.
+   * @param fields Fields to be selected.
    * @returns Returns the decorator method.
    */
   @Class.Public()
@@ -532,7 +563,8 @@ export class Schema extends Class.Null {
     foreign: string,
     model: Types.ModelClass<E>,
     local: string,
-    query?: Filters.Query
+    query?: Filters.Query,
+    fields?: string[]
   ): Types.ModelDecorator {
     return (target: Object, property: PropertyKey, descriptor?: PropertyDescriptor): PropertyDescriptor => {
       const localModel = <Types.ModelClass>target.constructor;
@@ -544,8 +576,9 @@ export class Schema extends Class.Null {
           local: localSchema.alias || localSchema.name,
           foreign: foreignSchema.alias || foreignSchema.name,
           multiple: localSchema.formats.includes(Types.Format.Array),
-          query: query,
+          fields: fields,
           model: model,
+          query: query,
           all: true
         }),
         new Validator.Common.InstanceOf(Array),

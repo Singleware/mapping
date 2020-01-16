@@ -21,17 +21,17 @@ let Outputer = class Outputer extends Class.Null {
      * Creates a new list based on the specified model type, entry list and viewed fields.
      * @param model Model type.
      * @param entries Entry list.
-     * @param multiple Determines whether each value in the specified list can be a sub list.
-     * @param required Determines whether all required columns must be provided.
      * @param fields Viewed fields.
+     * @param required Determines whether all required columns must be provided.
+     * @param multiple Determines whether each value in the specified list can be a sub list.
      * @returns Returns the generated list.
      */
-    static createArrayEntity(model, entries, multiple, required, fields) {
+    static createArrayEntity(model, entries, fields, required, multiple) {
         const list = [];
         for (const entry of entries) {
             let entity;
             if (multiple && entry instanceof Array) {
-                entity = this.createArrayEntity(model, entry, false, required, fields);
+                entity = this.createArrayEntity(model, entry, fields, required, false);
             }
             else {
                 entity = this.createEntity(model, entry, fields, required, false);
@@ -72,23 +72,26 @@ let Outputer = class Outputer extends Class.Null {
      */
     static createValue(model, schema, entry, fields, required) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
+            const nestedFields = fields.length > 0 ? schema_1.Schema.getNestedFields(schema, fields) : schema.fields || [];
+            const nestedRequired = required && nestedFields.length === 0;
+            const nestedModel = schema_1.Schema.getEntityModel(schema.model);
             if (entry instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
-                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, schema.all || false, required, fields);
+                    return this.createArrayEntity(nestedModel, entry, nestedFields, nestedRequired, schema.all || false);
                 }
                 else {
-                    throw new TypeError(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
+                    throw new Error(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
                 }
             }
             else if (entry instanceof Object) {
                 if (schema.formats.includes(14 /* Object */)) {
-                    return this.createEntity(schema_1.Schema.getEntityModel(schema.model), entry, fields, required, (schema.required || false) && schema.type === "real" /* Real */);
+                    return this.createEntity(nestedModel, entry, nestedFields, nestedRequired, (schema.required || false) && schema.type === "real" /* Real */);
                 }
                 else if (schema.formats.includes(13 /* Map */)) {
-                    return this.createMapEntity(schema_1.Schema.getEntityModel(schema.model), entry, fields, required);
+                    return this.createMapEntity(nestedModel, entry, nestedFields, nestedRequired);
                 }
                 else {
-                    throw new TypeError(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
+                    throw new Error(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
                 }
             }
         }
@@ -152,7 +155,7 @@ let Outputer = class Outputer extends Class.Null {
      * @returns Returns the generated entity array.
      */
     static createArray(model, entries, fields) {
-        return this.createArrayEntity(model, entries, false, false, fields);
+        return this.createArrayEntity(model, entries, fields, false, false);
     }
     /**
      * Create a new entity map based on the specified model type, entry map and viewed fields.
@@ -172,7 +175,7 @@ let Outputer = class Outputer extends Class.Null {
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
     static createFull(model, entry, fields) {
-        return this.createEntity(model, entry, fields, true, true);
+        return this.createEntity(model, entry, fields, fields.length === 0, true);
     }
     /**
      * Creates a new full entity array based on the specified model type, entry list and viewed fields.
@@ -182,7 +185,7 @@ let Outputer = class Outputer extends Class.Null {
      * @returns Returns the generated entity array.
      */
     static createFullArray(model, entries, fields) {
-        return this.createArrayEntity(model, entries, false, true, fields);
+        return this.createArrayEntity(model, entries, fields, fields.length === 0, false);
     }
     /**
      * Create a new full entity map based on the specified model type, entry map and viewed fields.
@@ -192,7 +195,7 @@ let Outputer = class Outputer extends Class.Null {
      * @returns Returns the generated entity map.
      */
     static createFullMap(model, entry, fields) {
-        return this.createMapEntity(model, entry, fields, true);
+        return this.createMapEntity(model, entry, fields, fields.length === 0);
     }
 };
 __decorate([
