@@ -21,7 +21,7 @@ export declare class Normalizer extends Class.Null {
     /**
      * Create a new normalized map based on the specified model type and entity map.
      * @param model Model type.
-     * @param entity Entity map.
+     * @param entry Entity map.
      * @param alias Determines whether all column names should be aliased.
      * @param unsafe Determines whether all hidden columns should be visible.
      * @param unroll Determines whether all columns should be unrolled.

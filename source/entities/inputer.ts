@@ -55,7 +55,10 @@ export class Inputer extends Class.Null {
   ): Types.Map<O> {
     const map = <Types.Map<O>>{};
     for (const property in entry) {
-      map[property] = this.createEntity(model, entry[property], required);
+      const entity = entry[property];
+      if (entity !== void 0) {
+        map[property] = this.createEntity(model, entity, required);
+      }
     }
     return map;
   }

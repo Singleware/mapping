@@ -47,7 +47,10 @@ let Inputer = class Inputer extends Class.Null {
     static createMapEntity(model, entry, required) {
         const map = {};
         for (const property in entry) {
-            map[property] = this.createEntity(model, entry[property], required);
+            const entity = entry[property];
+            if (entity !== void 0) {
+                map[property] = this.createEntity(model, entity, required);
+            }
         }
         return map;
     }

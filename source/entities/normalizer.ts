@@ -45,7 +45,7 @@ export class Normalizer extends Class.Null {
   /**
    * Create a new normalized map based on the specified model type and entity map.
    * @param model Model type.
-   * @param entity Entity map.
+   * @param entry Entity map.
    * @param alias Determines whether all column names should be aliased.
    * @param unsafe Determines whether all hidden columns should be visible.
    * @param unroll Determines whether all columns should be unrolled.
@@ -56,13 +56,16 @@ export class Normalizer extends Class.Null {
   @Class.Private()
   private static createMap<I extends Types.Entity, O extends Types.Entity>(
     model: Types.ModelClass<I>,
-    entity: Types.Map<I>,
+    entry: Types.Map<I>,
     alias: boolean,
     unsafe: boolean
   ): Types.Map<O> {
     const map = <Types.Map<O>>{};
-    for (const property in entity) {
-      map[property] = <O>this.createEntry(model, entity[property], alias, unsafe, false);
+    for (const property in entry) {
+      const entity = entry[property];
+      if (entity !== void 0) {
+        map[property] = this.createEntry(model, entity, alias, unsafe, false);
+      }
     }
     return map;
   }
