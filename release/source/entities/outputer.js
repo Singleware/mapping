@@ -18,23 +18,24 @@ const schema_1 = require("../schema");
  */
 let Outputer = class Outputer extends Class.Null {
     /**
-     * Creates a new list based on the specified model type, entry list and viewed fields.
+     * Creates a new list based on the specified model type, entry list and the fields.
      * @param model Model type.
      * @param entries Entry list.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @param required Determines whether all required columns must be provided.
+     * @param wanted Determines whether all columns are wanted by the parent entity.
      * @param multiple Determines whether each value in the specified list can be a sub list.
      * @returns Returns the generated list.
      */
-    static createArrayEntity(model, entries, fields, required, multiple) {
+    static createArrayEntity(model, entries, fields, required, wanted, multiple) {
         const list = [];
         for (const entry of entries) {
             let entity;
             if (multiple && entry instanceof Array) {
-                entity = this.createArrayEntity(model, entry, fields, required, false);
+                entity = this.createArrayEntity(model, entry, fields, required, wanted, false);
             }
             else {
-                entity = this.createEntity(model, entry, fields, required, false);
+                entity = this.createEntity(model, entry, fields, required, wanted);
             }
             if (entity !== void 0) {
                 list.push(entity);
@@ -43,17 +44,18 @@ let Outputer = class Outputer extends Class.Null {
         return list;
     }
     /**
-     * Create a new entity map based on the specified model type, entry map and viewed fields.
+     * Create a new entity map based on the specified model type, entry map and the fields.
      * @param model Model type.
      * @param entry Entry map.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @param required Determines whether all required columns must be provided.
+     * @param wanted Determines whether all columns are wanted by the parent entity.
      * @returns Returns the generated entity map.
      */
-    static createMapEntity(model, entry, fields, required) {
+    static createMapEntity(model, entry, fields, required, wanted) {
         const map = {};
         for (const property in entry) {
-            const entity = this.createEntity(model, entry[property], fields, required, false);
+            const entity = this.createEntity(model, entry[property], fields, required, wanted);
             if (entity !== void 0) {
                 map[property] = entity;
             }
@@ -61,11 +63,11 @@ let Outputer = class Outputer extends Class.Null {
         return map;
     }
     /**
-     * Creates a new entry value from the specified column schema, entity value and viewed fields.
+     * Creates a new entry value from the specified column schema, entity value and the fields.
      * @param model Model type.
      * @param schema Column schema.
      * @param entry Entry value.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity (if the values is an entity).
      * @param required Determines whether all required columns must be provided.
      * @returns Returns the original or the converted value.
      * @throws Throws an error when the expected value should be an array or map but the given value is not.
@@ -77,7 +79,8 @@ let Outputer = class Outputer extends Class.Null {
             const nestedModel = schema_1.Schema.getEntityModel(schema.model);
             if (entry instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
-                    return this.createArrayEntity(nestedModel, entry, nestedFields, nestedRequired, schema.all || false);
+                    const nestedMultiple = schema.all || false;
+                    return this.createArrayEntity(nestedModel, entry, nestedFields, nestedRequired, false, nestedMultiple);
                 }
                 else {
                     throw new Error(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
@@ -85,10 +88,11 @@ let Outputer = class Outputer extends Class.Null {
             }
             else if (entry instanceof Object) {
                 if (schema.formats.includes(14 /* Object */)) {
-                    return this.createEntity(nestedModel, entry, nestedFields, nestedRequired, (schema.required || false) && schema.type === "real" /* Real */);
+                    const nestedWanted = (schema.required || false) && schema.type === "real" /* Real */;
+                    return this.createEntity(nestedModel, entry, nestedFields, nestedRequired, nestedWanted);
                 }
                 else if (schema.formats.includes(13 /* Map */)) {
-                    return this.createMapEntity(nestedModel, entry, nestedFields, nestedRequired);
+                    return this.createMapEntity(nestedModel, entry, nestedFields, nestedRequired, false);
                 }
                 else {
                     throw new Error(`Output column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
@@ -98,10 +102,10 @@ let Outputer = class Outputer extends Class.Null {
         return schema.caster(entry, "output" /* Output */);
     }
     /**
-     * Creates a new entity based on the specified model type, entry value and viewed fields.
+     * Creates a new entity based on the specified model type, entry value and the fields.
      * @param model Model type.
      * @param entry Entry value.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @param required Determines whether all required columns must be provided.
      * @param wanted Determines whether all columns are wanted by the parent entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
@@ -138,64 +142,64 @@ let Outputer = class Outputer extends Class.Null {
         return entity;
     }
     /**
-     * Creates a new entity based on the specified model type, entry value and viewed fields.
+     * Creates a new entity based on the specified model type, entry value and the fields.
      * @param model Model type.
      * @param entry Entry value.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
     static create(model, entry, fields) {
         return this.createEntity(model, entry, fields, false, true);
     }
     /**
-     * Creates a new entity array based on the specified model type, entry list and viewed fields.
+     * Creates a new entity array based on the specified model type, entry list and the fields.
      * @param model Model type.
      * @param entries Entry list.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity array.
      */
     static createArray(model, entries, fields) {
-        return this.createArrayEntity(model, entries, fields, false, false);
+        return this.createArrayEntity(model, entries, fields, false, true, false);
     }
     /**
-     * Create a new entity map based on the specified model type, entry map and viewed fields.
+     * Create a new entity map based on the specified model type, entry map and the fields.
      * @param model Model type.
      * @param entry Entry map.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity map.
      */
     static createMap(model, entry, fields) {
-        return this.createMapEntity(model, entry, fields, false);
+        return this.createMapEntity(model, entry, fields, false, true);
     }
     /**
-     * Creates a new full entity based on the specified model type, entry value and viewed fields.
+     * Creates a new full entity based on the specified model type, entry value and the fields.
      * @param model Model type.
      * @param entry Entry value.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
     static createFull(model, entry, fields) {
         return this.createEntity(model, entry, fields, fields.length === 0, true);
     }
     /**
-     * Creates a new full entity array based on the specified model type, entry list and viewed fields.
+     * Creates a new full entity array based on the specified model type, entry list and the fields.
      * @param model Model type.
      * @param entries Entry list.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity array.
      */
     static createFullArray(model, entries, fields) {
-        return this.createArrayEntity(model, entries, fields, fields.length === 0, false);
+        return this.createArrayEntity(model, entries, fields, fields.length === 0, true, false);
     }
     /**
-     * Create a new full entity map based on the specified model type, entry map and viewed fields.
+     * Create a new full entity map based on the specified model type, entry map and the fields.
      * @param model Model type.
      * @param entry Entry map.
-     * @param fields Viewed fields.
+     * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity map.
      */
     static createFullMap(model, entry, fields) {
-        return this.createMapEntity(model, entry, fields, fields.length === 0);
+        return this.createMapEntity(model, entry, fields, fields.length === 0, true);
     }
 };
 __decorate([
