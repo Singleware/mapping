@@ -25,7 +25,7 @@ let Inputer = class Inputer extends Class.Null {
      * @param multiple Determines whether each value in the specified list can be a sub list.
      * @returns Returns the generated list.
      */
-    static createArrayEntity(model, entries, multiple, required) {
+    static createArrayEntity(model, entries, required, multiple) {
         const list = [];
         for (const entry of entries) {
             if (multiple && entry instanceof Array) {
@@ -67,7 +67,8 @@ let Inputer = class Inputer extends Class.Null {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
             if (entry instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
-                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, required, schema.all || false);
+                    const nestedMultiple = schema.all || false;
+                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, required, nestedMultiple);
                 }
                 else {
                     throw new Error(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);

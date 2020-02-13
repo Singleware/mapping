@@ -26,8 +26,8 @@ export class Inputer extends Class.Null {
   private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
     model: Types.ModelClass<O>,
     entries: (I | I[])[],
-    multiple: boolean,
-    required: boolean
+    required: boolean,
+    multiple: boolean
   ): (O | O[])[] {
     const list = [];
     for (const entry of entries) {
@@ -82,12 +82,8 @@ export class Inputer extends Class.Null {
     if (schema.model && Schema.isEntity(schema.model)) {
       if (entry instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
-          return this.createArrayEntity(
-            Schema.getEntityModel(schema.model),
-            entry,
-            required,
-            (<Columns.Virtual<O>>schema).all || false
-          );
+          const nestedMultiple = (<Columns.Virtual<O>>schema).all || false;
+          return this.createArrayEntity(Schema.getEntityModel(schema.model), entry, required, nestedMultiple);
         } else {
           throw new Error(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
