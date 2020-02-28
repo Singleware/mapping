@@ -19,11 +19,16 @@ import { Virtual } from './virtual';
 export type BaseRow = Types.Map<Base>;
 
 /**
- * Type declaration for map of real columns.
+ * Type declaration for a map of real columns.
  */
 export type RealRow = Types.Map<Real>;
 
 /**
- * Type declaration for map of virtual columns.
+ * Type declaration for a map of virtual columns.
  */
 export type VirtualRow = Types.Map<Virtual>;
+
+/**
+ * Type declaration for a map of readonly columns.
+ */
+export type ReadonlyRow<T> = Types.Map<Readonly<T>>;

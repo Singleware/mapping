@@ -31,7 +31,7 @@ export interface Real<T extends Types.Entity = Types.Entity> extends Base<T> {
    */
   pattern?: RegExp;
   /**
-   * Valid column values for enumerations.
+   * Valid values for enumerations.
    */
   values?: string[];
 }

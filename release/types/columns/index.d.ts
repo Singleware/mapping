@@ -14,10 +14,14 @@ import { Virtual } from './virtual';
  */
 export declare type BaseRow = Types.Map<Base>;
 /**
- * Type declaration for map of real columns.
+ * Type declaration for a map of real columns.
  */
 export declare type RealRow = Types.Map<Real>;
 /**
- * Type declaration for map of virtual columns.
+ * Type declaration for a map of virtual columns.
  */
 export declare type VirtualRow = Types.Map<Virtual>;
+/**
+ * Type declaration for a map of readonly columns.
+ */
+export declare type ReadonlyRow<T> = Types.Map<Readonly<T>>;

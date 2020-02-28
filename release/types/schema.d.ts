@@ -1,5 +1,5 @@
 /*!
- * Copyright (C) 2018-2019 Silas B. Domingos
+ * Copyright (C) 2018-2020 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 import * as Class from '@singleware/class';
@@ -11,7 +11,7 @@ import * as Filters from './filters';
  */
 export declare class Schema extends Class.Null {
     /**
-     * Map of entity storages.
+     * Map of storages.
      */
     private static storages;
     /**
@@ -25,14 +25,27 @@ export declare class Schema extends Class.Null {
      */
     private static addValidation;
     /**
-     * Assign all properties into the storage that corresponds to the specified model type.
+     * Freeze any column in the specified row schema.
+     * @param row Row schema.
+     * @returns Returns a new row schema.
+     */
+    private static freezeRowColumns;
+    /**
+     * Assign all properties to the storage that corresponds to the specified model type.
      * @param model Model type.
      * @param properties Storage properties.
      * @returns Returns the assigned storage object.
      */
-    private static assignStorage;
+    private static assignToStorage;
     /**
-     * Assign all properties into the column schema that corresponds to the specified model type and column name.
+     * Find in all storages that corresponds to the specified model type using the given callback.
+     * @param model Model type.
+     * @param callback Callback filter.
+     * @returns Returns the found value or undefined when no value was found.
+     */
+    private static findInStorages;
+    /**
+     * Assign all properties to the column that corresponds to the specified model type and column name.
      * @param model Model type.
      * @param type Column type.
      * @param name Column name.
@@ -40,35 +53,35 @@ export declare class Schema extends Class.Null {
      * @returns Returns the assigned column schema.
      * @throws Throws an error when a column with the same name and another type already exists.
      */
-    private static assignColumn;
+    private static assignToColumn;
     /**
-     * Assign all properties into a real or virtual column schema that corresponds to the specified model type and column name.
+     * Assign all properties to a real or virtual column that corresponds to the specified model type and column name.
      * @param model Model type.
      * @param name Column name.
      * @param properties Column properties.
      * @returns Returns the assigned column schema.
      * @throws Throws an error when the column does not exists yet.
      */
-    private static assignRealOrVirtualColumn;
+    private static assignToRVColumn;
     /**
      * Determines whether or not the specified model input is a valid entity model.
      * @param input Model input.
-     * @returns Returns true when the specified model input is a valid entity model, false otherwise.
+     * @returns Returns true when it's valid, false otherwise.
      */
     static isEntity<E extends Types.Entity>(input?: Types.ModelClass<E> | Types.ModelCallback<E>): boolean;
     /**
      * Determines whether or not the specified entity is empty.
      * @param model Entity model.
      * @param entity Entity object.
-     * @param deep Determines how deep the method can go in nested entities. Default value is: 8
+     * @param deep Determines how deep for nested entities. Default value is: 8
      * @returns Returns true when the specified entity is empty, false otherwise.
      */
     static isEmpty<E extends Types.Entity>(model: Types.ModelClass<E>, entity: E, deep?: number): boolean;
     /**
-     * Determines whether or not the specified column schema is visible based on the given fields.
+     * Determines whether or not the specified column is visible based on the given fields.
      * @param schema Column schema.
      * @param fields Visible fields.
-     * @returns Returns true when the view is valid or false otherwise.
+     * @returns Returns true when the column is visible, false otherwise.
      */
     static isVisible<E extends Types.Entity>(schema: Columns.Base<E>, ...fields: string[]): boolean;
     /**
@@ -76,7 +89,7 @@ export declare class Schema extends Class.Null {
      * @param input Model input.
      * @returns Returns the resolved model class or undefined.
      */
-    static tryEntityModel<T extends Types.Entity>(input: Types.ModelClass<T> | Types.ModelCallback<T>): Types.ModelClass<T> | undefined;
+    static tryEntityModel<E extends Types.Entity>(input: Types.ModelClass<E> | Types.ModelCallback<E>): Types.ModelClass<E> | undefined;
     /**
      * Get the model class based on the specified model input.
      * @param input Model input.
@@ -85,13 +98,43 @@ export declare class Schema extends Class.Null {
      */
     static getEntityModel<T extends Types.Entity>(input: Types.ModelClass<T> | Types.ModelCallback<T>): Types.ModelClass<T>;
     /**
+     * Try to get the merged real and virtual row schema from the specified model type and fields.
+     * @param model Model type.
+     * @param fields Fields to be selected.
+     * @returns Returns the real and virtual row schema or undefined when the model is invalid.
+     */
+    static tryRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real | Columns.Virtual> | undefined;
+    /**
+     * Get the merged real and virtual row schema from the specified model type and fields.
+     * @param model Model type.
+     * @param fields Fields to be selected.
+     * @returns Returns the real and virtual row schema.
+     * @throws Throws an error when the model type isn't valid.
+     */
+    static getRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real | Columns.Virtual>;
+    /**
+     * Try to get the real row schema from the specified model type and fields.
+     * @param model Model type.
+     * @param fields Fields to be selected.
+     * @returns Returns the real row schema or undefined when the model is invalid.
+     */
+    static tryRealRow(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real> | undefined;
+    /**
      * Gets the real row schema from the specified model type and fields.
      * @param model Model type.
      * @param fields Fields to be selected.
      * @returns Returns the real row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getRealRow(model: Types.ModelClass, ...fields: string[]): Columns.RealRow;
+    static getRealRow(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real>;
+    /**
+     * Try to get the virtual row schema from the specified model type and fields.
+     * @param model Model type.
+     * @param fields Fields to be selected.
+     * @returns Returns the virtual row schema.
+     * @throws Throws an error when the model type isn't valid.
+     */
+    static tryVirtualRow(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Virtual> | undefined;
     /**
      * Gets the virtual row schema from the specified model type and fields.
      * @param model Model type.
@@ -99,7 +142,14 @@ export declare class Schema extends Class.Null {
      * @returns Returns the virtual row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getVirtualRow(model: Types.ModelClass, ...fields: string[]): Columns.VirtualRow;
+    static getVirtualRow(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Virtual>;
+    /**
+     * Try to get the real column schema from the specified model type and column name.
+     * @param model Model type.
+     * @param name Column name.
+     * @returns Returns the real column schema or undefined when the column doesn't found.
+     */
+    static tryRealColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Real<E>> | undefined;
     /**
      * Gets the real column schema from the specified model type and column name.
      * @param model Model type.
@@ -107,14 +157,20 @@ export declare class Schema extends Class.Null {
      * @returns Returns the real column schema.
      * @throws Throws an error when the model type isn't valid or the specified column was not found.
      */
-    static getRealColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Columns.Real<E>;
+    static getRealColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Real<E>>;
+    /**
+     * Try to get the primary column schema from the specified model type.
+     * @param model Model type.
+     * @returns Returns the column schema or undefined when the column does not exists.
+     */
+    static tryPrimaryColumn<E extends Types.Entity>(model: Types.ModelClass<E>): Readonly<Columns.Real<E>> | undefined;
     /**
      * Gets the primary column schema from the specified model type.
      * @param model Model type.
-     * @returns Returns the column schema or undefined when the column does not exists.
+     * @returns Returns the column schema.
      * @throws Throws an error when the entity model isn't valid or the primary column was not defined
      */
-    static getPrimaryColumn<E extends Types.Entity>(model: Types.ModelClass<E>): Columns.Real<E>;
+    static getPrimaryColumn<E extends Types.Entity>(model: Types.ModelClass<E>): Readonly<Columns.Real<E>>;
     /**
      * Gets the storage name from the specified model type.
      * @param model Model type.
