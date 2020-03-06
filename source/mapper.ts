@@ -7,6 +7,7 @@ import * as Class from '@singleware/class';
 import * as Types from './types';
 import * as Filters from './filters';
 import * as Entities from './entities';
+import * as Columns from './columns';
 
 import { Schema } from './schema';
 import { Driver } from './driver';
@@ -270,8 +271,7 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    */
   @Class.Public()
   public normalizeAsMap(entities: Entity[], alias?: boolean, unsafe?: boolean, unroll?: boolean): Types.Map<Entity> {
-    const column = Schema.getPrimaryColumn(this.model);
-    const primary = Schema.getColumnName(column);
+    const primary = Columns.Helper.getName(Schema.getPrimaryColumn(this.model));
     const data = <Types.Map<Entity>>{};
     for (const input of entities) {
       const entity = this.normalize(input, alias, unsafe, unroll);

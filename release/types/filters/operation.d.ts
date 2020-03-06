@@ -9,7 +9,7 @@ import { Operator } from './operator';
  */
 export interface Operation {
   /**
-   * Operation operator.
+   * Operator type.
    */
   operator: Operator;
   /**

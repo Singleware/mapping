@@ -7,6 +7,7 @@ import * as Class from '@singleware/class';
 import * as Types from '../types';
 import * as Columns from '../columns';
 
+import { Helper } from '../helper';
 import { Schema } from '../schema';
 
 /**
@@ -83,15 +84,15 @@ export class Inputer extends Class.Null {
       if (entry instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
           const nestedMultiple = (<Columns.Virtual<O>>schema).all || false;
-          return this.createArrayEntity(Schema.getEntityModel(schema.model), entry, required, nestedMultiple);
+          return this.createArrayEntity(Helper.getEntityModel(schema.model), entry, required, nestedMultiple);
         } else {
           throw new Error(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entry instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
-          return this.createEntity(Schema.getEntityModel(schema.model), entry, required);
+          return this.createEntity(Helper.getEntityModel(schema.model), entry, required);
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMapEntity(Schema.getEntityModel(schema.model), entry, required);
+          return this.createMapEntity(Helper.getEntityModel(schema.model), entry, required);
         } else {
           throw new Error(`Input column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }

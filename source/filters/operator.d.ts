@@ -6,15 +6,15 @@
 /**
  * Operator filter.
  */
-export enum Operator {
+export const enum Operator {
   LessThan = 'lt',
-  LessThanOrEqual = 'le',
+  LessThanOrEqual = 'lte',
   Equal = 'eq',
   NotEqual = 'ne',
+  GreaterThanOrEqual = 'gte',
   GreaterThan = 'gt',
-  GreaterThanOrEqual = 'ge',
   Contain = 'in',
+  NotContain = 'nin',
   Between = 'bt',
-  NotContain = 'ni',
   RegExp = 're'
 }

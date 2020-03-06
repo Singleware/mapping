@@ -29,7 +29,7 @@ export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column caster callback.
    */
-  caster: Types.Caster;
+  caster: Types.ModelCaster;
   /**
    * Determines whether the column is required or not.
    */
@@ -49,5 +49,9 @@ export interface Base<T extends Types.Entity = Types.Entity> {
   /**
    * Column entity model.
    */
-  model?: Types.ModelClass<T> | Types.ModelCallback<T>;
+  model?: Types.ModelInput<T>;
+  /**
+   * Fields to be selected in the model.
+   */
+  fields?: string[];
 }

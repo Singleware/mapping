@@ -31,9 +31,19 @@ export type ModelCallback<T extends Entity = Entity> = () => ModelClass<T>;
 export type ModelDecorator = (target: Object, property: string | symbol, descriptor?: PropertyDescriptor) => any;
 
 /**
+ * Type declaration for model input.
+ */
+export type ModelInput<T extends Entity = Entity> = ModelClass<T> | ModelCallback<T>;
+
+/**
+ * Type declaration for model values.
+ */
+export type ModelValues = string[] | (() => string[]);
+
+/**
  * Type declaration for caster callback.
  */
-export type Caster<T = any> = (input: T | undefined, type: Cast) => T;
+export type ModelCaster<T = any> = (input: T | undefined, type: Cast) => T;
 
 /**
  * Class decorator.

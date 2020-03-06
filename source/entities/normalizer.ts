@@ -7,6 +7,7 @@ import * as Class from '@singleware/class';
 import * as Types from '../types';
 import * as Columns from '../columns';
 
+import { Helper } from '../helper';
 import { Schema } from '../schema';
 
 /**
@@ -98,7 +99,7 @@ export class Normalizer extends Class.Null {
       if (entity instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
           return this.createList(
-            Schema.getEntityModel(schema.model),
+            Helper.getEntityModel(schema.model),
             entity,
             (<Columns.Virtual<I>>schema).all || false,
             alias,
@@ -110,12 +111,12 @@ export class Normalizer extends Class.Null {
       } else if (entity instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
           if (unroll) {
-            return this.createEntry(Schema.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
+            return this.createEntry(Helper.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
           } else {
-            return this.createEntry(Schema.getEntityModel(schema.model), entity, alias, unsafe, false);
+            return this.createEntry(Helper.getEntityModel(schema.model), entity, alias, unsafe, false);
           }
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMap(Schema.getEntityModel(schema.model), entity, alias, unsafe);
+          return this.createMap(Helper.getEntityModel(schema.model), entity, alias, unsafe);
         } else {
           throw new Error(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
@@ -145,13 +146,13 @@ export class Normalizer extends Class.Null {
     path?: string,
     data?: Types.Entity
   ): O {
-    const columns = { ...Schema.getRealRow(model), ...Schema.getVirtualRow(model) };
+    const schemas = Schema.getRows(model);
     const entry = <O>(data || {});
-    for (const name in columns) {
-      const schema = columns[name];
+    for (const name in schemas) {
+      const schema = schemas[name];
       const value = entity[name];
       if (value !== void 0 && (unsafe || !schema.hidden)) {
-        let property = alias ? Schema.getColumnName(schema) : schema.name;
+        let property = alias ? Columns.Helper.getName(schema) : schema.name;
         if (unroll) {
           property = path ? `${path}.${property}` : property;
         }

@@ -6,7 +6,7 @@
 /**
  * Order filter.
  */
-export enum Order {
-  Ascending,
-  Descending
+export const enum Order {
+  Ascending = 'asc',
+  Descending = 'desc'
 }

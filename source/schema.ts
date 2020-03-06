@@ -9,9 +9,12 @@ import * as Types from './types';
 import * as Columns from './columns';
 import * as Filters from './filters';
 import * as Castings from './castings';
+import * as Formats from './formats';
+
+import { Helper } from './helper';
 
 /**
- * Schema helper class.
+ * Schema class.
  */
 @Class.Describe()
 export class Schema extends Class.Null {
@@ -22,7 +25,7 @@ export class Schema extends Class.Null {
   private static storages = new WeakMap<any, Types.Storage>();
 
   /**
-   * Adds the specified format validation into the provided column schema and property descriptor.
+   * Set the specified format validation into the given column schema and property descriptor.
    * @param target Model target.
    * @param schema Column schema.
    * @param validator Data validator.
@@ -31,22 +34,22 @@ export class Schema extends Class.Null {
    * @returns Returns the wrapped property descriptor.
    */
   @Class.Private()
-  private static addValidation<E extends Types.Entity>(
+  private static setValidation(
     target: Object,
-    schema: Columns.Real<E>,
+    schema: Columns.Real,
     validator: Validator.Format,
     format: Types.Format,
     descriptor?: PropertyDescriptor
   ): PropertyDescriptor {
     if (schema.validations.length === 0) {
       const validation = new Validator.Common.Group(Validator.Common.Group.OR, schema.validations);
-      descriptor = <PropertyDescriptor>Validator.Validate(validation)(target, schema.name, descriptor);
-      descriptor.enumerable = true;
-      schema.validations.push(new Validator.Common.Undefined());
+      descriptor = Validator.Validate(validation)(target, schema.name, descriptor);
+      descriptor!.enumerable = true;
+      schema.validations.push(new Formats.Undefined());
     }
     schema.formats.push(format);
     schema.validations.push(validator);
-    return <PropertyDescriptor>descriptor;
+    return descriptor!;
   }
 
   /**
@@ -196,112 +199,14 @@ export class Schema extends Class.Null {
    * @returns Returns true when it's valid, false otherwise.
    */
   @Class.Public()
-  public static isEntity<E extends Types.Entity>(input?: Types.ModelClass<E> | Types.ModelCallback<E>): boolean {
+  public static isEntity<E extends Types.Entity>(input?: Types.ModelInput<E>): boolean {
     if (input) {
-      const model = this.tryEntityModel(input);
+      const model = Helper.tryEntityModel(input);
       if (model !== void 0) {
         return this.storages.has(model.prototype.constructor);
       }
     }
     return false;
-  }
-
-  /**
-   * Determines whether or not the specified entity is empty.
-   * @param model Entity model.
-   * @param entity Entity object.
-   * @param deep Determines how deep for nested entities. Default value is: 8
-   * @returns Returns true when the specified entity is empty, false otherwise.
-   */
-  @Class.Public()
-  public static isEmpty<E extends Types.Entity>(model: Types.ModelClass<E>, entity: E, deep: number = 8): boolean {
-    const columns = { ...Schema.getRealRow(model), ...Schema.getVirtualRow(model) };
-    for (const name in columns) {
-      const value = entity[name];
-      const schema = columns[name];
-      if (value instanceof Array) {
-        if (schema.model && Schema.isEntity(schema.model)) {
-          const resolved = this.getEntityModel(schema.model);
-          for (const entry of value) {
-            if (!this.isEmpty(resolved, entry, deep)) {
-              return false;
-            }
-          }
-        } else if (value.length > 0) {
-          return false;
-        }
-      } else if (value instanceof Object) {
-        if (schema.model && Schema.isEntity(schema.model)) {
-          if (deep < 0 || !this.isEmpty(this.getEntityModel(schema.model), value, deep - 1)) {
-            return false;
-          }
-        } else if (Object.getPrototypeOf(value) === Object.getPrototypeOf({})) {
-          if (Object.keys(value).length > 0) {
-            return false;
-          }
-        } else {
-          return false;
-        }
-      } else if (value !== void 0 && value !== null) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Determines whether or not the specified column is visible based on the given fields.
-   * @param schema Column schema.
-   * @param fields Visible fields.
-   * @returns Returns true when the column is visible, false otherwise.
-   */
-  @Class.Public()
-  public static isVisible<E extends Types.Entity>(schema: Columns.Base<E>, ...fields: string[]): boolean {
-    if (fields.length > 0) {
-      const column = schema.name;
-      for (const field of fields) {
-        if (column === field || field.startsWith(`${column}.`)) {
-          return true;
-        }
-      }
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * Try to resolve the specified model input to a model class.
-   * @param input Model input.
-   * @returns Returns the resolved model class or undefined.
-   */
-  @Class.Public()
-  public static tryEntityModel<E extends Types.Entity>(
-    input: Types.ModelClass<E> | Types.ModelCallback<E>
-  ): Types.ModelClass<E> | undefined {
-    if (input instanceof Function) {
-      if (`${input.prototype ? input.prototype.constructor : input}`.startsWith('class')) {
-        return <Types.ModelClass<E>>input;
-      }
-      return this.tryEntityModel((<Types.ModelCallback<E>>input)());
-    }
-    return void 0;
-  }
-
-  /**
-   * Get the model class based on the specified model input.
-   * @param input Model input.
-   * @returns Returns the model class.
-   * @throws Throws an error when the specified model input doesn't resolve to a model class.
-   */
-  @Class.Public()
-  public static getEntityModel<T extends Types.Entity>(
-    input: Types.ModelClass<T> | Types.ModelCallback<T>
-  ): Types.ModelClass<T> {
-    const model = Schema.tryEntityModel(input);
-    if (!model) {
-      throw new Error(`Unable to resolve the specified model input.`);
-    }
-    return model;
   }
 
   /**
@@ -311,23 +216,21 @@ export class Schema extends Class.Null {
    * @returns Returns the real and virtual row schema or undefined when the model is invalid.
    */
   @Class.Public()
-  public static tryRows(
-    model: Types.ModelClass,
-    ...fields: string[]
-  ): Columns.ReadonlyRow<Columns.Real | Columns.Virtual> | undefined {
-    const row = <Columns.ReadonlyRow<Columns.Real | Columns.Virtual>>{};
+  public static tryRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Any> | undefined {
+    const rows = <Columns.ReadonlyRow<Columns.Any>>{};
     let last;
     this.findInStorages(model, storage => {
       last = storage;
-      for (const name in { ...storage.real, ...storage.virtual }) {
-        const column = storage.real[name];
-        if (this.isVisible(column, ...fields) && !(name in row)) {
-          row[name] = column;
+      const allRows = { ...storage.real, ...storage.virtual };
+      for (const name in allRows) {
+        const column = allRows[name];
+        if (Columns.Helper.isVisible(column, ...fields) && !(name in rows)) {
+          rows[name] = column;
         }
       }
     });
     if (last !== void 0) {
-      return row;
+      return rows;
     }
     return last;
   }
@@ -340,12 +243,12 @@ export class Schema extends Class.Null {
    * @throws Throws an error when the model type isn't valid.
    */
   @Class.Public()
-  public static getRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real | Columns.Virtual> {
-    const row = this.tryRows(model, ...fields);
-    if (!row) {
+  public static getRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Any> {
+    const rows = this.tryRows(model, ...fields);
+    if (rows === void 0) {
       throw new Error(`Invalid model type, unable to get rows.`);
     }
-    return row;
+    return rows;
   }
 
   /**
@@ -362,7 +265,7 @@ export class Schema extends Class.Null {
       last = storage;
       for (const name in storage.real) {
         const column = storage.real[name];
-        if (this.isVisible(column, ...fields) && !(name in row)) {
+        if (Columns.Helper.isVisible(column, ...fields) && !(name in row)) {
           row[name] = column;
         }
       }
@@ -407,7 +310,7 @@ export class Schema extends Class.Null {
       last = storage;
       for (const name in storage.virtual) {
         const column = storage.virtual[name];
-        if (!(name in row) && this.isVisible(column, ...fields)) {
+        if (!(name in row) && Columns.Helper.isVisible(column, ...fields)) {
           row[name] = column;
         }
       }
@@ -432,6 +335,42 @@ export class Schema extends Class.Null {
       throw new Error(`Invalid model type, unable to get the virtual row.`);
     }
     return row;
+  }
+
+  /**
+   * Try to get the real or virtual column schema from the specified model type and column name.
+   * @param model Model type.
+   * @param name Column name.
+   * @returns Returns the real or virtual column schema or undefined when the column doesn't found.
+   */
+  @Class.Public()
+  public static tryColumn<E extends Types.Entity>(
+    model: Types.ModelClass<E>,
+    name: string
+  ): Readonly<Columns.Any<E>> | undefined {
+    return this.findInStorages(model, storage => {
+      if (name in storage.real) {
+        return <Columns.Real<E>>storage.real[name];
+      } else if (name in storage.virtual) {
+        return <Columns.Virtual<E>>storage.virtual[name];
+      }
+    });
+  }
+
+  /**
+   * Gets the real or virtual column schema from the specified model type and column name.
+   * @param model Model type.
+   * @param name Column name.
+   * @returns Returns the real or virtual column schema.
+   * @throws Throws an error when the model type isn't valid or the specified column was not found.
+   */
+  @Class.Public()
+  public static getColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Any<E>> {
+    const column = this.tryColumn(model, name);
+    if (!column) {
+      throw new Error(`Column '${name}' doesn't exists in the entity '${this.getStorageName(model)}'.`);
+    }
+    return column;
   }
 
   /**
@@ -463,7 +402,44 @@ export class Schema extends Class.Null {
   public static getRealColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Real<E>> {
     const column = this.tryRealColumn(model, name);
     if (!column) {
-      throw new Error(`Column '${name}' does not exists in the entity '${this.getStorageName(model)}'.`);
+      throw new Error(`Real column '${name}' doesn't exists in the entity '${this.getStorageName(model)}'.`);
+    }
+    return column;
+  }
+
+  /**
+   * Try to get the virtual column schema from the specified model type and column name.
+   * @param model Model type.
+   * @param name Column name.
+   * @returns Returns the virtual column schema or undefined when the column doesn't found.
+   */
+  @Class.Public()
+  public static tryVirtualColumn<E extends Types.Entity>(
+    model: Types.ModelClass<E>,
+    name: string
+  ): Readonly<Columns.Virtual<E>> | undefined {
+    return this.findInStorages(model, storage => {
+      if (name in storage.virtual) {
+        return <Columns.Virtual<E>>storage.virtual[name];
+      }
+    });
+  }
+
+  /**
+   * Gets the virtual column schema from the specified model type and column name.
+   * @param model Model type.
+   * @param name Column name.
+   * @returns Returns the virtual column schema.
+   * @throws Throws an error when the model type isn't valid or the specified column was not found.
+   */
+  @Class.Public()
+  public static getVirtualColumn<E extends Types.Entity>(
+    model: Types.ModelClass<E>,
+    name: string
+  ): Readonly<Columns.Virtual<E>> {
+    const column = this.tryVirtualColumn(model, name);
+    if (!column) {
+      throw new Error(`Virtual column '${name}' doesn't exists in the entity '${this.getStorageName(model)}'.`);
     }
     return column;
   }
@@ -514,37 +490,6 @@ export class Schema extends Class.Null {
   }
 
   /**
-   * Gets the column name from the specified column schema.
-   * @param schema Column schema.
-   * @returns Returns the column name.
-   */
-  @Class.Public()
-  public static getColumnName<I extends Types.Entity>(schema: Columns.Base<I>): string {
-    return (<Columns.Real<I>>schema).alias || schema.name;
-  }
-
-  /**
-   * Get all nested fields from the given column schema and field list.
-   * @param schema Column schema.
-   * @param fields Field list.
-   * @returns Returns a new field list containing all nested fields.
-   */
-  @Class.Public()
-  public static getNestedFields<I extends Types.Entity>(schema: Columns.Base<I>, fields: string[]): string[] {
-    const list = [];
-    const prefix = `${this.getColumnName(schema)}.`;
-    for (const field of fields) {
-      if (field.startsWith(prefix)) {
-        const suffix = field.substr(prefix.length);
-        if (suffix.length > 0 && suffix !== '*') {
-          list.push(suffix);
-        }
-      }
-    }
-    return list;
-  }
-
-  /**
    * Decorates the specified class to be an entity model.
    * @param name Storage name.
    * @returns Returns the decorator method.
@@ -578,7 +523,7 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Convert(callback: Types.Caster): Types.ModelDecorator {
+  public static Convert(callback: Types.ModelCaster): Types.ModelDecorator {
     return (target, property) => {
       this.assignToRVColumn(<Types.ModelClass>target.constructor, String(property), {
         caster: callback
@@ -596,7 +541,7 @@ export class Schema extends Class.Null {
       const column = this.assignToRVColumn(<Types.ModelClass>target.constructor, String(property), {
         required: true
       });
-      const index = column.validations.findIndex(validator => validator instanceof Validator.Common.Undefined);
+      const index = column.validations.findIndex(validator => validator instanceof Formats.Undefined);
       if (index !== -1) {
         column.validations.splice(index, 1);
       }
@@ -660,23 +605,21 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Join<E extends Types.Entity>(
+  public static Join(
     foreign: string,
-    model: Types.ModelClass<E>,
+    model: Types.ModelInput,
     local: string,
     match?: Filters.Match,
     fields?: string[]
   ): Types.ModelDecorator {
     return (target, property, descriptor?) => {
-      const localModel = <Types.ModelClass>target.constructor;
-      const localSchema = this.getRealColumn(localModel, local);
-      const foreignSchema = this.getRealColumn(model, foreign);
-      const multiple = localSchema.formats.includes(Types.Format.Array);
-      return this.addValidation(
+      const schema = this.getRealColumn(<Types.ModelClass>target.constructor, local);
+      const multiple = schema.formats.includes(Types.Format.Array);
+      return this.setValidation(
         target,
-        this.assignToColumn(localModel, Types.Column.Virtual, String(property), {
-          local: localSchema.alias || localSchema.name,
-          foreign: foreignSchema.alias || foreignSchema.name,
+        this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Virtual, String(property), {
+          local: Columns.Helper.getName(schema),
+          foreign: foreign,
           multiple: multiple,
           fields: fields,
           model: model,
@@ -684,7 +627,7 @@ export class Schema extends Class.Null {
             pre: match
           }
         }),
-        new Validator.Common.InstanceOf(multiple ? Array : model),
+        multiple ? new Formats.ArrayOf(model) : new Formats.InstanceOf(model),
         multiple ? Types.Format.Array : Types.Format.Object,
         descriptor
       );
@@ -701,29 +644,28 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static JoinAll<E extends Types.Entity>(
+  public static JoinAll(
     foreign: string,
-    model: Types.ModelClass<E>,
+    model: Types.ModelInput,
     local: string,
     query?: Filters.Query,
     fields?: string[]
   ): Types.ModelDecorator {
     return (target, property, descriptor?) => {
-      const localModel = <Types.ModelClass>target.constructor;
-      const localSchema = this.getRealColumn(localModel, local);
-      const foreignSchema = this.getRealColumn(model, foreign);
-      return this.addValidation(
+      const schema = this.getRealColumn(<Types.ModelClass>target.constructor, local);
+      const multiple = schema.formats.includes(Types.Format.Array);
+      return this.setValidation(
         target,
-        this.assignToColumn(localModel, Types.Column.Virtual, String(property), {
-          local: localSchema.alias || localSchema.name,
-          foreign: foreignSchema.alias || foreignSchema.name,
-          multiple: localSchema.formats.includes(Types.Format.Array),
+        this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Virtual, String(property), {
+          local: Columns.Helper.getName(schema),
+          foreign: foreign,
+          multiple: multiple,
           fields: fields,
           model: model,
           query: query,
           all: true
         }),
-        new Validator.Common.InstanceOf(Array),
+        new Formats.InstanceOf(Array),
         Types.Format.Array,
         descriptor
       );
@@ -749,15 +691,14 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Id(): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property)),
-        new Validator.Common.Any(),
+        new Formats.Any(),
         Types.Format.Id,
         descriptor
       );
-    };
   }
 
   /**
@@ -766,15 +707,14 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Null(): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property)),
-        new Validator.Common.Null(),
+        new Formats.Null(),
         Types.Format.Null,
         descriptor
       );
-    };
   }
 
   /**
@@ -783,15 +723,14 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Binary(): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property)),
-        new Validator.Common.Any(),
+        new Formats.Any(),
         Types.Format.Binary,
         descriptor
       );
-    };
   }
 
   /**
@@ -800,15 +739,14 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Boolean(): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property)),
-        new Validator.Common.Boolean(),
+        new Formats.Boolean(),
         Types.Format.Boolean,
         descriptor
       );
-    };
   }
 
   /**
@@ -819,18 +757,17 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Integer(minimum?: number, maximum?: number): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           minimum: minimum,
           maximum: maximum
         }),
-        new Validator.Common.Integer(minimum, maximum),
+        new Formats.Integer(minimum, maximum),
         Types.Format.Integer,
         descriptor
       );
-    };
   }
 
   /**
@@ -841,18 +778,17 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Decimal(minimum?: number, maximum?: number): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           minimum: minimum,
           maximum: maximum
         }),
-        new Validator.Common.Decimal(minimum, maximum),
+        new Formats.Decimal(minimum, maximum),
         Types.Format.Decimal,
         descriptor
       );
-    };
   }
 
   /**
@@ -863,18 +799,17 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Number(minimum?: number, maximum?: number): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           minimum: minimum,
           maximum: maximum
         }),
-        new Validator.Common.Number(minimum, maximum),
+        new Formats.Number(minimum, maximum),
         Types.Format.Number,
         descriptor
       );
-    };
   }
 
   /**
@@ -885,18 +820,17 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static String(minimum?: number, maximum?: number): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           minimum: minimum,
           maximum: maximum
         }),
-        new Validator.Common.String(minimum, maximum),
+        new Formats.String(minimum, maximum),
         Types.Format.String,
         descriptor
       );
-    };
   }
 
   /**
@@ -905,18 +839,17 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Enumeration(...values: string[]): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+  public static Enumeration(values: Types.ModelValues): Types.ModelDecorator {
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           values: values
         }),
-        new Validator.Common.Enumeration(...values),
+        new Formats.Enumeration(values),
         Types.Format.Enumeration,
         descriptor
       );
-    };
   }
 
   /**
@@ -927,17 +860,16 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Pattern(pattern: RegExp, name?: string): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           pattern: pattern
         }),
-        new Validator.Common.Pattern(pattern, name),
+        new Formats.Pattern(pattern, name),
         Types.Format.Pattern,
         descriptor
       );
-    };
   }
 
   /**
@@ -948,17 +880,16 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Timestamp(minimum?: Date, maximum?: Date): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           caster: Castings.ISODate.Integer.bind(Castings.ISODate)
         }),
-        new Validator.Common.Integer(minimum ? minimum.getTime() : 0, maximum ? maximum.getTime() : Infinity),
+        new Formats.Integer(minimum ? minimum.getTime() : 0, maximum ? maximum.getTime() : Infinity),
         Types.Format.Timestamp,
         descriptor
       );
-    };
   }
 
   /**
@@ -969,87 +900,90 @@ export class Schema extends Class.Null {
    */
   @Class.Public()
   public static Date(minimum?: Date, maximum?: Date): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           caster: Castings.ISODate.Object.bind(Castings.ISODate)
         }),
-        new Validator.Common.Timestamp(minimum, maximum),
+        new Formats.Timestamp(minimum, maximum),
         Types.Format.Date,
         descriptor
       );
-    };
   }
 
   /**
    * Decorates the specified property to be an array column.
    * @param model Model type.
-   * @param unique Determines whether the array items must be unique or not.
+   * @param fields Fields to select.
+   * @param unique Determines whether or not the array items must be unique.
    * @param minimum Minimum items.
    * @param maximum Maximum items.
    * @returns Returns the decorator method.
    */
   @Class.Public()
   public static Array(
-    model: Types.ModelClass | Types.ModelCallback,
+    model: Types.ModelInput,
+    fields?: string[],
     unique?: boolean,
     minimum?: number,
     maximum?: number
   ): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
           model: model,
+          fields: fields,
           unique: unique,
           minimum: minimum,
           maximum: maximum
         }),
-        new Validator.Common.InstanceOf(Array),
+        new Formats.ArrayOf(model),
         Types.Format.Array,
         descriptor
       );
-    };
   }
 
   /**
    * Decorates the specified property to be a map column.
    * @param model Model type.
+   * @param fields Fields to select.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Map(model: Types.ModelClass | Types.ModelCallback): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+  public static Map(model: Types.ModelInput, fields?: string[]): Types.ModelDecorator {
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
-          model: model
+          model: model,
+          fields: fields
         }),
-        new Validator.Common.InstanceOf(Object),
+        new Formats.MapOf(model),
         Types.Format.Map,
         descriptor
       );
-    };
   }
 
   /**
    * Decorates the specified property to be an object column.
    * @param model Model type.
+   * @param fields Fields to select.
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Object(model: Types.ModelClass | Types.ModelCallback): Types.ModelDecorator {
-    return (target, property, descriptor?) => {
-      return this.addValidation(
+  public static Object(model: Types.ModelInput, fields?: string[]): Types.ModelDecorator {
+    return (target, property, descriptor?) =>
+      this.setValidation(
         target,
         this.assignToColumn(<Types.ModelClass>target.constructor, Types.Column.Real, String(property), {
-          model: model
+          model: model,
+          fields: fields
         }),
-        new Validator.Common.InstanceOf(Object),
+        new Formats.InstanceOf(model),
         Types.Format.Object,
         descriptor
       );
-    };
   }
 }

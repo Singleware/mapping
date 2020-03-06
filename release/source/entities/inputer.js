@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const Class = require("@singleware/class");
 const Types = require("../types");
+const helper_1 = require("../helper");
 const schema_1 = require("../schema");
 /**
  * Inputer helper class.
@@ -68,7 +69,7 @@ let Inputer = class Inputer extends Class.Null {
             if (entry instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
                     const nestedMultiple = schema.all || false;
-                    return this.createArrayEntity(schema_1.Schema.getEntityModel(schema.model), entry, required, nestedMultiple);
+                    return this.createArrayEntity(helper_1.Helper.getEntityModel(schema.model), entry, required, nestedMultiple);
                 }
                 else {
                     throw new Error(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
@@ -76,10 +77,10 @@ let Inputer = class Inputer extends Class.Null {
             }
             else if (entry instanceof Object) {
                 if (schema.formats.includes(14 /* Object */)) {
-                    return this.createEntity(schema_1.Schema.getEntityModel(schema.model), entry, required);
+                    return this.createEntity(helper_1.Helper.getEntityModel(schema.model), entry, required);
                 }
                 else if (schema.formats.includes(13 /* Map */)) {
-                    return this.createMapEntity(schema_1.Schema.getEntityModel(schema.model), entry, required);
+                    return this.createMapEntity(helper_1.Helper.getEntityModel(schema.model), entry, required);
                 }
                 else {
                     throw new Error(`Input column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);

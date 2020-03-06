@@ -5,6 +5,7 @@
 export { Base } from './base';
 export { Real } from './real';
 export { Virtual } from './virtual';
+export { Helper } from './helper';
 
 // Imported aliases.
 import * as Types from '../types';
@@ -12,6 +13,11 @@ import * as Types from '../types';
 import { Base } from './base';
 import { Real } from './real';
 import { Virtual } from './virtual';
+
+/**
+ * Type declaration for any column.
+ */
+export type Any<T extends Types.Entity = Types.Entity> = Real<T> | Virtual<T>;
 
 /**
  * Type declaration for map of columns base.

@@ -7,7 +7,7 @@ import * as Types from './types';
 import * as Columns from './columns';
 import * as Filters from './filters';
 /**
- * Schema helper class.
+ * Schema class.
  */
 export declare class Schema extends Class.Null {
     /**
@@ -15,7 +15,7 @@ export declare class Schema extends Class.Null {
      */
     private static storages;
     /**
-     * Adds the specified format validation into the provided column schema and property descriptor.
+     * Set the specified format validation into the given column schema and property descriptor.
      * @param target Model target.
      * @param schema Column schema.
      * @param validator Data validator.
@@ -23,7 +23,7 @@ export declare class Schema extends Class.Null {
      * @param descriptor Property descriptor.
      * @returns Returns the wrapped property descriptor.
      */
-    private static addValidation;
+    private static setValidation;
     /**
      * Freeze any column in the specified row schema.
      * @param row Row schema.
@@ -68,42 +68,14 @@ export declare class Schema extends Class.Null {
      * @param input Model input.
      * @returns Returns true when it's valid, false otherwise.
      */
-    static isEntity<E extends Types.Entity>(input?: Types.ModelClass<E> | Types.ModelCallback<E>): boolean;
-    /**
-     * Determines whether or not the specified entity is empty.
-     * @param model Entity model.
-     * @param entity Entity object.
-     * @param deep Determines how deep for nested entities. Default value is: 8
-     * @returns Returns true when the specified entity is empty, false otherwise.
-     */
-    static isEmpty<E extends Types.Entity>(model: Types.ModelClass<E>, entity: E, deep?: number): boolean;
-    /**
-     * Determines whether or not the specified column is visible based on the given fields.
-     * @param schema Column schema.
-     * @param fields Visible fields.
-     * @returns Returns true when the column is visible, false otherwise.
-     */
-    static isVisible<E extends Types.Entity>(schema: Columns.Base<E>, ...fields: string[]): boolean;
-    /**
-     * Try to resolve the specified model input to a model class.
-     * @param input Model input.
-     * @returns Returns the resolved model class or undefined.
-     */
-    static tryEntityModel<E extends Types.Entity>(input: Types.ModelClass<E> | Types.ModelCallback<E>): Types.ModelClass<E> | undefined;
-    /**
-     * Get the model class based on the specified model input.
-     * @param input Model input.
-     * @returns Returns the model class.
-     * @throws Throws an error when the specified model input doesn't resolve to a model class.
-     */
-    static getEntityModel<T extends Types.Entity>(input: Types.ModelClass<T> | Types.ModelCallback<T>): Types.ModelClass<T>;
+    static isEntity<E extends Types.Entity>(input?: Types.ModelInput<E>): boolean;
     /**
      * Try to get the merged real and virtual row schema from the specified model type and fields.
      * @param model Model type.
      * @param fields Fields to be selected.
      * @returns Returns the real and virtual row schema or undefined when the model is invalid.
      */
-    static tryRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real | Columns.Virtual> | undefined;
+    static tryRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Any> | undefined;
     /**
      * Get the merged real and virtual row schema from the specified model type and fields.
      * @param model Model type.
@@ -111,7 +83,7 @@ export declare class Schema extends Class.Null {
      * @returns Returns the real and virtual row schema.
      * @throws Throws an error when the model type isn't valid.
      */
-    static getRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Real | Columns.Virtual>;
+    static getRows(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Any>;
     /**
      * Try to get the real row schema from the specified model type and fields.
      * @param model Model type.
@@ -144,6 +116,21 @@ export declare class Schema extends Class.Null {
      */
     static getVirtualRow(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Virtual>;
     /**
+     * Try to get the real or virtual column schema from the specified model type and column name.
+     * @param model Model type.
+     * @param name Column name.
+     * @returns Returns the real or virtual column schema or undefined when the column doesn't found.
+     */
+    static tryColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Any<E>> | undefined;
+    /**
+     * Gets the real or virtual column schema from the specified model type and column name.
+     * @param model Model type.
+     * @param name Column name.
+     * @returns Returns the real or virtual column schema.
+     * @throws Throws an error when the model type isn't valid or the specified column was not found.
+     */
+    static getColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Any<E>>;
+    /**
      * Try to get the real column schema from the specified model type and column name.
      * @param model Model type.
      * @param name Column name.
@@ -158,6 +145,21 @@ export declare class Schema extends Class.Null {
      * @throws Throws an error when the model type isn't valid or the specified column was not found.
      */
     static getRealColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Real<E>>;
+    /**
+     * Try to get the virtual column schema from the specified model type and column name.
+     * @param model Model type.
+     * @param name Column name.
+     * @returns Returns the virtual column schema or undefined when the column doesn't found.
+     */
+    static tryVirtualColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Virtual<E>> | undefined;
+    /**
+     * Gets the virtual column schema from the specified model type and column name.
+     * @param model Model type.
+     * @param name Column name.
+     * @returns Returns the virtual column schema.
+     * @throws Throws an error when the model type isn't valid or the specified column was not found.
+     */
+    static getVirtualColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Virtual<E>>;
     /**
      * Try to get the primary column schema from the specified model type.
      * @param model Model type.
@@ -179,19 +181,6 @@ export declare class Schema extends Class.Null {
      */
     static getStorageName(model: Types.ModelClass): string;
     /**
-     * Gets the column name from the specified column schema.
-     * @param schema Column schema.
-     * @returns Returns the column name.
-     */
-    static getColumnName<I extends Types.Entity>(schema: Columns.Base<I>): string;
-    /**
-     * Get all nested fields from the given column schema and field list.
-     * @param schema Column schema.
-     * @param fields Field list.
-     * @returns Returns a new field list containing all nested fields.
-     */
-    static getNestedFields<I extends Types.Entity>(schema: Columns.Base<I>, fields: string[]): string[];
-    /**
      * Decorates the specified class to be an entity model.
      * @param name Storage name.
      * @returns Returns the decorator method.
@@ -208,7 +197,7 @@ export declare class Schema extends Class.Null {
      * @param callback Caster callback.
      * @returns Returns the decorator method.
      */
-    static Convert(callback: Types.Caster): Types.ModelDecorator;
+    static Convert(callback: Types.ModelCaster): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a required column.
      * @returns Returns the decorator method.
@@ -240,7 +229,7 @@ export declare class Schema extends Class.Null {
      * @param fields Fields to be selected.
      * @returns Returns the decorator method.
      */
-    static Join<E extends Types.Entity>(foreign: string, model: Types.ModelClass<E>, local: string, match?: Filters.Match, fields?: string[]): Types.ModelDecorator;
+    static Join(foreign: string, model: Types.ModelInput, local: string, match?: Filters.Match, fields?: string[]): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a virtual column of a foreign entity list.
      * @param foreign Foreign column name.
@@ -250,7 +239,7 @@ export declare class Schema extends Class.Null {
      * @param fields Fields to be selected.
      * @returns Returns the decorator method.
      */
-    static JoinAll<E extends Types.Entity>(foreign: string, model: Types.ModelClass<E>, local: string, query?: Filters.Query, fields?: string[]): Types.ModelDecorator;
+    static JoinAll(foreign: string, model: Types.ModelInput, local: string, query?: Filters.Query, fields?: string[]): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a primary column.
      * @returns Returns the decorator method.
@@ -309,7 +298,7 @@ export declare class Schema extends Class.Null {
      * @param values Enumeration values.
      * @returns Returns the decorator method.
      */
-    static Enumeration(...values: string[]): Types.ModelDecorator;
+    static Enumeration(values: Types.ModelValues): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a string pattern column.
      * @param pattern Pattern expression.
@@ -334,22 +323,25 @@ export declare class Schema extends Class.Null {
     /**
      * Decorates the specified property to be an array column.
      * @param model Model type.
-     * @param unique Determines whether the array items must be unique or not.
+     * @param fields Fields to select.
+     * @param unique Determines whether or not the array items must be unique.
      * @param minimum Minimum items.
      * @param maximum Maximum items.
      * @returns Returns the decorator method.
      */
-    static Array(model: Types.ModelClass | Types.ModelCallback, unique?: boolean, minimum?: number, maximum?: number): Types.ModelDecorator;
+    static Array(model: Types.ModelInput, fields?: string[], unique?: boolean, minimum?: number, maximum?: number): Types.ModelDecorator;
     /**
      * Decorates the specified property to be a map column.
      * @param model Model type.
+     * @param fields Fields to select.
      * @returns Returns the decorator method.
      */
-    static Map(model: Types.ModelClass | Types.ModelCallback): Types.ModelDecorator;
+    static Map(model: Types.ModelInput, fields?: string[]): Types.ModelDecorator;
     /**
      * Decorates the specified property to be an object column.
      * @param model Model type.
+     * @param fields Fields to select.
      * @returns Returns the decorator method.
      */
-    static Object(model: Types.ModelClass | Types.ModelCallback): Types.ModelDecorator;
+    static Object(model: Types.ModelInput, fields?: string[]): Types.ModelDecorator;
 }

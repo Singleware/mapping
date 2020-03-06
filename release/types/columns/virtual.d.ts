@@ -24,19 +24,15 @@ export interface Virtual<T extends Types.Entity = Types.Entity> extends Base<T> 
    */
   multiple?: boolean;
   /**
-   * Fields to be selected in the virtual column.
-   */
-  fields?: string[];
-  /**
    * Column entity model.
    */
-  model: Types.ModelClass<T> | Types.ModelCallback<T>;
+  model: Types.ModelInput<T>;
   /**
    * Column query.
    */
   query?: Filters.Query;
   /**
-   * Determines whether all values from the foreign column must be loaded.
+   * Determines whether or not all values from the foreign column must be loaded.
    */
   all?: boolean;
 }

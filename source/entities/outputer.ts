@@ -7,6 +7,7 @@ import * as Class from '@singleware/class';
 import * as Types from '../types';
 import * as Columns from '../columns';
 
+import { Helper } from '../helper';
 import { Schema } from '../schema';
 
 /**
@@ -94,10 +95,9 @@ export class Outputer extends Class.Null {
     required: boolean
   ): O | I | Types.Map<O | I> | ((O | I) | (O | I)[])[] | undefined {
     if (schema.model && Schema.isEntity(schema.model)) {
-      const nestedFields =
-        fields.length > 0 ? Schema.getNestedFields(schema, fields) : (<Columns.Virtual<O>>schema).fields || [];
+      const nestedFields = fields.length > 0 ? Columns.Helper.getNestedFields(schema, fields) : schema.fields || [];
       const nestedRequired = required && nestedFields.length === 0;
-      const nestedModel = Schema.getEntityModel(schema.model);
+      const nestedModel = Helper.getEntityModel(schema.model);
       if (entry instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
           const nestedMultiple = (<Columns.Virtual<O>>schema).all || false;
@@ -137,12 +137,12 @@ export class Outputer extends Class.Null {
     required: boolean,
     wanted: boolean
   ): O | undefined {
-    const columns = { ...Schema.getRealRow(model, ...fields), ...Schema.getVirtualRow(model, ...fields) };
+    const schemas = Schema.getRows(model, ...fields);
     const entity = <O>new model();
     const missing = [];
-    for (const name in columns) {
-      const schema = columns[name];
-      const value = entry[Schema.getColumnName(schema)];
+    for (const name in schemas) {
+      const schema = schemas[name];
+      const value = entry[Columns.Helper.getName(schema)];
       if (value === void 0) {
         if (required && schema.required && !schema.writeOnly) {
           missing.push(name);
@@ -157,7 +157,7 @@ export class Outputer extends Class.Null {
         }
       }
     }
-    if (!wanted && Schema.isEmpty(model, entity, 0)) {
+    if (!wanted && Helper.isEmptyModel(model, entity, 0)) {
       return void 0;
     }
     if (missing.length) {

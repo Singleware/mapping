@@ -33,5 +33,5 @@ export interface Real<T extends Types.Entity = Types.Entity> extends Base<T> {
   /**
    * Valid values for enumerations.
    */
-  values?: string[];
+  values?: Types.ModelValues;
 }

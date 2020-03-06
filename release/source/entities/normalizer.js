@@ -12,6 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const Class = require("@singleware/class");
 const Types = require("../types");
+const Columns = require("../columns");
+const helper_1 = require("../helper");
 const schema_1 = require("../schema");
 /**
  * Normalizer helper class.
@@ -76,7 +78,7 @@ let Normalizer = class Normalizer extends Class.Null {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
             if (entity instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
-                    return this.createList(schema_1.Schema.getEntityModel(schema.model), entity, schema.all || false, alias, unsafe);
+                    return this.createList(helper_1.Helper.getEntityModel(schema.model), entity, schema.all || false, alias, unsafe);
                 }
                 else {
                     throw new Error(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
@@ -85,14 +87,14 @@ let Normalizer = class Normalizer extends Class.Null {
             else if (entity instanceof Object) {
                 if (schema.formats.includes(14 /* Object */)) {
                     if (unroll) {
-                        return this.createEntry(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
+                        return this.createEntry(helper_1.Helper.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
                     }
                     else {
-                        return this.createEntry(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe, false);
+                        return this.createEntry(helper_1.Helper.getEntityModel(schema.model), entity, alias, unsafe, false);
                     }
                 }
                 else if (schema.formats.includes(13 /* Map */)) {
-                    return this.createMap(schema_1.Schema.getEntityModel(schema.model), entity, alias, unsafe);
+                    return this.createMap(helper_1.Helper.getEntityModel(schema.model), entity, alias, unsafe);
                 }
                 else {
                     throw new Error(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);
@@ -113,13 +115,13 @@ let Normalizer = class Normalizer extends Class.Null {
      * @returns Returns the generated entry.
      */
     static createEntry(model, entity, alias, unsafe, unroll, path, data) {
-        const columns = { ...schema_1.Schema.getRealRow(model), ...schema_1.Schema.getVirtualRow(model) };
+        const schemas = schema_1.Schema.getRows(model);
         const entry = (data || {});
-        for (const name in columns) {
-            const schema = columns[name];
+        for (const name in schemas) {
+            const schema = schemas[name];
             const value = entity[name];
             if (value !== void 0 && (unsafe || !schema.hidden)) {
-                let property = alias ? schema_1.Schema.getColumnName(schema) : schema.name;
+                let property = alias ? Columns.Helper.getName(schema) : schema.name;
                 if (unroll) {
                     property = path ? `${path}.${property}` : property;
                 }

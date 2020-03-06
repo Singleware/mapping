@@ -12,6 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const Class = require("@singleware/class");
 const Types = require("../types");
+const Columns = require("../columns");
+const helper_1 = require("../helper");
 const schema_1 = require("../schema");
 /**
  * Outputer helper class.
@@ -74,9 +76,9 @@ let Outputer = class Outputer extends Class.Null {
      */
     static createValue(model, schema, entry, fields, required) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
-            const nestedFields = fields.length > 0 ? schema_1.Schema.getNestedFields(schema, fields) : schema.fields || [];
+            const nestedFields = fields.length > 0 ? Columns.Helper.getNestedFields(schema, fields) : schema.fields || [];
             const nestedRequired = required && nestedFields.length === 0;
-            const nestedModel = schema_1.Schema.getEntityModel(schema.model);
+            const nestedModel = helper_1.Helper.getEntityModel(schema.model);
             if (entry instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
                     const nestedMultiple = schema.all || false;
@@ -112,12 +114,12 @@ let Outputer = class Outputer extends Class.Null {
      * @throws Throws an error when required columns aren't supplied or write-only columns were set.
      */
     static createEntity(model, entry, fields, required, wanted) {
-        const columns = { ...schema_1.Schema.getRealRow(model, ...fields), ...schema_1.Schema.getVirtualRow(model, ...fields) };
+        const schemas = schema_1.Schema.getRows(model, ...fields);
         const entity = new model();
         const missing = [];
-        for (const name in columns) {
-            const schema = columns[name];
-            const value = entry[schema_1.Schema.getColumnName(schema)];
+        for (const name in schemas) {
+            const schema = schemas[name];
+            const value = entry[Columns.Helper.getName(schema)];
             if (value === void 0) {
                 if (required && schema.required && !schema.writeOnly) {
                     missing.push(name);
@@ -133,7 +135,7 @@ let Outputer = class Outputer extends Class.Null {
                 }
             }
         }
-        if (!wanted && schema_1.Schema.isEmpty(model, entity, 0)) {
+        if (!wanted && helper_1.Helper.isEmptyModel(model, entity, 0)) {
             return void 0;
         }
         if (missing.length) {

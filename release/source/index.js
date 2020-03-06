@@ -6,6 +6,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 var mapper_1 = require("./mapper");
 exports.Mapper = mapper_1.Mapper;
+var helper_1 = require("./helper");
+exports.Helper = helper_1.Helper;
 var schema_1 = require("./schema");
 exports.Schema = schema_1.Schema;
 // Imported aliases.
@@ -14,6 +16,7 @@ const Columns = require("./columns");
 const Filters = require("./filters");
 const Entities = require("./entities");
 const Castings = require("./castings");
+const Formats = require("./formats");
 /**
  * Types namespace.
  */
@@ -34,4 +37,8 @@ exports.Entities = Entities;
  * Castings namespace.
  */
 exports.Castings = Castings;
+/**
+ * Formats namespace.
+ */
+exports.Formats = Formats;
 //# sourceMappingURL=index.js.map

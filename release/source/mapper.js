@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
  */
 const Class = require("@singleware/class");
 const Entities = require("./entities");
+const Columns = require("./columns");
 const schema_1 = require("./schema");
 /**
  * Generic data mapper class.
@@ -213,8 +214,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns the map of normalized entities.
      */
     normalizeAsMap(entities, alias, unsafe, unroll) {
-        const column = schema_1.Schema.getPrimaryColumn(this.model);
-        const primary = schema_1.Schema.getColumnName(column);
+        const primary = Columns.Helper.getName(schema_1.Schema.getPrimaryColumn(this.model));
         const data = {};
         for (const input of entities) {
             const entity = this.normalize(input, alias, unsafe, unroll);
