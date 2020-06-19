@@ -6,5 +6,5 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 // Casters.
 var isodate_1 = require("./isodate");
-exports.ISODate = isodate_1.ISODate;
+Object.defineProperty(exports, "ISODate", { enumerable: true, get: function () { return isodate_1.ISODate; } });
 //# sourceMappingURL=index.js.map

@@ -7,6 +7,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 };
 var Helper_1;
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Helper = void 0;
 /*!
  * Copyright (C) 2018-2020 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.

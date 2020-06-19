@@ -16,7 +16,7 @@ import { Driver } from './driver';
  * Generic data mapper class.
  */
 @Class.Describe()
-export class Mapper<Entity extends Types.Entity> extends Class.Null {
+export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extends Class.Null {
   /**
    * Entity model.
    */
@@ -48,67 +48,79 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * Insert the specified entity list into the storage using a custom model type.
    * @param model Model type.
    * @param entities Entity list.
+   * @param options Insert options.
    * @returns Returns a promise to get the id list of all inserted entities.
    */
   @Class.Public()
-  public async insertManyEx<T extends Types.Entity>(model: Types.ModelClass<T>, entities: T[]): Promise<any[]> {
-    return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities));
+  public async insertManyEx<T extends Types.Entity>(
+    model: Types.ModelClass<T>,
+    entities: T[],
+    options?: Options
+  ): Promise<any[]> {
+    return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities), options ?? {});
   }
 
   /**
    * Insert the specified entity list into the storage.
    * @param entities Entity list.
+   * @param options Insert options.
    * @returns Returns a promise to get the Id list of all inserted entities.
    */
   @Class.Public()
-  public async insertMany(entities: Entity[]): Promise<any[]> {
-    return await this.insertManyEx(this.model, entities);
+  public async insertMany(entities: Entity[], options?: Options): Promise<any[]> {
+    return await this.insertManyEx(this.model, entities, options);
   }
 
   /**
    * Insert the specified entity into the storage using a custom model type.
    * @param model Model type.
    * @param entity Entity data.
+   * @param options Insert options.
    * @returns Returns a promise to get the id of the inserted entry.
    */
   @Class.Public()
-  public async insertEx<T extends Types.Entity>(model: Types.ModelClass<T>, entity: T): Promise<any> {
-    return (await this.insertManyEx(model, [entity]))[0];
+  public async insertEx<T extends Types.Entity>(model: Types.ModelClass<T>, entity: T, options?: Options): Promise<any> {
+    return (await this.insertManyEx(model, [entity], options))[0];
   }
 
   /**
    * Insert the specified entity into the storage.
    * @param entity Entity data.
+   * @param options Insert options.
    * @returns Returns a promise to get the id of the inserted entity.
    */
   @Class.Public()
-  public async insert(entity: Entity): Promise<any> {
-    return await this.insertEx(this.model, entity);
+  public async insert(entity: Entity, options?: Options): Promise<any> {
+    return await this.insertEx(this.model, entity, options);
   }
 
   /**
    * Find all corresponding entity in the storage.
    * @param query Query filter
    * @param select Fields to select.
+   * @param options Find options.
    * @returns Returns a promise to get the list of entities found.
    */
   @Class.Public()
-  public async find(query: Filters.Query, select: string[] = []): Promise<Entity[]> {
-    const entities = await this.driver.find(this.model, query, select);
-    return <Entity[]>Entities.Outputer.createFullArray(this.model, entities, select);
+  public async find(query: Filters.Query, select?: string[], options?: Options): Promise<Entity[]> {
+    const fields = select ?? [];
+    const entities = await this.driver.find(this.model, query, fields, options ?? {});
+    return <Entity[]>Entities.Outputer.createFullArray(this.model, entities, fields);
   }
 
   /**
    * Find the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
    * @param select Fields to select.
+   * @param options Find options.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
   @Class.Public()
-  public async findById(id: any, select: string[] = []): Promise<Entity | undefined> {
-    const entity = await this.driver.findById(this.model, id, select);
+  public async findById(id: any, select?: string[], options?: Options): Promise<Entity | undefined> {
+    const fields = select ?? [];
+    const entity = await this.driver.findById(this.model, id, fields, options ?? {});
     if (entity !== void 0) {
-      return Entities.Outputer.createFull(this.model, entity, select);
+      return Entities.Outputer.createFull(this.model, entity, fields);
     }
     return void 0;
   }
@@ -117,14 +129,15 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * Gets the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
    * @param select Fields to select.
+   * @param options Find options.
    * @returns Returns a promise to get the entity.
    * @throws Throws an error when the entity wasn't found.
    */
   @Class.Public()
-  public async getById(id: any, select: string[] = []): Promise<Entity> {
-    const entity = await this.findById(id, select);
+  public async getById(id: any, select?: string[], options?: Options): Promise<Entity> {
+    const entity = await this.findById(id, select, options);
     if (!entity) {
-      throw new Error(`Failed to find entity by Id.`);
+      throw new Error(`Failed to find entity by Id '${id}'.`);
     }
     return entity;
   }
@@ -134,26 +147,29 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @param model Model type.
    * @param match Matching filter.
    * @param entity Entity data.
+   * @param options Update options.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Public()
   public async updateEx<T extends Types.Entity>(
     model: Types.ModelClass<T>,
     match: Filters.Match,
-    entity: T
+    entity: T,
+    options?: Options
   ): Promise<number> {
-    return await this.driver.update(model, match, Entities.Inputer.createFull(model, entity));
+    return this.driver.update(model, match, Entities.Inputer.createFull(model, entity), options ?? {});
   }
 
   /**
    * Update all entities that corresponds to the specified match.
    * @param match Matching filter.
    * @param entity Entity data.
+   * @param options Update options.
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Public()
-  public async update(match: Filters.Match, entity: Types.Entity): Promise<number> {
-    return await this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity));
+  public async update(match: Filters.Match, entity: Types.Entity, options?: Options): Promise<number> {
+    return this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity), options ?? {});
   }
 
   /**
@@ -161,78 +177,91 @@ export class Mapper<Entity extends Types.Entity> extends Class.Null {
    * @param model Model type.
    * @param id Entity Id.
    * @param entity Entity data.
+   * @param options Update options.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Public()
-  public async updateByIdEx<T extends Types.Entity>(model: Types.ModelClass<T>, id: any, entity: T): Promise<boolean> {
-    return await this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity));
+  public async updateByIdEx<T extends Types.Entity>(
+    model: Types.ModelClass<T>,
+    id: any,
+    entity: T,
+    options?: Options
+  ): Promise<boolean> {
+    return this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity), options ?? {});
   }
 
   /**
    * Update the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
    * @param entity Entity data.
+   * @param options Update options.
    * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
    */
   @Class.Public()
-  public async updateById(id: any, entity: Types.Entity): Promise<boolean> {
-    return await this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity));
+  public async updateById(id: any, entity: Types.Entity, options?: Options): Promise<boolean> {
+    return this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity), options ?? {});
   }
 
   /**
    * Replace the entity that corresponds to the specified entity Id using a custom model type.
    * @param id Entity Id.
    * @param entity Entity data.
+   * @param options Replace options.
    * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
    */
   @Class.Public()
   public async replaceByIdEx<T extends Types.Entity>(
     model: Types.ModelClass<T>,
     id: any,
-    entity: Types.Entity
+    entity: Types.Entity,
+    options?: Options
   ): Promise<boolean> {
-    return await this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity));
+    return this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity), options ?? {});
   }
 
   /**
    * Replace the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
    * @param entity Entity data.
+   * @param options Replace options.
    * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
    */
   @Class.Public()
-  public async replaceById(id: any, entity: Types.Entity): Promise<boolean> {
-    return await this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity));
+  public async replaceById(id: any, entity: Types.Entity, options?: Options): Promise<boolean> {
+    return this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity), options ?? {});
   }
 
   /**
    * Delete all entities that corresponds to the specified match.
    * @param match Matching filter.
+   * @param options Delete options.
    * @return Returns a promise to get the number of deleted entities.
    */
   @Class.Public()
-  public async delete(match: Filters.Match): Promise<number> {
-    return await this.driver.delete(this.model, match);
+  public async delete(match: Filters.Match, options?: Options): Promise<number> {
+    return this.driver.delete(this.model, match, options ?? {});
   }
 
   /**
    * Delete the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
+   * @param options Delete options.
    * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
    */
   @Class.Public()
-  public async deleteById(id: any): Promise<boolean> {
-    return await this.driver.deleteById(this.model, id);
+  public async deleteById(id: any, options?: Options): Promise<boolean> {
+    return this.driver.deleteById(this.model, id, options ?? {});
   }
 
   /**
    * Count all corresponding entities from the storage.
    * @param query Query filter.
+   * @param options Count options.
    * @returns Returns a promise to get the total amount of found entities.
    */
   @Class.Public()
-  public async count(query: Filters.Query): Promise<number> {
-    return await this.driver.count(this.model, query);
+  public async count(query: Filters.Query, options?: Options): Promise<number> {
+    return this.driver.count(this.model, query, options ?? {});
   }
 
   /**

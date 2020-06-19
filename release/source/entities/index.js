@@ -5,9 +5,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
  * This source code is licensed under the MIT License as described in the file LICENSE.
  */
 var inputer_1 = require("./inputer");
-exports.Inputer = inputer_1.Inputer;
+Object.defineProperty(exports, "Inputer", { enumerable: true, get: function () { return inputer_1.Inputer; } });
 var outputer_1 = require("./outputer");
-exports.Outputer = outputer_1.Outputer;
+Object.defineProperty(exports, "Outputer", { enumerable: true, get: function () { return outputer_1.Outputer; } });
 var normalizer_1 = require("./normalizer");
-exports.Normalizer = normalizer_1.Normalizer;
+Object.defineProperty(exports, "Normalizer", { enumerable: true, get: function () { return normalizer_1.Normalizer; } });
 //# sourceMappingURL=index.js.map

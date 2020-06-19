@@ -1,7 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Operations = void 0;
 var helper_1 = require("./helper");
-exports.Helper = helper_1.Helper;
+Object.defineProperty(exports, "Helper", { enumerable: true, get: function () { return helper_1.Helper; } });
 // Imported aliases
 const Operations = require("./operations");
 /**

@@ -13,76 +13,95 @@ export interface Driver {
    * Insert the specified entity list into the storage.
    * @param model Model type.
    * @param entities Entity list.
+   * @param options Insert options.
    * @returns Returns a promise to get the id list of inserted entities.
    */
-  insert<T extends Types.Entity>(model: Types.ModelClass<T>, entities: T[]): Promise<any[]>;
+  insert<T extends Types.Entity, U extends {}>(model: Types.ModelClass<T>, entities: T[], options: U): Promise<any[]>;
 
   /**
    * Find all corresponding entities from the storage.
    * @param model Model type.
    * @param query Query filter.
    * @param select Fields to select.
+   * @param options Find options.
    * @returns Returns a promise to get the list of entities found.
    */
-  find<T extends Types.Entity>(model: Types.ModelClass<T>, query: Filters.Query, select: string[]): Promise<T[]>;
+  find<T extends Types.Entity, U extends {}>(
+    model: Types.ModelClass<T>,
+    query: Filters.Query,
+    select: string[],
+    options: U
+  ): Promise<T[]>;
 
   /**
    * Find the entity that corresponds to the specified entity id.
    * @param model Model type.
    * @param id Entity id.
    * @param select Fields to select.
+   * @param options Find options.
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
-  findById<T extends Types.Entity>(model: Types.ModelClass<T>, id: any, select: string[]): Promise<T | undefined>;
+  findById<T extends Types.Entity, U extends {}>(
+    model: Types.ModelClass<T>,
+    id: any,
+    select: string[],
+    options: U
+  ): Promise<T | undefined>;
 
   /**
    * Update all entities that corresponds to the specified match.
    * @param model Model type.
    * @param match Matching filter.
    * @param entity Entity data.
+   * @param options Update options.
    * @returns Returns a promise to get the number of updated entities.
    */
-  update(model: Types.ModelClass, match: Filters.Match, entity: Types.Entity): Promise<number>;
+  update<U extends {}>(model: Types.ModelClass, match: Filters.Match, entity: Types.Entity, options: U): Promise<number>;
 
   /**
    * Update a entity that corresponds to the specified entity id.
    * @param model Model type.
    * @param id Entity id.
    * @param entity Entity data.
+   * @param options Update options.
    * @returns Returns a promise to get true when the entity has been updated or false otherwise.
    */
-  updateById(model: Types.ModelClass, id: any, entity: Types.Entity): Promise<boolean>;
+  updateById<U extends {}>(model: Types.ModelClass, id: any, entity: Types.Entity, options: U): Promise<boolean>;
 
   /**
    * Replace a entity that corresponds to the specified entity id.
    * @param model Model type.
    * @param id Entity id.
    * @param entity Entity data.
+   * @param options Replace options.
    * @returns Returns a promise to get true when the entity has been replaced or false otherwise.
    */
-  replaceById(model: Types.ModelClass, id: any, entity: Types.Entity): Promise<boolean>;
+  replaceById<U extends {}>(model: Types.ModelClass, id: any, entity: Types.Entity, options: U): Promise<boolean>;
 
   /**
    * Delete all entities that corresponds to the specified match.
    * @param model Model type.
    * @param match Matching filter.
+   * @param options Delete options.
    * @return Returns a promise to get the number of deleted entities.
    */
-  delete(model: Types.ModelClass, match: Filters.Match): Promise<number>;
+  delete<U extends {}>(model: Types.ModelClass, match: Filters.Match, options: U): Promise<number>;
 
   /**
    * Delete the entity that corresponds to the specified entity id.
    * @param model Model type.
    * @param id Entity id.
+   * @param options Delete options.
    * @return Returns a promise to get true when the entity has been deleted or false otherwise.
    */
-  deleteById(model: Types.ModelClass, id: any): Promise<boolean>;
+  deleteById<U extends {}>(model: Types.ModelClass, id: any, options: U): Promise<boolean>;
 
   /**
    * Count all corresponding entities from the storage.
    * @param model Model type.
    * @param query Query filter.
+   * @param options Count options.
    * @returns Returns a promise to get the total amount of found entities.
    */
-  count(model: Types.ModelClass, query: Filters.Query): Promise<number>;
+  count<U extends {}>(model: Types.ModelClass, query: Filters.Query, options: U): Promise<number>;
 }

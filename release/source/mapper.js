@@ -6,6 +6,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.Mapper = void 0;
 /*!
  * Copyright (C) 2018-2019 Silas B. Domingos
  * This source code is licensed under the MIT License as described in the file LICENSE.
@@ -36,56 +37,64 @@ let Mapper = class Mapper extends Class.Null {
      * Insert the specified entity list into the storage using a custom model type.
      * @param model Model type.
      * @param entities Entity list.
+     * @param options Insert options.
      * @returns Returns a promise to get the id list of all inserted entities.
      */
-    async insertManyEx(model, entities) {
-        return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities));
+    async insertManyEx(model, entities, options) {
+        return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
+     * @param options Insert options.
      * @returns Returns a promise to get the Id list of all inserted entities.
      */
-    async insertMany(entities) {
-        return await this.insertManyEx(this.model, entities);
+    async insertMany(entities, options) {
+        return await this.insertManyEx(this.model, entities, options);
     }
     /**
      * Insert the specified entity into the storage using a custom model type.
      * @param model Model type.
      * @param entity Entity data.
+     * @param options Insert options.
      * @returns Returns a promise to get the id of the inserted entry.
      */
-    async insertEx(model, entity) {
-        return (await this.insertManyEx(model, [entity]))[0];
+    async insertEx(model, entity, options) {
+        return (await this.insertManyEx(model, [entity], options))[0];
     }
     /**
      * Insert the specified entity into the storage.
      * @param entity Entity data.
+     * @param options Insert options.
      * @returns Returns a promise to get the id of the inserted entity.
      */
-    async insert(entity) {
-        return await this.insertEx(this.model, entity);
+    async insert(entity, options) {
+        return await this.insertEx(this.model, entity, options);
     }
     /**
      * Find all corresponding entity in the storage.
      * @param query Query filter
      * @param select Fields to select.
+     * @param options Find options.
      * @returns Returns a promise to get the list of entities found.
      */
-    async find(query, select = []) {
-        const entities = await this.driver.find(this.model, query, select);
-        return Entities.Outputer.createFullArray(this.model, entities, select);
+    async find(query, select, options) {
+        const fields = select !== null && select !== void 0 ? select : [];
+        const entities = await this.driver.find(this.model, query, fields, options !== null && options !== void 0 ? options : {});
+        return Entities.Outputer.createFullArray(this.model, entities, fields);
     }
     /**
      * Find the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param select Fields to select.
+     * @param options Find options.
      * @returns Returns a promise to get the entity found or undefined when the entity was not found.
      */
-    async findById(id, select = []) {
-        const entity = await this.driver.findById(this.model, id, select);
+    async findById(id, select, options) {
+        const fields = select !== null && select !== void 0 ? select : [];
+        const entity = await this.driver.findById(this.model, id, fields, options !== null && options !== void 0 ? options : {});
         if (entity !== void 0) {
-            return Entities.Outputer.createFull(this.model, entity, select);
+            return Entities.Outputer.createFull(this.model, entity, fields);
         }
         return void 0;
     }
@@ -93,13 +102,14 @@ let Mapper = class Mapper extends Class.Null {
      * Gets the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param select Fields to select.
+     * @param options Find options.
      * @returns Returns a promise to get the entity.
      * @throws Throws an error when the entity wasn't found.
      */
-    async getById(id, select = []) {
-        const entity = await this.findById(id, select);
+    async getById(id, select, options) {
+        const entity = await this.findById(id, select, options);
         if (!entity) {
-            throw new Error(`Failed to find entity by Id.`);
+            throw new Error(`Failed to find entity by Id '${id}'.`);
         }
         return entity;
     }
@@ -108,80 +118,89 @@ let Mapper = class Mapper extends Class.Null {
      * @param model Model type.
      * @param match Matching filter.
      * @param entity Entity data.
+     * @param options Update options.
      * @returns Returns a promise to get the number of updated entities.
      */
-    async updateEx(model, match, entity) {
-        return await this.driver.update(model, match, Entities.Inputer.createFull(model, entity));
+    async updateEx(model, match, entity, options) {
+        return this.driver.update(model, match, Entities.Inputer.createFull(model, entity), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Update all entities that corresponds to the specified match.
      * @param match Matching filter.
      * @param entity Entity data.
+     * @param options Update options.
      * @returns Returns a promise to get the number of updated entities.
      */
-    async update(match, entity) {
-        return await this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity));
+    async update(match, entity, options) {
+        return this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Update the entity that corresponds to the specified id using a custom model type.
      * @param model Model type.
      * @param id Entity Id.
      * @param entity Entity data.
+     * @param options Update options.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
-    async updateByIdEx(model, id, entity) {
-        return await this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity));
+    async updateByIdEx(model, id, entity, options) {
+        return this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Update the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param entity Entity data.
+     * @param options Update options.
      * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
      */
-    async updateById(id, entity) {
-        return await this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity));
+    async updateById(id, entity, options) {
+        return this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Replace the entity that corresponds to the specified entity Id using a custom model type.
      * @param id Entity Id.
      * @param entity Entity data.
+     * @param options Replace options.
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
-    async replaceByIdEx(model, id, entity) {
-        return await this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity));
+    async replaceByIdEx(model, id, entity, options) {
+        return this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Replace the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param entity Entity data.
+     * @param options Replace options.
      * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
      */
-    async replaceById(id, entity) {
-        return await this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity));
+    async replaceById(id, entity, options) {
+        return this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity), options !== null && options !== void 0 ? options : {});
     }
     /**
      * Delete all entities that corresponds to the specified match.
      * @param match Matching filter.
+     * @param options Delete options.
      * @return Returns a promise to get the number of deleted entities.
      */
-    async delete(match) {
-        return await this.driver.delete(this.model, match);
+    async delete(match, options) {
+        return this.driver.delete(this.model, match, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Delete the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
+     * @param options Delete options.
      * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
      */
-    async deleteById(id) {
-        return await this.driver.deleteById(this.model, id);
+    async deleteById(id, options) {
+        return this.driver.deleteById(this.model, id, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Count all corresponding entities from the storage.
      * @param query Query filter.
+     * @param options Count options.
      * @returns Returns a promise to get the total amount of found entities.
      */
-    async count(query) {
-        return await this.driver.count(this.model, query);
+    async count(query, options) {
+        return this.driver.count(this.model, query, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Generate a new normalized entity based on the specified entity data.
