@@ -12,6 +12,7 @@ export declare class Inputer extends Class.Null {
      * Creates a new list based on the specified model type and entry list.
      * @param model Model type.
      * @param entries Entry list.
+     * @param fields Fields to be included in the entity.
      * @param required Determines whether all required columns must be provided.
      * @param multiple Determines whether each value in the specified list can be a sub list.
      * @returns Returns the generated list.
@@ -21,6 +22,7 @@ export declare class Inputer extends Class.Null {
      * Create a new map based on the specified model type and entry map.
      * @param model Model type.
      * @param entry Entry map.
+     * @param fields Fields to be included in the entity.
      * @param required Determines whether all required columns must be provided.
      * @returns Returns the generated map.
      */
@@ -30,6 +32,7 @@ export declare class Inputer extends Class.Null {
      * @param model Model type.
      * @param schema Column schema.
      * @param entry Entry value.
+     * @param fields Fields to be included in the entity (if the values is an entity).
      * @param required Determines whether all required columns must be provided.
      * @returns Returns the entity value.
      * @throws Throws an error when the expected value should be an array or map but the given value is not.
@@ -39,6 +42,7 @@ export declare class Inputer extends Class.Null {
      * Creates a new entity based on the specified model type and entry.
      * @param model Model type.
      * @param entry Entry value.
+     * @param fields Fields to be included in the entity.
      * @param required Determines whether all required columns must be provided.
      * @returns Returns the generated entity.
      * @throws Throws an error when required columns aren't supplied or read-only columns were set.
