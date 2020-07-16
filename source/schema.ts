@@ -140,12 +140,7 @@ export class Schema extends Class.Null {
    * @throws Throws an error when a column with the same name and another type already exists.
    */
   @Class.Private()
-  private static assignToColumn(
-    model: Types.ModelClass,
-    type: Types.Column,
-    name: string,
-    properties?: Types.Entity
-  ): Columns.Base {
+  private static assignToColumn(model: Types.ModelClass, type: Types.Column, name: string, properties?: Types.Entity): Columns.Base {
     const storage = this.assignToStorage(model);
     const row = storage[type];
     if (type === Types.Column.Real && name in storage.virtual) {
@@ -176,11 +171,7 @@ export class Schema extends Class.Null {
    * @throws Throws an error when the column does not exists yet.
    */
   @Class.Private()
-  private static assignToRVColumn(
-    model: Types.ModelClass,
-    name: string,
-    properties?: Types.Entity
-  ): Columns.Real | Columns.Virtual {
+  private static assignToRVColumn(model: Types.ModelClass, name: string, properties?: Types.Entity): Columns.Real | Columns.Virtual {
     const storage = this.assignToStorage(model);
     if (name in storage.virtual) {
       Object.assign(storage.virtual[name], properties);
@@ -300,10 +291,7 @@ export class Schema extends Class.Null {
    * @throws Throws an error when the model type isn't valid.
    */
   @Class.Public()
-  public static tryVirtualRow(
-    model: Types.ModelClass,
-    ...fields: string[]
-  ): Columns.ReadonlyRow<Columns.Virtual> | undefined {
+  public static tryVirtualRow(model: Types.ModelClass, ...fields: string[]): Columns.ReadonlyRow<Columns.Virtual> | undefined {
     const row = <Columns.ReadonlyRow<Columns.Virtual>>{};
     let last;
     this.findInStorages(model, storage => {
@@ -344,10 +332,7 @@ export class Schema extends Class.Null {
    * @returns Returns the real or virtual column schema or undefined when the column doesn't found.
    */
   @Class.Public()
-  public static tryColumn<E extends Types.Entity>(
-    model: Types.ModelClass<E>,
-    name: string
-  ): Readonly<Columns.Any<E>> | undefined {
+  public static tryColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Any<E>> | undefined {
     return this.findInStorages(model, storage => {
       if (name in storage.real) {
         return <Columns.Real<E>>storage.real[name];
@@ -380,10 +365,7 @@ export class Schema extends Class.Null {
    * @returns Returns the real column schema or undefined when the column doesn't found.
    */
   @Class.Public()
-  public static tryRealColumn<E extends Types.Entity>(
-    model: Types.ModelClass<E>,
-    name: string
-  ): Readonly<Columns.Real<E>> | undefined {
+  public static tryRealColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Real<E>> | undefined {
     return this.findInStorages(model, storage => {
       if (name in storage.real) {
         return <Columns.Real<E>>storage.real[name];
@@ -414,10 +396,7 @@ export class Schema extends Class.Null {
    * @returns Returns the virtual column schema or undefined when the column doesn't found.
    */
   @Class.Public()
-  public static tryVirtualColumn<E extends Types.Entity>(
-    model: Types.ModelClass<E>,
-    name: string
-  ): Readonly<Columns.Virtual<E>> | undefined {
+  public static tryVirtualColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Virtual<E>> | undefined {
     return this.findInStorages(model, storage => {
       if (name in storage.virtual) {
         return <Columns.Virtual<E>>storage.virtual[name];
@@ -433,10 +412,7 @@ export class Schema extends Class.Null {
    * @throws Throws an error when the model type isn't valid or the specified column was not found.
    */
   @Class.Public()
-  public static getVirtualColumn<E extends Types.Entity>(
-    model: Types.ModelClass<E>,
-    name: string
-  ): Readonly<Columns.Virtual<E>> {
+  public static getVirtualColumn<E extends Types.Entity>(model: Types.ModelClass<E>, name: string): Readonly<Columns.Virtual<E>> {
     const column = this.tryVirtualColumn(model, name);
     if (!column) {
       throw new Error(`Virtual column '${name}' doesn't exists in the entity '${this.getStorageName(model)}'.`);
@@ -605,13 +581,7 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Join(
-    foreign: string,
-    model: Types.ModelInput,
-    local: string,
-    match?: Filters.Match,
-    fields?: string[]
-  ): Types.ModelDecorator {
+  public static Join(foreign: string, model: Types.ModelInput, local: string, match?: Filters.Match, fields?: string[]): Types.ModelDecorator {
     return (target, property, descriptor?) => {
       const schema = this.getRealColumn(<Types.ModelClass>target.constructor, local);
       const multiple = schema.formats.includes(Types.Format.Array);
@@ -922,13 +892,7 @@ export class Schema extends Class.Null {
    * @returns Returns the decorator method.
    */
   @Class.Public()
-  public static Array(
-    model: Types.ModelInput,
-    fields?: string[],
-    unique?: boolean,
-    minimum?: number,
-    maximum?: number
-  ): Types.ModelDecorator {
+  public static Array(model: Types.ModelInput, fields?: string[], unique?: boolean, minimum?: number, maximum?: number): Types.ModelDecorator {
     return (target, property, descriptor?) =>
       this.setValidation(
         target,

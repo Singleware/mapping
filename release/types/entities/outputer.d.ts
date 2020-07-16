@@ -58,7 +58,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
-    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined;
+    static create<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined;
     /**
      * Creates a new entity array based on the specified model type, entry list and the fields.
      * @param model Model type.
@@ -66,7 +66,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity array.
      */
-    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[];
+    static createArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[];
     /**
      * Create a new entity map based on the specified model type, entry map and the fields.
      * @param model Model type.
@@ -74,7 +74,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity map.
      */
-    static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
+    static createMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
     /**
      * Creates a new full entity based on the specified model type, entry value and the fields.
      * @param model Model type.
@@ -82,7 +82,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity or undefined when the entity has no data.
      */
-    static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined;
+    static createFull<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined;
     /**
      * Creates a new full entity array based on the specified model type, entry list and the fields.
      * @param model Model type.
@@ -90,7 +90,7 @@ export declare class Outputer extends Class.Null {
      * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity array.
      */
-    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[];
+    static createFullArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[];
     /**
      * Create a new full entity map based on the specified model type, entry map and the fields.
      * @param model Model type.
@@ -98,5 +98,5 @@ export declare class Outputer extends Class.Null {
      * @param fields Fields to be included in the entity.
      * @returns Returns the generated entity map.
      */
-    static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
+    static createFullMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O>;
 }

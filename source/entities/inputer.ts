@@ -25,7 +25,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated list.
    */
   @Class.Private()
-  private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
+  private static createArrayEntity<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     entries: (I | I[])[],
     fields: string[],
@@ -52,7 +52,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated map.
    */
   @Class.Private()
-  private static createMapEntity<I extends Types.Entity, O extends Types.Entity>(
+  private static createMapEntity<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     entry: Types.Map<I>,
     fields: string[],
@@ -79,7 +79,7 @@ export class Inputer extends Class.Null {
    * @throws Throws an error when the expected value should be an array or map but the given value is not.
    */
   @Class.Private()
-  private static createValue<I extends Types.Entity, O extends Types.Entity>(
+  private static createValue<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     schema: Columns.Base<O>,
     entry: I | Types.Map<I> | (I | I[])[],
@@ -120,12 +120,7 @@ export class Inputer extends Class.Null {
    * @throws Throws an error when required columns aren't supplied or read-only columns were set.
    */
   @Class.Private()
-  private static createEntity<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: I,
-    fields: string[],
-    required: boolean
-  ): O {
+  private static createEntity<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I, fields: string[], required: boolean): O {
     const entity = <O>new model();
     const columns = Schema.getRealRow(model, ...fields);
     for (const name in columns) {
@@ -155,7 +150,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity.
    */
   @Class.Public()
-  public static create<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I): O {
+  public static create<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I): O {
     return this.createEntity(model, entry, [], false);
   }
 
@@ -166,7 +161,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[]): O[] {
+  public static createArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[]): O[] {
     return <O[]>this.createArrayEntity(model, entries, [], false, false);
   }
 
@@ -177,10 +172,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Public()
-  public static createMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: Types.Map<I>
-  ): Types.Map<O> {
+  public static createMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>): Types.Map<O> {
     return this.createMapEntity(model, entry, [], false);
   }
 
@@ -191,7 +183,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity.
    */
   @Class.Public()
-  public static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, data: I): O {
+  public static createFull<I extends Types.Entity, O>(model: Types.ModelClass<O>, data: I): O {
     return this.createEntity(model, data, [], true);
   }
 
@@ -202,10 +194,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createFullArray<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entries: I[]
-  ): O[] {
+  public static createFullArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[]): O[] {
     return <O[]>this.createArrayEntity(model, entries, [], true, false);
   }
 
@@ -216,10 +205,7 @@ export class Inputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Public()
-  public static createFullMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: Types.Map<I>
-  ): Types.Map<O> {
+  public static createFullMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>): Types.Map<O> {
     return this.createMapEntity(model, entry, [], true);
   }
 }

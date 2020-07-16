@@ -26,7 +26,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated list.
    */
   @Class.Private()
-  private static createArrayEntity<I extends Types.Entity, O extends Types.Entity>(
+  private static createArrayEntity<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     entries: (I | I[])[],
     fields: string[],
@@ -59,7 +59,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Private()
-  private static createMapEntity<I extends Types.Entity, O extends Types.Entity>(
+  private static createMapEntity<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     entry: Types.Map<I>,
     fields: string[],
@@ -87,7 +87,7 @@ export class Outputer extends Class.Null {
    * @throws Throws an error when the expected value should be an array or map but the given value is not.
    */
   @Class.Private()
-  private static createValue<I extends Types.Entity, O extends Types.Entity>(
+  private static createValue<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     schema: Columns.Base<O>,
     entry: I | Types.Map<I> | (I | I[])[],
@@ -130,7 +130,7 @@ export class Outputer extends Class.Null {
    * @throws Throws an error when required columns aren't supplied or write-only columns were set.
    */
   @Class.Private()
-  private static createEntity<I extends Types.Entity, O extends Types.Entity>(
+  private static createEntity<I extends Types.Entity, O>(
     model: Types.ModelClass<O>,
     entry: I,
     fields: string[],
@@ -174,11 +174,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity or undefined when the entity has no data.
    */
   @Class.Public()
-  public static create<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: I,
-    fields: string[]
-  ): O | undefined {
+  public static create<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined {
     return this.createEntity(model, entry, fields, false, true);
   }
 
@@ -190,11 +186,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createArray<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entries: I[],
-    fields: string[]
-  ): O[] {
+  public static createArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[] {
     return <O[]>this.createArrayEntity(model, entries, fields, false, true, false);
   }
 
@@ -206,11 +198,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Public()
-  public static createMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: Types.Map<I>,
-    fields: string[]
-  ): Types.Map<O> {
+  public static createMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O> {
     return this.createMapEntity(model, entry, fields, false, true);
   }
 
@@ -222,11 +210,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity or undefined when the entity has no data.
    */
   @Class.Public()
-  public static createFull<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: I,
-    fields: string[]
-  ): O | undefined {
+  public static createFull<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I, fields: string[]): O | undefined {
     return this.createEntity(model, entry, fields, fields.length === 0, true);
   }
 
@@ -238,11 +222,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity array.
    */
   @Class.Public()
-  public static createFullArray<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entries: I[],
-    fields: string[]
-  ): O[] {
+  public static createFullArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[], fields: string[]): O[] {
     return <O[]>this.createArrayEntity(model, entries, fields, fields.length === 0, true, false);
   }
 
@@ -254,11 +234,7 @@ export class Outputer extends Class.Null {
    * @returns Returns the generated entity map.
    */
   @Class.Public()
-  public static createFullMap<I extends Types.Entity, O extends Types.Entity>(
-    model: Types.ModelClass<O>,
-    entry: Types.Map<I>,
-    fields: string[]
-  ): Types.Map<O> {
+  public static createFullMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>, fields: string[]): Types.Map<O> {
     return this.createMapEntity(model, entry, fields, fields.length === 0, true);
   }
 }

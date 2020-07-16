@@ -8,6 +8,7 @@ export { Entity } from './entity';
 export { Column } from './column';
 export { Format } from './format';
 export { Storage } from './storage';
+export { Options } from './options';
 
 // Imported aliases.
 import * as Class from '@singleware/class';

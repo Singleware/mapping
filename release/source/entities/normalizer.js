@@ -77,9 +77,11 @@ let Normalizer = class Normalizer extends Class.Null {
      */
     static createValue(model, schema, entity, alias, unsafe, unroll, path, data) {
         if (schema.model && schema_1.Schema.isEntity(schema.model)) {
+            const nestedModel = helper_1.Helper.getEntityModel(schema.model);
             if (entity instanceof Array) {
                 if (schema.formats.includes(12 /* Array */)) {
-                    return this.createList(helper_1.Helper.getEntityModel(schema.model), entity, schema.all || false, alias, unsafe);
+                    const nestedMultiple = schema.all || false;
+                    return this.createList(nestedModel, entity, nestedMultiple, alias, unsafe);
                 }
                 else {
                     throw new Error(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support array types.`);
@@ -88,14 +90,14 @@ let Normalizer = class Normalizer extends Class.Null {
             else if (entity instanceof Object) {
                 if (schema.formats.includes(14 /* Object */)) {
                     if (unroll) {
-                        return this.createEntry(helper_1.Helper.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
+                        return this.createEntry(nestedModel, entity, alias, unsafe, true, path, data), void 0;
                     }
                     else {
-                        return this.createEntry(helper_1.Helper.getEntityModel(schema.model), entity, alias, unsafe, false);
+                        return this.createEntry(nestedModel, entity, alias, unsafe, false);
                     }
                 }
                 else if (schema.formats.includes(13 /* Map */)) {
-                    return this.createMap(helper_1.Helper.getEntityModel(schema.model), entity, alias, unsafe);
+                    return this.createMap(nestedModel, entity, alias, unsafe);
                 }
                 else {
                     throw new Error(`Column '${schema.name}@${schema_1.Schema.getStorageName(model)}' doesn't support object types.`);

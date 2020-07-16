@@ -54,40 +54,40 @@ export declare class Inputer extends Class.Null {
      * @param entry Entry value.
      * @returns Returns the generated entity.
      */
-    static create<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: I): O;
+    static create<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: I): O;
     /**
      * Creates a new entity array based on the specified model type and entry list.
      * @param model Model type.
      * @param entries Entry list.
      * @returns Returns the generated entity array.
      */
-    static createArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[]): O[];
+    static createArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[]): O[];
     /**
      * Create a new entity map based on the specified model type and entry map.
      * @param model Model type.
      * @param entry Entry map.
      * @returns Returns the generated entity map.
      */
-    static createMap<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: Types.Map<I>): Types.Map<O>;
+    static createMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>): Types.Map<O>;
     /**
      * Creates a new full entity based on the specified model type and entry value.
      * @param model Model type.
      * @param entry Entry value.
      * @returns Returns the generated entity.
      */
-    static createFull<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, data: I): O;
+    static createFull<I extends Types.Entity, O>(model: Types.ModelClass<O>, data: I): O;
     /**
      * Creates a new full entity array based on the specified model type and entry list.
      * @param model Model type.
      * @param entries Entry list.
      * @returns Returns the generated entity array.
      */
-    static createFullArray<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entries: I[]): O[];
+    static createFullArray<I extends Types.Entity, O>(model: Types.ModelClass<O>, entries: I[]): O[];
     /**
      * Create a new full entity map based on the specified model type and entry map.
      * @param model Model type.
      * @param entry Entry map.
      * @returns Returns the generated entity map.
      */
-    static createFullMap<I extends Types.Entity, O extends Types.Entity>(model: Types.ModelClass<O>, entry: Types.Map<I>): Types.Map<O>;
+    static createFullMap<I extends Types.Entity, O>(model: Types.ModelClass<O>, entry: Types.Map<I>): Types.Map<O>;
 }

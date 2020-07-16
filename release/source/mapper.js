@@ -22,66 +22,76 @@ let Mapper = class Mapper extends Class.Null {
     /**
      * Default constructor.
      * @param driver Data driver.
-     * @param model Entity model.
+     * @param output Output entity model.
+     * @param input Input entity model.
      * @throws Throws an error when the model isn't a valid entity.
      */
-    constructor(driver, model) {
+    constructor(driver, output, input = output) {
         super();
-        if (!schema_1.Schema.isEntity(model)) {
-            throw new Error(`Invalid entity model.`);
+        if (!schema_1.Schema.isEntity(output) || !schema_1.Schema.isEntity(input)) {
+            throw new Error(`Invalid input and/or output entity model.`);
         }
         this.driver = driver;
-        this.model = model;
+        this.output = output;
+        this.input = input;
     }
     /**
      * Insert the specified entity list into the storage using a custom model type.
      * @param model Model type.
      * @param entities Entity list.
      * @param options Insert options.
-     * @returns Returns a promise to get the id list of all inserted entities.
+     * @returns Returns a promise to get the Id list of all inserted entities or undefined when an error occurs.
      */
     async insertManyEx(model, entities, options) {
-        return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.createFullArray(model, entities);
+        return await this.driver.insert(model, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Insert the specified entity list into the storage.
      * @param entities Entity list.
      * @param options Insert options.
-     * @returns Returns a promise to get the Id list of all inserted entities.
+     * @returns Returns a promise to get the Id list of all inserted entities or undefined when an error occurs.
      */
     async insertMany(entities, options) {
-        return await this.insertManyEx(this.model, entities, options);
+        return await this.insertManyEx(this.input, entities, options);
     }
     /**
      * Insert the specified entity into the storage using a custom model type.
      * @param model Model type.
      * @param entity Entity data.
      * @param options Insert options.
-     * @returns Returns a promise to get the id of the inserted entry.
+     * @returns Returns a promise to get the Id of the inserted entry or undefined when an error occurs.
      */
     async insertEx(model, entity, options) {
-        return (await this.insertManyEx(model, [entity], options))[0];
+        const output = await this.insertManyEx(model, [entity], options);
+        if (output !== void 0) {
+            return output[0];
+        }
+        return void 0;
     }
     /**
      * Insert the specified entity into the storage.
      * @param entity Entity data.
      * @param options Insert options.
-     * @returns Returns a promise to get the id of the inserted entity.
+     * @returns Returns a promise to get the Id of the inserted entity or undefined when an error occurs.
      */
     async insert(entity, options) {
-        return await this.insertEx(this.model, entity, options);
+        return await this.insertEx(this.input, entity, options);
     }
     /**
      * Find all corresponding entity in the storage.
      * @param query Query filter
      * @param select Fields to select.
      * @param options Find options.
-     * @returns Returns a promise to get the list of entities found.
+     * @returns Returns a promise to get the list of entities found or undefined when an error occurs.
      */
     async find(query, select, options) {
         const fields = select !== null && select !== void 0 ? select : [];
-        const entities = await this.driver.find(this.model, query, fields, options !== null && options !== void 0 ? options : {});
-        return Entities.Outputer.createFullArray(this.model, entities, fields);
+        const output = await this.driver.find(this.output, query, fields, options !== null && options !== void 0 ? options : {});
+        if (output !== void 0) {
+            return Entities.Outputer.createFullArray(this.output, output, fields);
+        }
+        return void 0;
     }
     /**
      * Find the entity that corresponds to the specified entity Id.
@@ -92,9 +102,9 @@ let Mapper = class Mapper extends Class.Null {
      */
     async findById(id, select, options) {
         const fields = select !== null && select !== void 0 ? select : [];
-        const entity = await this.driver.findById(this.model, id, fields, options !== null && options !== void 0 ? options : {});
-        if (entity !== void 0) {
-            return Entities.Outputer.createFull(this.model, entity, fields);
+        const output = await this.driver.findById(this.output, id, fields, options !== null && options !== void 0 ? options : {});
+        if (output !== void 0) {
+            return Entities.Outputer.createFull(this.output, output, fields);
         }
         return void 0;
     }
@@ -107,11 +117,11 @@ let Mapper = class Mapper extends Class.Null {
      * @throws Throws an error when the entity wasn't found.
      */
     async getById(id, select, options) {
-        const entity = await this.findById(id, select, options);
-        if (!entity) {
-            throw new Error(`Failed to find entity by Id '${id}'.`);
+        const output = await this.findById(id, select, options);
+        if (output === void 0) {
+            throw new Error(`Failed to get the entity in '${schema_1.Schema.getStorageName(this.output)}' with '${id}' as Id.`);
         }
-        return entity;
+        return output;
     }
     /**
      * Update all entities that corresponds to the specified match using a custom model type.
@@ -119,10 +129,11 @@ let Mapper = class Mapper extends Class.Null {
      * @param match Matching filter.
      * @param entity Entity data.
      * @param options Update options.
-     * @returns Returns a promise to get the number of updated entities.
+     * @returns Returns a promise to get the number of updated entities or undefined when an error occurs.
      */
     async updateEx(model, match, entity, options) {
-        return this.driver.update(model, match, Entities.Inputer.createFull(model, entity), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.createFull(model, entity);
+        return this.driver.update(model, match, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Update all entities that corresponds to the specified match.
@@ -132,7 +143,8 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns a promise to get the number of updated entities.
      */
     async update(match, entity, options) {
-        return this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.create(this.input, entity);
+        return this.driver.update(this.input, match, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Update the entity that corresponds to the specified id using a custom model type.
@@ -140,67 +152,71 @@ let Mapper = class Mapper extends Class.Null {
      * @param id Entity Id.
      * @param entity Entity data.
      * @param options Update options.
-     * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
+     * @returns Returns a promise to get the true when the entity was updated either undefined when an error occurs or false otherwise.
      */
     async updateByIdEx(model, id, entity, options) {
-        return this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.createFull(model, entity);
+        return this.driver.updateById(model, id, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Update the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param entity Entity data.
      * @param options Update options.
-     * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
+     * @returns Returns a promise to get the true when the entity was updated either undefined when an error occurs or false otherwise.
      */
     async updateById(id, entity, options) {
-        return this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.create(this.input, entity);
+        return this.driver.updateById(this.input, id, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Replace the entity that corresponds to the specified entity Id using a custom model type.
      * @param id Entity Id.
      * @param entity Entity data.
      * @param options Replace options.
-     * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+     * @returns Returns a promise to get the true when the entity was replaced either undefined when an error occurs or false otherwise.
      */
     async replaceByIdEx(model, id, entity, options) {
-        return this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.createFull(model, entity);
+        return this.driver.replaceById(model, id, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Replace the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param entity Entity data.
      * @param options Replace options.
-     * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+     * @returns Returns a promise to get the true when the entity was replaced either undefined when an error occurs or false otherwise.
      */
     async replaceById(id, entity, options) {
-        return this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity), options !== null && options !== void 0 ? options : {});
+        const input = Entities.Inputer.create(this.input, entity);
+        return this.driver.replaceById(this.input, id, input, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Delete all entities that corresponds to the specified match.
      * @param match Matching filter.
      * @param options Delete options.
-     * @return Returns a promise to get the number of deleted entities.
+     * @return Returns a promise to get the number of deleted entities or undefined when an error occurs.
      */
     async delete(match, options) {
-        return this.driver.delete(this.model, match, options !== null && options !== void 0 ? options : {});
+        return this.driver.delete(this.output, match, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Delete the entity that corresponds to the specified entity Id.
      * @param id Entity Id.
      * @param options Delete options.
-     * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
+     * @return Returns a promise to get the true when the entity was deleted either undefined when an error occurs or false otherwise.
      */
     async deleteById(id, options) {
-        return this.driver.deleteById(this.model, id, options !== null && options !== void 0 ? options : {});
+        return this.driver.deleteById(this.output, id, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Count all corresponding entities from the storage.
      * @param query Query filter.
      * @param options Count options.
-     * @returns Returns a promise to get the total amount of found entities.
+     * @returns Returns a promise to get the total amount of found entities or undefined when an error occurs.
      */
     async count(query, options) {
-        return this.driver.count(this.model, query, options !== null && options !== void 0 ? options : {});
+        return this.driver.count(this.output, query, options !== null && options !== void 0 ? options : {});
     }
     /**
      * Generate a new normalized entity based on the specified entity data.
@@ -211,7 +227,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns the normalized entity.
      */
     normalize(entity, alias, unsafe, unroll) {
-        return Entities.Normalizer.create(this.model, entity, alias, unsafe, unroll);
+        return Entities.Normalizer.create(this.output, entity, alias, unsafe, unroll);
     }
     /**
      * Normalize all entities in the specified entity list.
@@ -233,7 +249,7 @@ let Mapper = class Mapper extends Class.Null {
      * @returns Returns the map of normalized entities.
      */
     normalizeAsMap(entities, alias, unsafe, unroll) {
-        const primary = Columns.Helper.getName(schema_1.Schema.getPrimaryColumn(this.model));
+        const primary = Columns.Helper.getName(schema_1.Schema.getPrimaryColumn(this.output));
         const data = {};
         for (const input of entities) {
             const entity = this.normalize(input, alias, unsafe, unroll);
@@ -244,10 +260,13 @@ let Mapper = class Mapper extends Class.Null {
 };
 __decorate([
     Class.Private()
-], Mapper.prototype, "model", void 0);
+], Mapper.prototype, "driver", void 0);
 __decorate([
     Class.Private()
-], Mapper.prototype, "driver", void 0);
+], Mapper.prototype, "output", void 0);
+__decorate([
+    Class.Private()
+], Mapper.prototype, "input", void 0);
 __decorate([
     Class.Public()
 ], Mapper.prototype, "insertManyEx", null);

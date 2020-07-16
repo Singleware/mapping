@@ -25,7 +25,7 @@ export class Normalizer extends Class.Null {
    * @returns Returns the generated list.
    */
   @Class.Private()
-  private static createList<I extends Types.Entity, O extends Types.Entity>(
+  private static createList<I, O extends Types.Entity>(
     model: Types.ModelClass<I>,
     entities: (I | I[])[],
     multiple: boolean,
@@ -55,7 +55,7 @@ export class Normalizer extends Class.Null {
    * @returns Returns the generated map.
    */
   @Class.Private()
-  private static createMap<I extends Types.Entity, O extends Types.Entity>(
+  private static createMap<I, O extends Types.Entity>(
     model: Types.ModelClass<I>,
     entry: Types.Map<I>,
     alias: boolean,
@@ -85,7 +85,7 @@ export class Normalizer extends Class.Null {
    * @throws Throws an error when the value isn't supported.
    */
   @Class.Private()
-  private static createValue<I extends Types.Entity, O extends Types.Entity>(
+  private static createValue<I, O extends Types.Entity>(
     model: Types.ModelClass<I>,
     schema: Columns.Base<I>,
     entity: I | Types.Map<I> | (I | I[])[],
@@ -96,27 +96,23 @@ export class Normalizer extends Class.Null {
     data?: Types.Entity
   ): O | I | Types.Map<O | I> | ((O | I) | (O | I)[])[] | undefined {
     if (schema.model && Schema.isEntity(schema.model)) {
+      const nestedModel = Helper.getEntityModel(schema.model);
       if (entity instanceof Array) {
         if (schema.formats.includes(Types.Format.Array)) {
-          return this.createList(
-            Helper.getEntityModel(schema.model),
-            entity,
-            (<Columns.Virtual<I>>schema).all || false,
-            alias,
-            unsafe
-          );
+          const nestedMultiple = (<Columns.Virtual<I>>schema).all || false;
+          return this.createList(nestedModel, entity, nestedMultiple, alias, unsafe);
         } else {
           throw new Error(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support array types.`);
         }
       } else if (entity instanceof Object) {
         if (schema.formats.includes(Types.Format.Object)) {
           if (unroll) {
-            return this.createEntry(Helper.getEntityModel(schema.model), entity, alias, unsafe, true, path, data), void 0;
+            return this.createEntry<Types.Entity, O>(nestedModel, entity, alias, unsafe, true, path, data), void 0;
           } else {
-            return this.createEntry(Helper.getEntityModel(schema.model), entity, alias, unsafe, false);
+            return this.createEntry<Types.Entity, O>(nestedModel, entity, alias, unsafe, false);
           }
         } else if (schema.formats.includes(Types.Format.Map)) {
-          return this.createMap(Helper.getEntityModel(schema.model), entity, alias, unsafe);
+          return this.createMap(nestedModel, entity, alias, unsafe);
         } else {
           throw new Error(`Column '${schema.name}@${Schema.getStorageName(model)}' doesn't support object types.`);
         }
@@ -137,7 +133,7 @@ export class Normalizer extends Class.Null {
    * @returns Returns the generated entry.
    */
   @Class.Private()
-  private static createEntry<I extends Types.Entity, O extends Types.Entity>(
+  private static createEntry<I, O extends Types.Entity>(
     model: Types.ModelClass<I>,
     entity: I,
     alias: boolean,
@@ -150,7 +146,7 @@ export class Normalizer extends Class.Null {
     const entry = <O>(data || {});
     for (const name in schemas) {
       const schema = schemas[name];
-      const value = entity[name];
+      const value = entity[<keyof I>name];
       if (value !== void 0 && (unsafe || !schema.hidden)) {
         let property = alias ? Columns.Helper.getName(schema) : schema.name;
         if (unroll) {
@@ -175,7 +171,7 @@ export class Normalizer extends Class.Null {
    * @returns Returns the generated object.
    */
   @Class.Public()
-  public static create<I extends Types.Entity, O extends Types.Entity>(
+  public static create<I, O extends Types.Entity>(
     model: Types.ModelClass<I>,
     entity: I,
     alias?: boolean,

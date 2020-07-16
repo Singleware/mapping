@@ -16,13 +16,7 @@ import { Driver } from './driver';
  * Generic data mapper class.
  */
 @Class.Describe()
-export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extends Class.Null {
-  /**
-   * Entity model.
-   */
-  @Class.Private()
-  private model: Types.ModelClass<Entity>;
-
+export class Mapper<Output extends Types.Entity, Input extends Types.Entity = Output, Options extends Types.Options = {}> extends Class.Null {
   /**
    * Data driver.
    */
@@ -30,18 +24,32 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
   private driver: Driver;
 
   /**
+   * Output entity model.
+   */
+  @Class.Private()
+  private output: Types.ModelClass<Output>;
+
+  /**
+   * Input entity model.
+   */
+  @Class.Private()
+  private input: Types.ModelClass<Output | Input>;
+
+  /**
    * Default constructor.
    * @param driver Data driver.
-   * @param model Entity model.
+   * @param output Output entity model.
+   * @param input Input entity model.
    * @throws Throws an error when the model isn't a valid entity.
    */
-  public constructor(driver: Driver, model: Types.ModelClass<Entity>) {
+  public constructor(driver: Driver, output: Types.ModelClass<Output>, input: Types.ModelClass<Output | Input> = output) {
     super();
-    if (!Schema.isEntity(model)) {
-      throw new Error(`Invalid entity model.`);
+    if (!Schema.isEntity(output) || !Schema.isEntity(input)) {
+      throw new Error(`Invalid input and/or output entity model.`);
     }
     this.driver = driver;
-    this.model = model;
+    this.output = output;
+    this.input = input;
   }
 
   /**
@@ -49,26 +57,23 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param model Model type.
    * @param entities Entity list.
    * @param options Insert options.
-   * @returns Returns a promise to get the id list of all inserted entities.
+   * @returns Returns a promise to get the Id list of all inserted entities or undefined when an error occurs.
    */
   @Class.Public()
-  public async insertManyEx<T extends Types.Entity>(
-    model: Types.ModelClass<T>,
-    entities: T[],
-    options?: Options
-  ): Promise<any[]> {
-    return await this.driver.insert(model, Entities.Inputer.createFullArray(model, entities), options ?? {});
+  public async insertManyEx<E, R>(model: Types.ModelClass<E>, entities: E[], options?: Options): Promise<R[] | undefined> {
+    const input = Entities.Inputer.createFullArray(model, entities);
+    return await this.driver.insert(model, input, options ?? {});
   }
 
   /**
    * Insert the specified entity list into the storage.
    * @param entities Entity list.
    * @param options Insert options.
-   * @returns Returns a promise to get the Id list of all inserted entities.
+   * @returns Returns a promise to get the Id list of all inserted entities or undefined when an error occurs.
    */
   @Class.Public()
-  public async insertMany(entities: Entity[], options?: Options): Promise<any[]> {
-    return await this.insertManyEx(this.model, entities, options);
+  public async insertMany<E extends Input, R>(entities: E[], options?: Options): Promise<R[] | undefined> {
+    return await this.insertManyEx(this.input, entities, options);
   }
 
   /**
@@ -76,22 +81,26 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param model Model type.
    * @param entity Entity data.
    * @param options Insert options.
-   * @returns Returns a promise to get the id of the inserted entry.
+   * @returns Returns a promise to get the Id of the inserted entry or undefined when an error occurs.
    */
   @Class.Public()
-  public async insertEx<T extends Types.Entity>(model: Types.ModelClass<T>, entity: T, options?: Options): Promise<any> {
-    return (await this.insertManyEx(model, [entity], options))[0];
+  public async insertEx<E, R>(model: Types.ModelClass<E>, entity: E, options?: Options): Promise<R | undefined> {
+    const output = await this.insertManyEx(model, [entity], options);
+    if (output !== void 0) {
+      return <R>output[0];
+    }
+    return void 0;
   }
 
   /**
    * Insert the specified entity into the storage.
    * @param entity Entity data.
    * @param options Insert options.
-   * @returns Returns a promise to get the id of the inserted entity.
+   * @returns Returns a promise to get the Id of the inserted entity or undefined when an error occurs.
    */
   @Class.Public()
-  public async insert(entity: Entity, options?: Options): Promise<any> {
-    return await this.insertEx(this.model, entity, options);
+  public async insert<E extends Input, R>(entity: E, options?: Options): Promise<R | undefined> {
+    return await this.insertEx(this.input, entity, options);
   }
 
   /**
@@ -99,13 +108,16 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param query Query filter
    * @param select Fields to select.
    * @param options Find options.
-   * @returns Returns a promise to get the list of entities found.
+   * @returns Returns a promise to get the list of entities found or undefined when an error occurs.
    */
   @Class.Public()
-  public async find(query: Filters.Query, select?: string[], options?: Options): Promise<Entity[]> {
+  public async find(query: Filters.Query, select?: string[], options?: Options): Promise<Output[] | undefined> {
     const fields = select ?? [];
-    const entities = await this.driver.find(this.model, query, fields, options ?? {});
-    return <Entity[]>Entities.Outputer.createFullArray(this.model, entities, fields);
+    const output = await this.driver.find(this.output, query, fields, options ?? {});
+    if (output !== void 0) {
+      return Entities.Outputer.createFullArray(this.output, output, fields);
+    }
+    return void 0;
   }
 
   /**
@@ -116,11 +128,11 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @returns Returns a promise to get the entity found or undefined when the entity was not found.
    */
   @Class.Public()
-  public async findById(id: any, select?: string[], options?: Options): Promise<Entity | undefined> {
+  public async findById<I>(id: I, select?: string[], options?: Options): Promise<Output | undefined> {
     const fields = select ?? [];
-    const entity = await this.driver.findById(this.model, id, fields, options ?? {});
-    if (entity !== void 0) {
-      return Entities.Outputer.createFull(this.model, entity, fields);
+    const output = await this.driver.findById(this.output, id, fields, options ?? {});
+    if (output !== void 0) {
+      return Entities.Outputer.createFull(this.output, output, fields);
     }
     return void 0;
   }
@@ -134,12 +146,12 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @throws Throws an error when the entity wasn't found.
    */
   @Class.Public()
-  public async getById(id: any, select?: string[], options?: Options): Promise<Entity> {
-    const entity = await this.findById(id, select, options);
-    if (!entity) {
-      throw new Error(`Failed to find entity by Id '${id}'.`);
+  public async getById<I>(id: I, select?: string[], options?: Options): Promise<Output> {
+    const output = await this.findById(id, select, options);
+    if (output === void 0) {
+      throw new Error(`Failed to get the entity in '${Schema.getStorageName(this.output)}' with '${id}' as Id.`);
     }
-    return entity;
+    return output;
   }
 
   /**
@@ -148,16 +160,12 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param match Matching filter.
    * @param entity Entity data.
    * @param options Update options.
-   * @returns Returns a promise to get the number of updated entities.
+   * @returns Returns a promise to get the number of updated entities or undefined when an error occurs.
    */
   @Class.Public()
-  public async updateEx<T extends Types.Entity>(
-    model: Types.ModelClass<T>,
-    match: Filters.Match,
-    entity: T,
-    options?: Options
-  ): Promise<number> {
-    return this.driver.update(model, match, Entities.Inputer.createFull(model, entity), options ?? {});
+  public async updateEx<E>(model: Types.ModelClass<E>, match: Filters.Match, entity: E, options?: Options): Promise<number | undefined> {
+    const input = Entities.Inputer.createFull(model, entity);
+    return this.driver.update(model, match, input, options ?? {});
   }
 
   /**
@@ -168,8 +176,9 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @returns Returns a promise to get the number of updated entities.
    */
   @Class.Public()
-  public async update(match: Filters.Match, entity: Types.Entity, options?: Options): Promise<number> {
-    return this.driver.update(this.model, match, Entities.Inputer.create(this.model, entity), options ?? {});
+  public async update<E extends Partial<Input>>(match: Filters.Match, entity: E, options?: Options): Promise<number | undefined> {
+    const input = Entities.Inputer.create(this.input, entity);
+    return this.driver.update(this.input, match, input, options ?? {});
   }
 
   /**
@@ -178,16 +187,12 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param id Entity Id.
    * @param entity Entity data.
    * @param options Update options.
-   * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
+   * @returns Returns a promise to get the true when the entity was updated either undefined when an error occurs or false otherwise.
    */
   @Class.Public()
-  public async updateByIdEx<T extends Types.Entity>(
-    model: Types.ModelClass<T>,
-    id: any,
-    entity: T,
-    options?: Options
-  ): Promise<boolean> {
-    return this.driver.updateById(model, id, Entities.Inputer.createFull(model, entity), options ?? {});
+  public async updateByIdEx<E, I>(model: Types.ModelClass<E>, id: I, entity: E, options?: Options): Promise<boolean | undefined> {
+    const input = Entities.Inputer.createFull(model, entity);
+    return this.driver.updateById(model, id, input, options ?? {});
   }
 
   /**
@@ -195,11 +200,12 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param id Entity Id.
    * @param entity Entity data.
    * @param options Update options.
-   * @returns Returns a promise to get the true when the entity has been updated or false otherwise.
+   * @returns Returns a promise to get the true when the entity was updated either undefined when an error occurs or false otherwise.
    */
   @Class.Public()
-  public async updateById(id: any, entity: Types.Entity, options?: Options): Promise<boolean> {
-    return this.driver.updateById(this.model, id, Entities.Inputer.create(this.model, entity), options ?? {});
+  public async updateById<E extends Partial<Input>, I>(id: I, entity: E, options?: Options): Promise<boolean | undefined> {
+    const input = Entities.Inputer.create(this.input, entity);
+    return this.driver.updateById(this.input, id, input, options ?? {});
   }
 
   /**
@@ -207,16 +213,12 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param id Entity Id.
    * @param entity Entity data.
    * @param options Replace options.
-   * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+   * @returns Returns a promise to get the true when the entity was replaced either undefined when an error occurs or false otherwise.
    */
   @Class.Public()
-  public async replaceByIdEx<T extends Types.Entity>(
-    model: Types.ModelClass<T>,
-    id: any,
-    entity: Types.Entity,
-    options?: Options
-  ): Promise<boolean> {
-    return this.driver.replaceById(model, id, Entities.Inputer.createFull(model, entity), options ?? {});
+  public async replaceByIdEx<E, I>(model: Types.ModelClass<E>, id: I, entity: E, options?: Options): Promise<boolean | undefined> {
+    const input = Entities.Inputer.createFull(model, entity);
+    return this.driver.replaceById(model, id, input, options ?? {});
   }
 
   /**
@@ -224,44 +226,45 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @param id Entity Id.
    * @param entity Entity data.
    * @param options Replace options.
-   * @returns Returns a promise to get the true when the entity has been replaced or false otherwise.
+   * @returns Returns a promise to get the true when the entity was replaced either undefined when an error occurs or false otherwise.
    */
   @Class.Public()
-  public async replaceById(id: any, entity: Types.Entity, options?: Options): Promise<boolean> {
-    return this.driver.replaceById(this.model, id, Entities.Inputer.create(this.model, entity), options ?? {});
+  public async replaceById<E extends Input, I>(id: I, entity: E, options?: Options): Promise<boolean | undefined> {
+    const input = Entities.Inputer.create(this.input, entity);
+    return this.driver.replaceById(this.input, id, input, options ?? {});
   }
 
   /**
    * Delete all entities that corresponds to the specified match.
    * @param match Matching filter.
    * @param options Delete options.
-   * @return Returns a promise to get the number of deleted entities.
+   * @return Returns a promise to get the number of deleted entities or undefined when an error occurs.
    */
   @Class.Public()
-  public async delete(match: Filters.Match, options?: Options): Promise<number> {
-    return this.driver.delete(this.model, match, options ?? {});
+  public async delete(match: Filters.Match, options?: Options): Promise<number | undefined> {
+    return this.driver.delete(this.output, match, options ?? {});
   }
 
   /**
    * Delete the entity that corresponds to the specified entity Id.
    * @param id Entity Id.
    * @param options Delete options.
-   * @return Returns a promise to get the true when the entity has been deleted or false otherwise.
+   * @return Returns a promise to get the true when the entity was deleted either undefined when an error occurs or false otherwise.
    */
   @Class.Public()
-  public async deleteById(id: any, options?: Options): Promise<boolean> {
-    return this.driver.deleteById(this.model, id, options ?? {});
+  public async deleteById<I>(id: I, options?: Options): Promise<boolean | undefined> {
+    return this.driver.deleteById(this.output, id, options ?? {});
   }
 
   /**
    * Count all corresponding entities from the storage.
    * @param query Query filter.
    * @param options Count options.
-   * @returns Returns a promise to get the total amount of found entities.
+   * @returns Returns a promise to get the total amount of found entities or undefined when an error occurs.
    */
   @Class.Public()
-  public async count(query: Filters.Query, options?: Options): Promise<number> {
-    return this.driver.count(this.model, query, options ?? {});
+  public async count(query: Filters.Query, options?: Options): Promise<number | undefined> {
+    return this.driver.count(this.output, query, options ?? {});
   }
 
   /**
@@ -273,8 +276,8 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @returns Returns the normalized entity.
    */
   @Class.Public()
-  public normalize(entity: Entity, alias?: boolean, unsafe?: boolean, unroll?: boolean): Entity {
-    return Entities.Normalizer.create(this.model, entity, alias, unsafe, unroll);
+  public normalize<E extends Output>(entity: E, alias?: boolean, unsafe?: boolean, unroll?: boolean): E {
+    return Entities.Normalizer.create(this.output, entity, alias, unsafe, unroll);
   }
 
   /**
@@ -286,7 +289,7 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @returns Returns the list of normalized entities.
    */
   @Class.Public()
-  public normalizeAll(entities: Entity[], alias?: boolean, unsafe?: boolean, unroll?: boolean): Entity[] {
+  public normalizeAll<E extends Output>(entities: E[], alias?: boolean, unsafe?: boolean, unroll?: boolean): E[] {
     return entities.map(entity => this.normalize(entity, alias, unsafe, unroll));
   }
 
@@ -299,9 +302,9 @@ export class Mapper<Entity extends Types.Entity, Options extends {} = {}> extend
    * @returns Returns the map of normalized entities.
    */
   @Class.Public()
-  public normalizeAsMap(entities: Entity[], alias?: boolean, unsafe?: boolean, unroll?: boolean): Types.Map<Entity> {
-    const primary = Columns.Helper.getName(Schema.getPrimaryColumn(this.model));
-    const data = <Types.Map<Entity>>{};
+  public normalizeAsMap<E extends Output>(entities: E[], alias?: boolean, unsafe?: boolean, unroll?: boolean): Types.Map<E> {
+    const primary = Columns.Helper.getName(Schema.getPrimaryColumn(this.output));
+    const data = <Types.Map<E>>{};
     for (const input of entities) {
       const entity = this.normalize(input, alias, unsafe, unroll);
       data[entity[primary]] = entity;
